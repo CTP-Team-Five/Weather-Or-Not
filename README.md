@@ -2,3 +2,6 @@
 This repository is for WeatherOrNot. A web-based application that will allow users to easily understand when to go do some of their favorite outdoor pastimes! The idea is to look at weather API's and direct users to which days would be most optimal. We want to tie in live cameras, both surf and mountains. 
 
 We will have to link to the making of our project, such as the proposal, wireframe, and other key items.
+
+
+
