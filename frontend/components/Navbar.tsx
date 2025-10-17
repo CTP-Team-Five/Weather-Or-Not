@@ -19,7 +19,6 @@ const Navbar: React.FC = () => {
         </Link>
       </div>
 
-      {/* Navigation Links */}
       <ul className={styles.navLinks}>
         {navLinks.map((link) => (
           <li key={link.name}>
