@@ -1,3 +1,5 @@
+@import "leaflet/dist/leaflet.css";
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -34,6 +36,187 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
+}
+
+.glassy {
+  background-color: rgba(51, 51, 51, 0.65);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
+  color: white;
+}
+
+.wo-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  font-size: 28px;
+  line-height: 1;
+  z-index: 1000;
+}
+
+.woPinBtn {
+  position: absolute;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  z-index: 2000;
+}
+
+.woPinBtn.glassy {
+  background-color: rgba(51, 51, 51, 0.65);
+  color: white;
+  backdrop-filter: blur(9px);
+  transition: background 0.2s ease;
+}
+
+.woPinBtn.glassy:hover {
+  background-color: rgba(51, 51, 51, 0.85);
+}
+
+.woSearchWrapper {
+  position: absolute;
+  top: 80px;             
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  z-index: 2000;
+}
+
+.woSearchInput {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  outline: none;
+}
+
+.woSearchInput.glassy {
+  background-color: rgba(51, 51, 51, 0.65);
+  color: white;
+}
+
+.woSearchInput::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.woSuggestions {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.woSuggestions.glassy {
+  background-color: rgba(51, 51, 51, 0.65);
+  backdrop-filter: blur(9px);
+}
+
+.woSuggestions li {
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.woSuggestions li:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.wo-my-location-btn {
+  position: absolute;
+  top: 80px;
+  right: 20px;
+  z-index: 2000;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.wo-my-location-btn.glassy {
+  background-color: rgba(51, 51, 51, 0.65);
+  color: white;
+  backdrop-filter: blur(9px);
+  transition: background 0.2s ease;
+}
+
+.wo-my-location-btn.glassy:hover {
+  background-color: rgba(51, 51, 51, 0.85);
+}
+
+.wo-coord-pill {
+  padding: 10px 14px;              
+  border-radius: 12px;             
+  background-color: rgba(51, 51, 51, 0.65);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.emoji-pin {
+  font-size: 26px;
+  text-align: center;
+  line-height: 1;
+}
+
+.wo-top-controls {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 2000;
+  max-width: 90%;
+  flex-wrap: nowrap;
+}
+
+.wo-search-inline {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+  max-width: 320px;
+  z-index: 3000;
+}
+
+.wo-recenter-btn {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wo-coord-pill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
 
 @media (prefers-color-scheme: dark) {
   html {
