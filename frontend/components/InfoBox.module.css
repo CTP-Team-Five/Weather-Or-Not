@@ -1,0 +1,27 @@
+.card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.infoHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.infoIcon {
+  color: #4f46e5;
+  margin-right: 0.75rem;
+}
+
+.infoTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.infoContent {
+  color: #4b5563;
+  font-size: 0.95rem;
+}
