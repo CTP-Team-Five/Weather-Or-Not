@@ -120,7 +120,17 @@ export default function MapPage() {
   };
 
   return (
-    <main style={{ position: "relative", height: "100vh", width: "100%" }}>
+    <main
+  style={{
+    position: "fixed",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    overflow: "hidden",
+    zIndex: 0,
+  }}
+>
+
       {/*  Search bar with suggestions */}
       <div className="woSearchWrapper">
         <input

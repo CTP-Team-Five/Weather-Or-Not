@@ -1,4 +1,7 @@
 @import "leaflet/dist/leaflet.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #ffffff;
@@ -12,6 +15,11 @@
   }
 }
 
+:root {
+  --navbar-height: 64px;
+}
+
+
 html,
 body {
   max-width: 100vw;
@@ -20,15 +28,19 @@ body {
 
 body {
   color: var(--foreground);
+  padding-top: var(--navbar-height);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+body.no-navbar-padding {
+  padding-top: 0;
+}
+
 * {
   box-sizing: border-box;
-  padding: 0;
   margin: 0;
 }
 
@@ -161,7 +173,8 @@ a {
 }
 
 .wo-coord-pill {
-  padding: 10px 14px;              
+  padding: 10px 14px;        
+  top: 80px;      
   border-radius: 12px;             
   background-color: rgba(51, 51, 51, 0.65);
   backdrop-filter: blur(9px);
@@ -171,7 +184,9 @@ a {
   color: white;
   font-size: 14px;
   font-weight: 500;
+  position: fixed;
   white-space: nowrap;
+  z-index: 3000;
 }
 
 .emoji-pin {
@@ -201,6 +216,47 @@ a {
   max-width: 320px;
   z-index: 3000;
 }
+/* Bottom control cluster: zoom + pin */
+.leaflet-control-container .leaflet-control-zoom {
+  position: absolute !important;
+  bottom: 20px !important;
+  left: calc(50% - 140px) !important; /* shifts left of centered pin */
+  top: auto !important;
+  right: auto !important;
+
+  display: flex !important;
+  flex-direction: row !important; /* makes + and - side-by-side */
+  background: rgba(51, 51, 51, 0.65) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(9px) !important;
+  -webkit-backdrop-filter: blur(9px) !important;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25) !important;
+  z-index: 3000 !important;
+}
+
+.woPinBtn {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  z-index: 2000;
+}
+
+.woPinBtn.glassy {
+  background-color: rgba(51, 51, 51, 0.65);
+  color: white;
+  backdrop-filter: blur(9px);
+  transition: background 0.2s ease;
+}
+
+.woPinBtn.glassy:hover {
+  background-color: rgba(51, 51, 51, 0.85);
+}
 
 .wo-recenter-btn {
   padding: 10px 14px;
@@ -222,4 +278,9 @@ a {
   html {
     color-scheme: dark;
   }
+}
+
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
 }
