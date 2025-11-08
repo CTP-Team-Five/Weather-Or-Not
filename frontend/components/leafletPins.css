@@ -1,0 +1,29 @@
+/* Pulse animation */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.3); opacity: 0.6; }
+  100% { transform: scale(1); opacity: 0.9; }
+}
+
+/* Reusable glowing pin */
+.glassy-pin {
+  position: relative;
+  transform: translate(-50%, -100%);
+}
+
+.glassy-pin-dot {
+  width: 12px;
+  height: 12px;
+  background: radial-gradient(circle at 40% 40%, #00c6ff, #0072ff);
+  border: 2px solid rgba(255,255,255,0.8);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(0,180,255,0.8);
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.glassy-pin-stem {
+  width: 2px;
+  height: 6px;
+  background: rgba(0,180,255,0.8);
+  margin: 0 auto;
+}
