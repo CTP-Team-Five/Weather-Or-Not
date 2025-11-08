@@ -3,15 +3,9 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-
+import MapSearch from "@/components/MapSearch";
 
 type LatLngTuple = [number, number];
-
-type SearchResult = {
-  display_name: string;
-  lat: string;
-  lon: string;
-};
 
 // Client-only import of Leaflet map
 const LeafletMap = dynamic(() => import("../../components/LeafletMap"), {
@@ -21,17 +15,12 @@ const LeafletMap = dynamic(() => import("../../components/LeafletMap"), {
 export default function MapPage() {
   const router = useRouter();
 
-  // Core state
-  const [center, setCenter] = useState<LatLngTuple>([40.7128, -74.006]); // default NYC
+  // Core map state
+  const [center, setCenter] = useState<LatLngTuple>([40.7128, -74.006]); // Default: NYC
   const [pinned, setPinned] = useState<LatLngTuple | null>(null);
-
-  // UI state
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [isFocused, setIsFocused] = useState(false);
   const [isProgrammaticMove, setIsProgrammaticMove] = useState(false);
 
-  // Get user location once on mount
+  /* 🌎 On Mount: Try to use user's current location */
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -41,48 +30,18 @@ export default function MapPage() {
           setCenter([latitude, longitude]);
           setPinned([latitude, longitude]);
         },
-        (err) => console.warn("Geolocation error:", err)
+        (err) =>
+          console.warn(
+            "Geolocation error:",
+            err?.message || "Permission denied or unavailable"
+          )
       );
     }
   }, []);
 
-  // Debounced search with Nominatim
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (query.trim().length > 2) {
-        fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-            query
-          )}&format=json&limit=5`,
-          { headers: { "User-Agent": "WeatherOrNot/1.0 (your_email@example.com)" } }
-        )
-          .then((res) => res.json())
-          .then((data) => setResults(data))
-          .catch((err) => {
-            console.error("Search error:", err);
-            setResults([]);
-          });
-      } else {
-        setResults([]);
-      }
-    }, 400);
-    return () => clearTimeout(timeout);
-  }, [query]);
-
-  // When user selects a result → fly to location
-  const handleSelect = (lat: number, lon: number) => {
-    const newCenter: LatLngTuple = [lat, lon];
-    setIsProgrammaticMove(true);
-    setCenter(newCenter);
-    setPinned(newCenter);
-    setQuery("");
-    setResults([]);
-    setIsFocused(false);
-  };
-
+  /* 📍 When user drops a pin */
   const handlePin = async (pos: [number, number]) => {
     const [lat, lon] = pos;
-
     console.log("📍 Pin pressed:", lat, lon);
 
     try {
@@ -106,8 +65,6 @@ export default function MapPage() {
       const state = data.address?.state ? `, ${data.address.state}` : "";
       const displayName = `${area}${state}`;
 
-      console.log("Display name:", displayName);
-
       router.push(
         `/rating?area=${encodeURIComponent(displayName)}&lat=${lat}&lon=${lon}`
       );
@@ -117,8 +74,7 @@ export default function MapPage() {
     }
   };
 
-
-  // Manual recenter to user location
+  /* Recenter Button -> use current location again */
   const handleUseMyLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -131,12 +87,16 @@ export default function MapPage() {
           setCenter(newCenter);
           setPinned(newCenter);
         },
-        (err) => console.error("Location error:", err)
+        (err) =>
+          console.warn(
+            "Location error:",
+            err?.message || "Permission denied or unavailable"
+          )
       );
     }
   };
 
-  // Handle map dragging or manual movement
+  /*  When map moves manually */
   const handleCenterMove = (c: LatLngTuple) => {
     if (isProgrammaticMove) {
       setIsProgrammaticMove(false);
@@ -145,11 +105,8 @@ export default function MapPage() {
 
     const [lat, lng] = center;
     const [newLat, newLng] = c;
-
-    // tiny tolerance to prevent infinite loops
-    if (Math.abs(lat - newLat) < 0.00001 && Math.abs(lng - newLng) < 0.00001) {
+    if (Math.abs(lat - newLat) < 0.00001 && Math.abs(lng - newLng) < 0.00001)
       return;
-    }
 
     setCenter(c);
   };
@@ -158,74 +115,100 @@ export default function MapPage() {
     <main
       style={{
         position: "fixed",
-        inset: 0,
+        top: 0,
+        left: 0,
         width: "100%",
-        height: "100%",
+        height: "100vh",
         overflow: "hidden",
         zIndex: 0,
+        background: "black",
       }}
     >
-
-      {/*  Search bar with suggestions */}
-      <div className="woSearchWrapper">
-        <input
-          type="text"
-          placeholder="Search for a place..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setTimeout(() => setIsFocused(false), 150)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && results.length > 0) {
-              const first = results[0];
-              handleSelect(parseFloat(first.lat), parseFloat(first.lon));
-            }
+      {/* Toolbar overlay below navbar */}
+      <div
+        style={{
+          position: "absolute",
+          top: "84px",
+          left: 0,
+          width: "100%",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "1rem",
+          padding: "0 2rem",
+          zIndex: 2500,
+        }}
+      >
+        {/* Left: Coordinates */}
+        <div
+          className="glassy"
+          style={{
+            padding: "0.6rem 1rem",
+            borderRadius: "10px",
+            fontSize: "0.9rem",
+            color: "#e5e5e5",
+            background: "rgba(25,25,25,0.6)",
+            backdropFilter: "blur(8px)",
+            whiteSpace: "nowrap",
           }}
-          className="woSearchInput glassy"
-        />
-        {isFocused && results.length > 0 && (
-          <ul className="woSuggestions glassy">
-            {results.map((r, i) => (
-              <li
-                key={i}
-                onClick={() =>
-                  handleSelect(parseFloat(r.lat), parseFloat(r.lon))
-                }
-              >
-                {r.display_name}
-              </li>
-            ))}
-          </ul>
-        )}
+        >
+          Center: {center[0].toFixed(5)}, {center[1].toFixed(5)}
+        </div>
+
+        {/* Middle: Search */}
+        <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+          <MapSearch
+            onSelect={(coords) => {
+              setIsProgrammaticMove(true);
+              setCenter(coords);
+              setPinned(coords);
+            }}
+          />
+        </div>
+
+        {/* Right: Recenter */}
+        <button
+          onClick={handleUseMyLocation}
+          className="glassy"
+          style={{
+            padding: "0.6rem 1.2rem",
+            borderRadius: "10px",
+            fontWeight: 600,
+            fontSize: "0.95rem",
+            color: "#e5e5e5",
+            background: "rgba(40, 40, 40, 0.6)",
+            backdropFilter: "blur(9px)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+            transition: "all 0.2s ease",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "rgba(60, 60, 60, 0.7)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "rgba(40, 40, 40, 0.6)")
+          }
+        >
+          Recenter
+        </button>
       </div>
-
-      {/*  Recenter Button */}
-      <button className="wo-my-location-btn glassy" onClick={handleUseMyLocation}>
-        Recenter
-      </button>
-
-      {/*  Center Coordinates */}
-      <div className="wo-coord-pill">
-        Center: {center[0].toFixed(5)}, {center[1].toFixed(5)}
-      </div>
-
-      {/*  Crosshair */}
-      <div className="wo-crosshair" style={{ top: "calc(50% + 32px)" }}>
+      {/* Crosshair */}
+      <div className="wo-crosshair" style={{ top: "calc(50%)" }}>
         📍
       </div>
 
-      {/*  Map */}
+      {/* Leaflet Map */}
       <LeafletMap
         initialCenter={center}
         pinned={pinned}
-        onCenterMove={setCenter}
+        onCenterMove={handleCenterMove}
         onPin={async (pos) => {
           setPinned(pos);
-          await handlePin(pos); // have to await for the address lookup (latency)
+          await handlePin(pos);
         }}
       />
-
-
     </main>
   );
 }

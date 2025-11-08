@@ -1,27 +1,60 @@
 .card {
-  background-color: #ffffff;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  background: rgba(35, 35, 35, 0.75);
+  border-radius: 12px;
+  padding: 1.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.25s ease;
+}
+
+.card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
 }
 
 .infoHeader {
   display: flex;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .infoIcon {
-  color: #4f46e5;
+  color: #60a5fa; /* soft blue */
   margin-right: 0.75rem;
+  font-size: 1.25rem;
 }
 
 .infoTitle {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 600;
+  color: #ffffff;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.15);
 }
 
 .infoContent {
-  color: #4b5563;
-  font-size: 0.95rem;
+  color: #e5e5e5;
+  font-size: 0.96rem;
+  line-height: 1.55;
+  white-space: pre-line;
+  transition: color 0.3s ease;
+}
+
+.infoContent strong {
+  color: #7dd3fc; /* cyan highlight for temp/wind */
+}
+
+.infoContent span.score {
+  color: #a78bfa; /* violet for session score */
+  font-weight: 600;
+}
+
+/* Subtle fade in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+  animation: fadeIn 0.3s ease-in-out;
 }
