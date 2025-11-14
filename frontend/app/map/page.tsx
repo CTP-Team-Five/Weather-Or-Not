@@ -1,7 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+
 
 type LatLngTuple = [number, number];
 
@@ -17,6 +19,8 @@ const LeafletMap = dynamic(() => import("../../components/LeafletMap"), {
 });
 
 export default function MapPage() {
+  const router = useRouter();
+
   // Core state
   const [center, setCenter] = useState<LatLngTuple>([40.7128, -74.006]); // default NYC
   const [pinned, setPinned] = useState<LatLngTuple | null>(null);
@@ -76,12 +80,43 @@ export default function MapPage() {
     setIsFocused(false);
   };
 
-  // Pin at current center
-  const handlePin = () => {
-    setIsProgrammaticMove(true);
-    setPinned(center);
-    setCenter(center);
+  const handlePin = async (pos: [number, number]) => {
+    const [lat, lon] = pos;
+
+    console.log("📍 Pin pressed:", lat, lon);
+
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10&addressdetails=1`,
+        { headers: { "User-Agent": "WeatherOrNot/1.0 (xyz@gmail.com)" } }
+      );
+
+      const data = await res.json();
+      console.log("Reverse geocode result:", data);
+
+      const area =
+        data.name ||
+        data.address?.neighbourhood ||
+        data.address?.suburb ||
+        data.address?.town ||
+        data.address?.city ||
+        data.address?.county ||
+        "Unknown Area";
+
+      const state = data.address?.state ? `, ${data.address.state}` : "";
+      const displayName = `${area}${state}`;
+
+      console.log("Display name:", displayName);
+
+      router.push(
+        `/rating?area=${encodeURIComponent(displayName)}&lat=${lat}&lon=${lon}`
+      );
+    } catch (err) {
+      console.error("Reverse geocode failed:", err);
+      router.push(`/rating?lat=${lat}&lon=${lon}`);
+    }
   };
+
 
   // Manual recenter to user location
   const handleUseMyLocation = () => {
@@ -120,7 +155,17 @@ export default function MapPage() {
   };
 
   return (
-    <main style={{ position: "relative", height: "100vh", width: "100%" }}>
+    <main
+      style={{
+        position: "fixed",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        zIndex: 0,
+      }}
+    >
+
       {/*  Search bar with suggestions */}
       <div className="woSearchWrapper">
         <input
@@ -173,8 +218,11 @@ export default function MapPage() {
       <LeafletMap
         initialCenter={center}
         pinned={pinned}
-        onCenterMove={handleCenterMove}
-        onPin={(pos) => setPinned(pos)}
+        onCenterMove={setCenter}
+        onPin={async (pos) => {
+          setPinned(pos);
+          await handlePin(pos); // have to await for the address lookup (latency)
+        }}
       />
 
 
