@@ -28,7 +28,7 @@ export default function RatingPage() {
       createdAt: Date.now(),
     };
 
-    console.log("📌 Saving new pin:", newPin);
+    console.log("Saving new pin:", newPin);
     PinStore.add(newPin);
 
     router.push("/"); // Return to dashboard

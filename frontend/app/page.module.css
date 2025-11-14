@@ -7,6 +7,93 @@
   max-width: 1500px;
   margin: 0 auto;
 }
+/* --- Saved Pins --- */
+.pinList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pinItem {
+  margin-bottom: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Active / selected pin */
+.activePin {
+  border: 1px solid rgba(0, 150, 255, 0.6);
+  background: rgba(0, 150, 255, 0.1);
+  transition: 0.2s ease;
+}
+
+.emptyStateText {
+  color: #bbbbbb;
+  margin-bottom: 0.75rem;
+}
+
+/* Add pin button (used for both empty + stack case) */
+.addButton {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  margin-top: 0.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  background-color: #4f46e5;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  font-size: 0.98rem;
+}
+
+.addButton:hover {
+  background-color: #4338ca;
+  transform: translateY(-1px);
+}
+
+/* --- Weather Panel Enhancements --- */
+.infoBoxGlassy {
+  flex: 1;
+  background: rgba(35, 35, 35, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  padding: 1.8rem;
+  color: #e5e5e5;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.infoBoxGlassy p {
+  color: #d8d8d8;
+  margin: 0.4rem 0;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+/* highlight parts like score / temp */
+.highlight {
+  color: #7dd3fc; /* light cyan for numbers */
+  font-weight: 600;
+}
+
+.sessionScore {
+  color: #a78bfa; /* violet */
+  font-weight: 500;
+  margin-top: 0.4rem;
+}
+
+/* fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 /* --- Section Spacing --- */
 .sectionSpacing {

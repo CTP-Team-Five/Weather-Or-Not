@@ -1,8 +1,11 @@
+// LeafletMap.tsx
+
 "use client";
 
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import { useEffect, useRef } from "react";
+import MapSearch from "@/components/MapSearch";
 import "@/components/leafletPins.css";
 
 
@@ -33,7 +36,7 @@ function CenterBridge({
   isFlyingRef,
 }: {
   onCenterMove: (c: LatLngTuple) => void;
-  isFlyingRef: React.MutableRefObject<boolean>;
+  isFlyingRef: React.RefObject<boolean>;
 }) {
   useMapEvents({
     moveend: (e) => {
@@ -51,7 +54,7 @@ function FlyTo({
   isFlyingRef,
 }: {
   center: LatLngTuple;
-  isFlyingRef: React.MutableRefObject<boolean>;
+  isFlyingRef: React.RefObject<boolean>;
 }) {
   const map = useMap();
   useEffect(() => {
@@ -90,7 +93,15 @@ export default function LeafletMap({ initialCenter, pinned, onCenterMove, onPin 
     onCenterMove(initialCenter);
   }, [initialCenter, onCenterMove]);
   return (
-    <div style={{ height: "calc(100vh - 64px)", width: "100%", position: "relative" }}>
+    <div
+      style={{
+        height: "100vh",
+        width: "100%",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+
       <MapContainer
         center={initialCenter}
         zoom={12}
@@ -111,56 +122,52 @@ export default function LeafletMap({ initialCenter, pinned, onCenterMove, onPin 
           </Marker>
         )}
       </MapContainer>
-
-     {/* Floating "Add Pin" Button */}
-<button
-  onClick={() => onPin && onPin(initialCenter)}
-  className="wo-pin-btn"
-  style={{
-    position: "absolute",
-    bottom: "24px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "64px",
-    height: "64px",
-    borderRadius: "50%",
-    background: "rgba(25, 25, 25, 0.55)",
-    border: "1px solid rgba(255,255,255,0.2)",
-    backdropFilter: "blur(10px)",
-    boxShadow: "0 4px 25px rgba(0, 180, 255, 0.3)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#313b3d40",
-    fontSize: "28px",
-    transition: "all 0.2s ease",
-    cursor: "pointer",
-    zIndex: 2000,
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.transform = "translateX(-50%) scale(1.08)";
-    e.currentTarget.style.boxShadow = "0 6px 30px rgba(0, 180, 255, 0.5)";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.transform = "translateX(-50%) scale(1)";
-    e.currentTarget.style.boxShadow = "0 4px 25px rgba(0, 180, 255, 0.3)";
-  }}
->
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.8}
-    stroke="currentColor"
-    width={32}
-    height={32}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v20m10-10H2" />
-  </svg>
-</button>
+      <MapSearch onSelect={onCenterMove} />
+      {/* Floating "Add Pin" Button */}
       <button
+        onClick={() => onPin && onPin(initialCenter)}
+        className="wo-pin-btn"
+        style={{
+          position: "absolute",
+          bottom: "24px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "64px",
+          height: "64px",
+          borderRadius: "50%",
+          background: "rgba(25, 25, 25, 0.55)",
+          border: "1px solid rgba(255,255,255,0.2)",
+          backdropFilter: "blur(10px)",
+          boxShadow: "0 4px 25px rgba(0, 180, 255, 0.3)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#313b3d40",
+          fontSize: "28px",
+          transition: "all 0.2s ease",
+          cursor: "pointer",
+          zIndex: 2000,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateX(-50%) scale(1.08)";
+          e.currentTarget.style.boxShadow = "0 6px 30px rgba(0, 180, 255, 0.5)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "translateX(-50%) scale(1)";
+          e.currentTarget.style.boxShadow = "0 4px 25px rgba(0, 180, 255, 0.3)";
+        }}
       >
-        Pin Location
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={1.8}
+          stroke="currentColor"
+          width={32}
+          height={32}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v20m10-10H2" />
+        </svg>
       </button>
     </div>
   );

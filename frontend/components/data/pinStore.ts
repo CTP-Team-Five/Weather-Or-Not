@@ -26,6 +26,13 @@ export const PinStore = {
     localStorage.setItem(this.KEY, JSON.stringify(pins));
   },
 
+  update(id: string, updated: Partial<SavedPin>) {
+    const pins = this.all().map((p) =>
+      p.id === id ? { ...p, ...updated } : p
+    );
+    localStorage.setItem(this.KEY, JSON.stringify(pins));
+  },
+
   remove(id: string) {
     const pins = this.all().filter((p) => p.id !== id);
     localStorage.setItem(this.KEY, JSON.stringify(pins));

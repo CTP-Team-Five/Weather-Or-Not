@@ -1,3 +1,5 @@
+//MapSection.tsx 
+
 'use client';
 
 import dynamic from 'next/dynamic';
@@ -11,7 +13,7 @@ export default function MapSection() {
   const [center, setCenter] = useState<[number, number] | null>(null);
   const [pinned, setPinned] = useState<[number, number] | null>(null);
 
-  // 🧭 Get user location once
+  // Get user location once
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -28,7 +30,7 @@ export default function MapSection() {
     }
   }, []);
 
-  // ⏳ simple loading placeholder
+  // simple loading placeholder
   if (!center) {
     return (
       <div
