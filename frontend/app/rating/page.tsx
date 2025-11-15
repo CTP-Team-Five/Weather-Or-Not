@@ -1,5 +1,8 @@
+//app/rating/page.tsx
+
 "use client";
 
+import { supabase } from "@/lib/supabaseClient";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { PinStore } from "@/components/data/pinStore";
@@ -15,24 +18,42 @@ export default function RatingPage() {
 
   const [activity, setActivity] = useState("");
 
-  const handleSelect = (type: string) => {
+  const handleSelect = async (type: string) => {
     setActivity(type);
 
     const id = crypto.randomUUID();
+    const parsedLat = lat ? parseFloat(lat) : 0;
+    const parsedLon = lon ? parseFloat(lon) : 0;
+
     const newPin = {
       id,
       area: area || "Unknown Area",
-      lat: lat ? parseFloat(lat) : 0,
-      lon: lon ? parseFloat(lon) : 0,
+      lat: parsedLat,
+      lon: parsedLon,
       activity: type,
       createdAt: Date.now(),
     };
 
     console.log("Saving new pin:", newPin);
+
+    // existing local behavior
     PinStore.add(newPin);
 
-    router.push("/"); // Return to dashboard
+    // save to Supabase
+    const { error } = await supabase.from("pins").insert({
+      area: newPin.area,
+      lat: newPin.lat,
+      lon: newPin.lon,
+      activity: newPin.activity,
+    });
+
+    if (error) {
+      console.error("Failed to save pin to Supabase:", error);
+    }
+
+    router.push("/");
   };
+
 
   return (
     <main

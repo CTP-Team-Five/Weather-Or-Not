@@ -1,4 +1,4 @@
-//MapSection.tsx 
+//components/MapSection.tsx 
 
 'use client';
 
