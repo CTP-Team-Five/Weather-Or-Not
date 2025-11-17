@@ -4,18 +4,23 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Outdoor sports dark theme - night/dawn sky gradient vibe */
+  --bg-page: #020617;
+  --bg-surface: rgba(15, 23, 42, 0.85);
+  --bg-surface-hover: rgba(30, 41, 59, 0.9);
+  --text-primary: #f9fafb;
+  --text-muted: #9ca3af;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.15);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+  /* Activity-specific accents */
+  --accent-hike: #22c55e;   /* green */
+  --accent-surf: #22d3ee;   /* aqua */
+  --accent-snow: #60a5fa;   /* icy blue */
 
-:root {
+  /* Legacy support */
+  --background: var(--bg-page);
+  --foreground: var(--text-primary);
   --navbar-height: 64px;
 }
 
@@ -27,9 +32,11 @@ body {
 }
 
 body {
-  color: var(--foreground);
+  color: var(--text-primary);
   padding-top: var(--navbar-height);
-  background: var(--background);
+  /* Subtle dark gradient - night/dawn sky vibe */
+  background: linear-gradient(to bottom, #020617 0%, #0f172a 50%, #1e293b 100%);
+  background-attachment: fixed;
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -70,9 +77,10 @@ a {
   left: 50%;
   transform: translate(-50%, -100%);
   pointer-events: none;
-  font-size: 28px;
+  font-size: 2rem;
   line-height: 1;
-  z-index: 1000;
+  z-index: 2600;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.8);
 }
 
 .woPinBtn {
@@ -283,4 +291,6 @@ a {
 .leaflet-container {
   height: 100% !important;
   width: 100% !important;
+  overflow: hidden !important;
+  max-height: 100%;
 }

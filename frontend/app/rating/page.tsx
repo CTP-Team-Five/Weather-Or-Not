@@ -4,17 +4,19 @@
 
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { PinStore } from "@/components/data/pinStore";
 
-
-export default function RatingPage() {
+function RatingPageContent() {
   const router = useRouter();
   const params = useSearchParams();
 
   const area = params.get("area");
   const lat = params.get("lat");
   const lon = params.get("lon");
+  const canonical = params.get("canonical");
+  const slug = params.get("slug");
+  const tagsParam = params.get("tags");
 
   const [activity, setActivity] = useState("");
 
@@ -24,6 +26,7 @@ export default function RatingPage() {
     const id = crypto.randomUUID();
     const parsedLat = lat ? parseFloat(lat) : 0;
     const parsedLon = lon ? parseFloat(lon) : 0;
+    const tags = tagsParam ? tagsParam.split(",") : [];
 
     const newPin = {
       id,
@@ -32,9 +35,11 @@ export default function RatingPage() {
       lon: parsedLon,
       activity: type,
       createdAt: Date.now(),
+      canonical_name: canonical || area || "Unknown Area",
+      slug: slug || `unknown-${id.slice(0, 4)}`,
+      popularity_score: 1,
+      tags,
     };
-
-    console.log("Saving new pin:", newPin);
 
     // existing local behavior
     PinStore.add(newPin);
@@ -45,6 +50,10 @@ export default function RatingPage() {
       lat: newPin.lat,
       lon: newPin.lon,
       activity: newPin.activity,
+      canonical_name: newPin.canonical_name,
+      slug: newPin.slug,
+      popularity_score: newPin.popularity_score,
+      tags: newPin.tags,
     });
 
     if (error) {
@@ -85,5 +94,13 @@ export default function RatingPage() {
 
       {activity && <p>You selected: {activity}</p>}
     </main>
+  );
+}
+
+export default function RatingPage() {
+  return (
+    <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'white' }}>Loading...</div>}>
+      <RatingPageContent />
+    </Suspense>
   );
 }

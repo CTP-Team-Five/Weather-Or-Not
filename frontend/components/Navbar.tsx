@@ -1,9 +1,9 @@
-'use client'; 
+'use client';
 
 import Link from 'next/link';
 import React from 'react';
 import { WiDaySunny } from 'react-icons/wi';
-import styles from './Navbar.module.css'; 
+import styles from './Navbar.module.css';
 
 const navLinks = [
   { name: 'Home', href: '/' },
@@ -16,7 +16,7 @@ const Navbar: React.FC = () => {
     <nav className={styles.navbar}>
       <div className={styles.logo}>
         <Link href="/" className={styles.logoLink}>
-          <WiDaySunny className={styles.logoIcon} /> 
+          <WiDaySunny className={styles.logoIcon} />
                          <span>WeatherOrNot</span>
                   </Link>
       </div>

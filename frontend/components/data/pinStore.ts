@@ -5,6 +5,10 @@ export interface SavedPin {
   lon: number;
   activity: string;
   createdAt: number;
+  canonical_name?: string;
+  slug?: string;
+  popularity_score?: number;
+  tags?: string[];
 }
 
 /** LocalStorage-backed pin manager */

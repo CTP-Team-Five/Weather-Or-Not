@@ -1,11 +1,131 @@
-/* Pulse animation */
+/* Pulse animation - enhanced for demo */
 @keyframes pulse {
-  0% { transform: scale(1); opacity: 0.9; }
-  50% { transform: scale(1.3); opacity: 0.6; }
-  100% { transform: scale(1); opacity: 0.9; }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
-/* Reusable glowing pin */
+/* Glow animation for extra pizzazz */
+@keyframes glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 12px currentColor);
+  }
+  50% {
+    filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 0 20px currentColor);
+  }
+}
+
+/* Modern custom map pin icon */
+.wo-map-pin-icon {
+  /* Leaflet removes default background; we control everything inside */
+  z-index: 1000 !important;
+}
+
+.wo-map-pin-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 30%, #ffffff, #38bdf8);
+  box-shadow:
+    0 0 0 3px rgba(15, 23, 42, 0.95),
+    0 0 20px rgba(56, 189, 248, 0.6),
+    0 15px 35px rgba(0, 0, 0, 0.8);
+  animation: pulse 3s infinite ease-in-out;
+  transition: all 0.3s ease;
+}
+
+.wo-map-pin-inner:hover {
+  transform: scale(1.2);
+  box-shadow:
+    0 0 0 3px rgba(15, 23, 42, 0.95),
+    0 0 30px rgba(56, 189, 248, 0.9),
+    0 20px 45px rgba(0, 0, 0, 0.9);
+}
+
+/* Little "tail" triangle */
+.wo-map-pin-inner::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -18%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 12px solid #38bdf8;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.8));
+}
+
+/* Activity-specific pin colors - DEMO READY! */
+.wo-map-pin-icon--hike .wo-map-pin-inner {
+  background: radial-gradient(circle at 30% 30%, #ffffff, #22c55e);
+  box-shadow:
+    0 0 0 3px rgba(15, 23, 42, 0.95),
+    0 0 20px rgba(34, 197, 94, 0.7),
+    0 15px 35px rgba(0, 0, 0, 0.8);
+}
+
+.wo-map-pin-icon--hike .wo-map-pin-inner:hover {
+  box-shadow:
+    0 0 0 3px rgba(15, 23, 42, 0.95),
+    0 0 35px rgba(34, 197, 94, 1),
+    0 20px 45px rgba(0, 0, 0, 0.9);
+}
+
+.wo-map-pin-icon--hike .wo-map-pin-inner::after {
+  border-top-color: #22c55e;
+}
+
+.wo-map-pin-icon--surf .wo-map-pin-inner {
+  background: radial-gradient(circle at 30% 30%, #ffffff, #22d3ee);
+  box-shadow:
+    0 0 0 3px rgba(15, 23, 42, 0.95),
+    0 0 20px rgba(34, 211, 238, 0.7),
+    0 15px 35px rgba(0, 0, 0, 0.8);
+}
+
+.wo-map-pin-icon--surf .wo-map-pin-inner:hover {
+  box-shadow:
+    0 0 0 3px rgba(15, 23, 42, 0.95),
+    0 0 35px rgba(34, 211, 238, 1),
+    0 20px 45px rgba(0, 0, 0, 0.9);
+}
+
+.wo-map-pin-icon--surf .wo-map-pin-inner::after {
+  border-top-color: #22d3ee;
+}
+
+.wo-map-pin-icon--snowboard .wo-map-pin-inner {
+  background: radial-gradient(circle at 30% 30%, #ffffff, #a855f7);
+  box-shadow:
+    0 0 0 3px rgba(15, 23, 42, 0.95),
+    0 0 20px rgba(168, 85, 247, 0.7),
+    0 15px 35px rgba(0, 0, 0, 0.8);
+}
+
+.wo-map-pin-icon--snowboard .wo-map-pin-inner:hover {
+  box-shadow:
+    0 0 0 3px rgba(15, 23, 42, 0.95),
+    0 0 35px rgba(168, 85, 247, 1),
+    0 20px 45px rgba(0, 0, 0, 0.9);
+}
+
+.wo-map-pin-icon--snowboard .wo-map-pin-inner::after {
+  border-top-color: #a855f7;
+}
+
+/* Legacy glassy pin (kept for backwards compatibility) */
 .glassy-pin {
   position: relative;
   transform: translate(-50%, -100%);
@@ -26,4 +146,231 @@
   height: 6px;
   background: rgba(0,180,255,0.8);
   margin: 0 auto;
+}
+
+/* === Pin Manager Overlay === */
+
+.wo-pin-manager-root {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3000;
+  pointer-events: none; /* so the map is still clickable except on the panel */
+}
+
+.wo-pin-manager-inner {
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+}
+
+/* Collapsed pill */
+
+.wo-pin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.75);
+  color: #f9fafb;
+  font-size: 0.85rem;
+  font-weight: 500;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.wo-pin-pill:hover {
+  background: rgba(15, 15, 15, 0.95);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.85);
+  transform: translateY(-1px);
+}
+
+.wo-pin-pill--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-8px);
+}
+
+.wo-pin-pill-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.wo-pin-pill-chevron {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+/* Sliding panel */
+
+.wo-pin-panel {
+  margin-left: 0.5rem;
+  width: 320px;
+  max-height: 70vh;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.25), transparent 55%)
+    rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.22s ease-out,
+    opacity 0.22s ease-out;
+}
+
+.wo-pin-panel--open {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Panel header */
+
+.wo-pin-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.wo-pin-panel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.wo-pin-panel-subtitle {
+  margin-top: 0.2rem;
+  font-size: 0.7rem;
+  color: rgba(229, 231, 235, 0.7);
+}
+
+.wo-pin-panel-close {
+  border: none;
+  border-radius: 999px;
+  padding: 0.35rem;
+  background: transparent;
+  cursor: pointer;
+  color: #f9fafb;
+}
+
+.wo-pin-panel-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Panel body */
+
+.wo-pin-panel-body {
+  padding: 0.6rem 0.75rem 0.75rem;
+  overflow-y: auto;
+}
+
+.wo-pin-panel-empty {
+  padding: 1.75rem 1rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: rgba(229, 231, 235, 0.65);
+}
+
+/* Pin items */
+
+.wo-pin-item {
+  margin-bottom: 0.45rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.85rem;
+  background: rgba(17, 24, 39, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.wo-pin-item-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.wo-pin-item-emoji {
+  font-size: 1.4rem;
+}
+
+.wo-pin-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.wo-pin-item-area {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #f9fafb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wo-pin-item-activity {
+  font-size: 0.7rem;
+  color: rgba(229, 231, 235, 0.7);
+}
+
+/* Buttons inside each pin */
+
+.wo-pin-item-actions {
+  margin-top: 0.35rem;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.wo-pin-item-btn {
+  flex: 1;
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid rgba(129, 140, 248, 0.5);
+  background: rgba(129, 140, 248, 0.16);
+  color: rgba(191, 219, 254, 0.98);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.12s ease;
+}
+
+.wo-pin-item-btn:hover {
+  background: rgba(129, 140, 248, 0.28);
+  border-color: rgba(129, 140, 248, 0.9);
+  transform: translateY(-1px);
+}
+
+.wo-pin-item-btn--danger {
+  flex: 0;
+  padding-inline: 0.6rem;
+  border-color: rgba(248, 113, 113, 0.5);
+  background: rgba(248, 113, 113, 0.16);
+  color: #fecaca;
+}
+
+.wo-pin-item-btn--danger:hover {
+  border-color: rgba(248, 113, 113, 0.95);
+  background: rgba(248, 113, 113, 0.3);
 }
