@@ -1,167 +1,123 @@
+//app/page.tsx
+
 "use client";
 
 import styles from "./page.module.css";
 import MapSection from "@/components/MapSection";
-import SuggestionCard from "@/components/SuggestionCard";
-import InfoBox from "@/components/InfoBox";
-import SunIcon from "@/components/icons/SunIcon";
-import { useRouter } from "next/navigation";
+import PinGrid from "@/components/PinGrid";
+import TopSpots from "@/components/TopSpots";
 import { PinStore, SavedPin } from "@/components/data/pinStore";
 import { useEffect, useState } from "react";
-import { testWeatherFetch } from "@/components/utils/weatherTest";
-import { mockWeather } from "../components/data/mockWeather";
-import { formatWeather } from "@/components/utils/formatWeather";
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const router = useRouter();
-
-  function handleRemovePin(id: string) {
-    if (confirm("Delete this pin?")) {
-      PinStore.remove(id);
-      setSavedPins(PinStore.all());
-      if (activePin?.id === id) setActivePin(null);
-    }
-  }
   const [savedPins, setSavedPins] = useState<SavedPin[]>([]);
-  const [activePin, setActivePin] = useState<SavedPin | null>(null);
-  const [weatherText, setWeatherText] = useState<string>(
-    formatWeather(mockWeather)
-  );
+  const [mapRefreshTrigger, setMapRefreshTrigger] = useState(0);
 
-  // Load pins from localStorage on mount
+  // Load pins from Supabase on mount
   useEffect(() => {
-    const pins = PinStore.all();
-    setSavedPins(pins);
+    // First load from localStorage for immediate display
+    const localPins = PinStore.all();
+    setSavedPins(localPins);
+
+    // Then load from Supabase and overwrite
+    const loadRemotePins = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("pins")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error || !data) {
+          if (error) console.error("Supabase pins fetch error:", error);
+          return;
+        }
+
+        const remotePins: SavedPin[] = data.map((p: any) => ({
+          id: p.id,
+          area: p.area,
+          lat: p.lat,
+          lon: p.lon,
+          activity: p.activity,
+          createdAt: new Date(p.created_at).getTime(),
+        }));
+
+        setSavedPins(remotePins);
+      } catch (err) {
+        console.error("Unexpected error loading pins:", err);
+      }
+    };
+
+    loadRemotePins();
   }, []);
 
-  // When a pin is clicked
-  const handlePinClick = (pin: SavedPin) => {
-    setActivePin(pin);
-    const formatted = formatWeather(mockWeather);
-    setWeatherText(
-      `${formatted}\nSession Score: 8.7 / 10 — Great day for ${pin.activity}!`
-    );
+  // Handler: Open pin detail page
+  const handleOpen = (id: string) => {
+    router.push(`/pins/${id}`);
   };
 
-  // Go to map to create a new pin
-  const handleAddPin = () => {
+  // Handler: Edit pin
+  const handleEdit = (id: string) => {
+    router.push(`/pins/${id}/edit`);
+  };
+
+  // Handler: Delete pin
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this spot?")) return;
+
+    try {
+      const { error } = await supabase.from("pins").delete().eq("id", id);
+
+      if (error) {
+        console.error("Supabase delete error:", error);
+        alert("Could not delete pin from database.");
+        return;
+      }
+
+      // Also remove from localStorage
+      PinStore.remove(id);
+
+      // Update state
+      setSavedPins((prev) => prev.filter((p) => p.id !== id));
+
+      // Trigger map refresh to remove deleted pin
+      setMapRefreshTrigger((prev) => prev + 1);
+    } catch (err) {
+      console.error("Unexpected error deleting pin:", err);
+      alert("An error occurred while deleting the pin.");
+    }
+  };
+
+  // Handler: Create new pin
+  const handleCreate = () => {
     router.push("/map");
   };
 
-  // Manual test fetch button
-  async function testWeatherFetch() {
-    const testLat = 40.7128; // NYC
-    const testLon = -74.0060;
-    try {
-      const res = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${testLat}&longitude=${testLon}&current_weather=true`
-      );
-      const data = await res.json();
-      console.log("Open-Meteo Test Data:", data.current_weather);
-      alert(
-        `Test Weather:\nTemperature: ${data.current_weather.temperature}°C\nWind Speed: ${data.current_weather.windspeed} m/s`
-      );
-    } catch (err) {
-      console.error("Weather fetch failed:", err);
-    }
-  }
-
   return (
     <main className={styles.pageContainer}>
-      {/* Top: Map */}
+      {/* Top: Pin Grid */}
       <section className={styles.sectionSpacing}>
-        <MapSection />
+        <h2 className={styles.mainHeading}>Your Spots</h2>
+        <PinGrid
+          pins={savedPins}
+          onOpen={handleOpen}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onCreate={handleCreate}
+        />
       </section>
 
-      {/* Dashboard */}
+      {/* Map Section */}
       <section className={styles.sectionSpacing}>
-        <h2 className={styles.mainHeading}>Your Dashboard</h2>
-
-        <div className={styles.infoBoxGrid}>
-          {/* Saved Pins List */}
-          <section>
-            <h2 className={styles.mainHeading}>Saved Pins</h2>
-
-            {savedPins.length === 0 ? (
-              <>
-                <p className={styles.emptyStateText}>
-                  No pins yet — start by creating your first one.
-                </p>
-                <button
-                  onClick={handleAddPin}
-                  className={`glassy ${styles.addButton}`}
-                >
-                  Make Your First Pin
-                </button>
-              </>
-            ) : (
-              <ul className={styles.pinList}>
-                {savedPins.map((p) => (
-                  <li
-                    key={p.id}
-                    className={`glassy ${styles.pinItem} ${activePin?.id === p.id ? styles.activePin : ""
-                      }`}
-                  >
-                    <div className={styles.pinRow}>
-                      <span onClick={() => handlePinClick(p)}>
-                        <strong>{p.area}</strong> — {p.activity} 🗺️
-                      </span>
-                      <button
-                        className={styles.pinDelete}
-                        onClick={() => handleRemovePin(p.id)}
-                      >
-                        ✖
-                      </button>
-                    </div>
-                  </li>
-                ))}
-
-                {/* Stack-style add button under existing pins */}
-                <li>
-                  <button
-                    onClick={handleAddPin}
-                    className={`glassy ${styles.addButton}`}
-                  >
-                    + Add New Pin
-                  </button>
-                </li>
-              </ul>
-            )}
-
-            {/* Manual test button */}
-            <button
-              onClick={testWeatherFetch}
-              className={`glassy ${styles.addButton}`}
-              style={{ marginTop: "1rem" }}
-            >
-              🧪 Test Weather Fetch
-            </button>
-          </section>
-
-          {/* Weather Panel */}
-          <div className={`glassy ${styles.infoBoxGlassy}`}>
-            <InfoBox
-              title={activePin ? `${activePin.area} Weather` : "Upcoming Weather"}
-              content={
-                activePin
-                  ? `${weatherText}`
-                  : "Select a saved pin from the left to preview real conditions."
-              }
-              icon={<SunIcon />}
-            />
-          </div>
-        </div>
+        <MapSection refreshTrigger={mapRefreshTrigger} />
       </section>
 
-      {/* Featured Destinations */}
+      {/* Top Spots Today */}
       <section className={styles.sectionSpacing}>
-        <h2 className={styles.mainHeading}>Featured Destinations</h2>
-        <div className={styles.suggestionGrid}>
-          <SuggestionCard title="Top Places Today" isTitleCard />
-          <SuggestionCard title="Place A: Bear Mountain Ski" />
-          <SuggestionCard title="Place B: Crotona Park" />
-          <SuggestionCard title="Place C: Red Bull Trail" />
-        </div>
+        <h2 className={styles.mainHeading}>🏆 Top Spots Today</h2>
+        <TopSpots />
       </section>
     </main>
   );

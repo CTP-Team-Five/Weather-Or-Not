@@ -1,38 +1,68 @@
+//app/rating/page.tsx
+
 "use client";
 
+import { supabase } from "@/lib/supabaseClient";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { PinStore } from "@/components/data/pinStore";
 
-
-export default function RatingPage() {
+function RatingPageContent() {
   const router = useRouter();
   const params = useSearchParams();
 
   const area = params.get("area");
   const lat = params.get("lat");
   const lon = params.get("lon");
+  const canonical = params.get("canonical");
+  const slug = params.get("slug");
+  const tagsParam = params.get("tags");
 
   const [activity, setActivity] = useState("");
 
-  const handleSelect = (type: string) => {
+  const handleSelect = async (type: string) => {
     setActivity(type);
 
     const id = crypto.randomUUID();
+    const parsedLat = lat ? parseFloat(lat) : 0;
+    const parsedLon = lon ? parseFloat(lon) : 0;
+    const tags = tagsParam ? tagsParam.split(",") : [];
+
     const newPin = {
       id,
       area: area || "Unknown Area",
-      lat: lat ? parseFloat(lat) : 0,
-      lon: lon ? parseFloat(lon) : 0,
+      lat: parsedLat,
+      lon: parsedLon,
       activity: type,
       createdAt: Date.now(),
+      canonical_name: canonical || area || "Unknown Area",
+      slug: slug || `unknown-${id.slice(0, 4)}`,
+      popularity_score: 1,
+      tags,
     };
 
-    console.log("Saving new pin:", newPin);
+    // existing local behavior
     PinStore.add(newPin);
 
-    router.push("/"); // Return to dashboard
+    // save to Supabase
+    const { error } = await supabase.from("pins").insert({
+      area: newPin.area,
+      lat: newPin.lat,
+      lon: newPin.lon,
+      activity: newPin.activity,
+      canonical_name: newPin.canonical_name,
+      slug: newPin.slug,
+      popularity_score: newPin.popularity_score,
+      tags: newPin.tags,
+    });
+
+    if (error) {
+      console.error("Failed to save pin to Supabase:", error);
+    }
+
+    router.push("/");
   };
+
 
   return (
     <main
@@ -64,5 +94,13 @@ export default function RatingPage() {
 
       {activity && <p>You selected: {activity}</p>}
     </main>
+  );
+}
+
+export default function RatingPage() {
+  return (
+    <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'white' }}>Loading...</div>}>
+      <RatingPageContent />
+    </Suspense>
   );
 }
