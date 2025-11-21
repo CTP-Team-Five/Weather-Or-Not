@@ -19,3 +19,13 @@ export const users = pgTable('users', {
   
   created_at: timestamp('created_at').defaultNow().notNull(),
 });
+
+export const settings = pgTable('settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  
+  setting_key: text('setting_key').notNull().unique(), 
+  
+  default_value: text('default_value').notNull(), 
+  
+  description: text('description'),
+});
