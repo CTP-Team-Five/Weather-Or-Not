@@ -4,6 +4,7 @@
     "drizzle-orm": "^0.44.7",
     "leaflet": "^1.9.4",
     "pg": "^8.16.3",
+    "postgres": "^3.4.7",
     "tailwind": "^2.3.1"
   },
   "devDependencies": {
