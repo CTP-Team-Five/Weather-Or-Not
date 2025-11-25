@@ -1,6 +1,15 @@
 {
   "dependencies": {
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.44.7",
     "leaflet": "^1.9.4",
+    "pg": "^8.16.3",
+    "postgres": "^3.4.7",
     "tailwind": "^2.3.1"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.15.6",
+    "drizzle-kit": "^0.31.7",
+    "tsx": "^4.20.6"
   }
 }
