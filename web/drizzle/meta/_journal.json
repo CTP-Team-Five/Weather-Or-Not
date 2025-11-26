@@ -5,8 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1764031737365,
-      "tag": "0000_create_user_and_settings_tables",
+      "when": 1764179713539,
+      "tag": "0000_create-tables",
       "breakpoints": true
     }
   ]
