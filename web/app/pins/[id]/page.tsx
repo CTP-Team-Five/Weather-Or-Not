@@ -10,6 +10,8 @@ import { PinStore, SavedPin } from "@/components/data/pinStore";
 import { fetchForecast, ExtendedWeatherData, getWeatherDescription } from "@/components/utils/fetchForecast";
 import { scoreSession } from "@/components/utils/fetchWeather";
 import { incrementPopularity } from "@/lib/supabase/incrementPopularity";
+import { scoreActivity, normalizeActivity, SuitabilityResult } from "@/lib/activityScore";
+import { fetchLocationMetadata, buildWeatherSnapshot } from "@/lib/locationMetadata";
 import styles from "./page.module.css";
 
 // Client-only import of Leaflet map
@@ -36,6 +38,7 @@ export default function PinDetailPage() {
 
   const [pin, setPin] = useState<SavedPin | null>(null);
   const [weather, setWeather] = useState<ExtendedWeatherData | null>(null);
+  const [suitability, setSuitability] = useState<SuitabilityResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,6 +105,25 @@ export default function PinDetailPage() {
         }
 
         setWeather(forecastData);
+
+        // Calculate activity suitability score
+        const activity = normalizeActivity(pinData.activity);
+        if (activity) {
+          const locationMeta = await fetchLocationMetadata(
+            pinData.lat,
+            pinData.lon,
+            pinData.canonical_name || pinData.area,
+            pinData.tags
+          );
+          const weatherSnap = buildWeatherSnapshot(
+            forecastData.current.temperature,
+            forecastData.current.windspeed,
+            forecastData.current.precipitation,
+            forecastData.current.weatherCode
+          );
+          const result = scoreActivity(activity, locationMeta, weatherSnap);
+          setSuitability(result);
+        }
       } catch (err) {
         console.error("Error loading pin detail:", err);
         setError("An error occurred while loading data");
@@ -238,14 +260,35 @@ export default function PinDetailPage() {
           </div>
         </div>
 
-        {/* Session Score Card */}
+        {/* Activity Suitability Card */}
         <div className={`${styles.card} ${styles.scoreCard}`}>
-          <h2 className={styles.cardTitle}>Session Score</h2>
-          <div className={styles.scoreValue}>
-            {sessionScore.score.toFixed(1)}
-            <span className={styles.scoreMax}> / 10</span>
-          </div>
-          <div className={styles.scoreSummary}>{sessionScore.summary}</div>
+          <h2 className={styles.cardTitle}>Activity Suitability</h2>
+          {suitability ? (
+            <>
+              <div className={styles.scoreValue}>
+                {suitability.score}
+                <span className={styles.scoreMax}> / 100</span>
+              </div>
+              <div className={`${styles.suitabilityLabel} ${styles[suitability.label]}`}>
+                {suitability.label}
+              </div>
+              {suitability.reasons.length > 0 && (
+                <ul className={styles.reasonsList}>
+                  {suitability.reasons.slice(0, 4).map((reason, idx) => (
+                    <li key={idx}>{reason}</li>
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : (
+            <>
+              <div className={styles.scoreValue}>
+                {sessionScore.score.toFixed(1)}
+                <span className={styles.scoreMax}> / 10</span>
+              </div>
+              <div className={styles.scoreSummary}>{sessionScore.summary}</div>
+            </>
+          )}
         </div>
       </div>
 

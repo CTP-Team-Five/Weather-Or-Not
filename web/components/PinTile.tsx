@@ -6,6 +6,8 @@ import { useState, useEffect, MouseEvent } from "react";
 import { HiCog6Tooth } from "react-icons/hi2";
 import { SavedPin } from "./data/pinStore";
 import { fetchWeather, scoreSession } from "./utils/fetchWeather";
+import { scoreActivity, normalizeActivity, SuitabilityResult } from "@/lib/activityScore";
+import { fetchLocationMetadata, buildWeatherSnapshot } from "@/lib/locationMetadata";
 import styles from "./PinTile.module.css";
 
 type PinTileProps = {
@@ -34,6 +36,7 @@ export default function PinTile({ pin, onOpen, onEdit, onDelete }: PinTileProps)
     precipitation: number;
     score: number;
   } | null>(null);
+  const [suitability, setSuitability] = useState<SuitabilityResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -50,6 +53,24 @@ export default function PinTile({ pin, onOpen, onEdit, onDelete }: PinTileProps)
             precipitation: weather.precipitation,
             score,
           });
+
+          // Calculate activity suitability
+          const activity = normalizeActivity(pin.activity);
+          if (activity) {
+            const locationMeta = await fetchLocationMetadata(
+              pin.lat,
+              pin.lon,
+              pin.canonical_name || pin.area,
+              pin.tags
+            );
+            const weatherSnap = buildWeatherSnapshot(
+              weather.temperature,
+              weather.windspeed,
+              weather.precipitation
+            );
+            const result = scoreActivity(activity, locationMeta, weatherSnap);
+            setSuitability(result);
+          }
         }
       } catch (err) {
         console.error("Failed to load weather for tile:", err);
@@ -59,7 +80,7 @@ export default function PinTile({ pin, onOpen, onEdit, onDelete }: PinTileProps)
     };
 
     loadWeather();
-  }, [pin.lat, pin.lon, pin.activity]);
+  }, [pin.lat, pin.lon, pin.activity, pin.canonical_name, pin.area, pin.tags]);
 
   const handleCardClick = () => {
     onOpen(pin.id);
@@ -143,19 +164,46 @@ export default function PinTile({ pin, onOpen, onEdit, onDelete }: PinTileProps)
       ) : weatherData ? (
         <>
           <div className={styles.scoreSection}>
-            <div className={styles.scoreValue}>
-              {weatherData.score.toFixed(1)}
-              <span
-                style={{
-                  fontSize: "1.2rem",
-                  color: "rgba(255,255,255,0.5)",
-                }}
-              >
-                {" "}
-                / 10
-              </span>
-            </div>
-            <div className={styles.scoreLabel}>Session Score</div>
+            {suitability ? (
+              <>
+                <div className={styles.scoreValue}>
+                  {suitability.score}
+                  <span
+                    style={{
+                      fontSize: "1.2rem",
+                      color: "rgba(255,255,255,0.5)",
+                    }}
+                  >
+                    {" "}
+                    / 100
+                  </span>
+                </div>
+                <div className={`${styles.suitabilityBadge} ${styles[suitability.label]}`}>
+                  {suitability.label}
+                </div>
+                {suitability.reasons.length > 0 && (
+                  <div className={styles.suitabilityReason}>
+                    {suitability.reasons[0]}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className={styles.scoreValue}>
+                  {weatherData.score.toFixed(1)}
+                  <span
+                    style={{
+                      fontSize: "1.2rem",
+                      color: "rgba(255,255,255,0.5)",
+                    }}
+                  >
+                    {" "}
+                    / 10
+                  </span>
+                </div>
+                <div className={styles.scoreLabel}>Session Score</div>
+              </>
+            )}
           </div>
 
           <div className={styles.weatherSummary}>
