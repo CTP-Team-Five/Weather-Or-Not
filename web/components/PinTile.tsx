@@ -5,7 +5,8 @@
 import { useState, useEffect, MouseEvent } from "react";
 import { HiCog6Tooth } from "react-icons/hi2";
 import { SavedPin } from "./data/pinStore";
-import { fetchWeather, scoreSession } from "./utils/fetchWeather";
+import { SuitabilityResult } from "@/lib/activityScore";
+import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
 import styles from "./PinTile.module.css";
 
 type PinTileProps = {
@@ -28,38 +29,29 @@ const activityLabels: Record<string, string> = {
 };
 
 export default function PinTile({ pin, onOpen, onEdit, onDelete }: PinTileProps) {
-  const [weatherData, setWeatherData] = useState<{
-    temperature: number;
-    windspeed: number;
-    precipitation: number;
-    score: number;
-  } | null>(null);
+  // Use the shared computeSuitabilityForPin helper - this ensures the same
+  // suitability score is computed here as on the detail page
+  const [computed, setComputed] = useState<ComputedSuitability | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const loadWeather = async () => {
+    const loadSuitability = async () => {
       setIsLoading(true);
       try {
-        const weather = await fetchWeather(pin.lat, pin.lon);
-        if (weather) {
-          const { score } = scoreSession(pin.activity, weather);
-          setWeatherData({
-            temperature: weather.temperature,
-            windspeed: weather.windspeed,
-            precipitation: weather.precipitation,
-            score,
-          });
-        }
+        // Use the shared helper that fetches weather (including marine data)
+        // and computes suitability using the same logic as the detail page
+        const result = await computeSuitabilityForPinSafe(pin);
+        setComputed(result);
       } catch (err) {
-        console.error("Failed to load weather for tile:", err);
+        console.error("Failed to load suitability for tile:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadWeather();
-  }, [pin.lat, pin.lon, pin.activity]);
+    loadSuitability();
+  }, [pin]);
 
   const handleCardClick = () => {
     onOpen(pin.id);
@@ -140,11 +132,11 @@ export default function PinTile({ pin, onOpen, onEdit, onDelete }: PinTileProps)
             style={{ width: "70%" }}
           />
         </div>
-      ) : weatherData ? (
+      ) : computed ? (
         <>
           <div className={styles.scoreSection}>
             <div className={styles.scoreValue}>
-              {weatherData.score.toFixed(1)}
+              {computed.suitability.score}
               <span
                 style={{
                   fontSize: "1.2rem",
@@ -152,29 +144,36 @@ export default function PinTile({ pin, onOpen, onEdit, onDelete }: PinTileProps)
                 }}
               >
                 {" "}
-                / 10
+                / 100
               </span>
             </div>
-            <div className={styles.scoreLabel}>Session Score</div>
+            <div className={`${styles.suitabilityBadge} ${styles[computed.suitability.label]}`}>
+              {computed.suitability.label}
+            </div>
+            {computed.suitability.reasons.length > 0 && (
+              <div className={styles.suitabilityReason}>
+                {computed.suitability.reasons[0]}
+              </div>
+            )}
           </div>
 
           <div className={styles.weatherSummary}>
             <div className={styles.weatherRow}>
               <span className={styles.weatherLabel}>Temperature</span>
               <span className={styles.weatherValue}>
-                {weatherData.temperature.toFixed(1)}°C
+                {computed.weather.current.temperature.toFixed(1)}°C
               </span>
             </div>
             <div className={styles.weatherRow}>
               <span className={styles.weatherLabel}>Wind</span>
               <span className={styles.weatherValue}>
-                {weatherData.windspeed.toFixed(1)} m/s
+                {computed.weather.current.windspeed.toFixed(1)} m/s
               </span>
             </div>
             <div className={styles.weatherRow}>
               <span className={styles.weatherLabel}>Precipitation</span>
               <span className={styles.weatherValue}>
-                {weatherData.precipitation.toFixed(1)} mm
+                {computed.weather.current.precipitation.toFixed(1)} mm
               </span>
             </div>
           </div>

@@ -4,14 +4,19 @@
 
 import { useState, useEffect, useRef } from "react";
 
-interface SearchResult {
+export interface SearchResult {
     display_name: string;
+    name?: string;  // Short name from Nominatim (e.g., "Gore Mountain")
     lat: string;
     lon: string;
+    // Additional fields for better naming
+    class?: string;
+    type?: string;
+    address?: Record<string, string>;
 }
 
 interface MapSearchProps {
-    onSelect: (coords: [number, number]) => void;
+    onSelect: (coords: [number, number], searchResult?: SearchResult) => void;
 }
 
 export default function MapSearch({ onSelect }: MapSearchProps) {
@@ -37,8 +42,10 @@ export default function MapSearch({ onSelect }: MapSearchProps) {
 
         setLoading(true);
         try {
+            // Request addressdetails=1 to get address components for better naming
             const res = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`
+                `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(q)}`,
+                { headers: { "User-Agent": "WeatherOrNot/1.0 (xyz@gmail.com)" } }
             );
             const data = await res.json();
             cache.current[q] = data;
@@ -62,8 +69,10 @@ export default function MapSearch({ onSelect }: MapSearchProps) {
     const handleSelect = (result: SearchResult) => {
         const lat = parseFloat(result.lat);
         const lon = parseFloat(result.lon);
-        onSelect([lat, lon]);
-        setQuery(result.display_name);
+        onSelect([lat, lon], result);
+        // Show short name if available, otherwise first part of display_name
+        const shortLabel = result.name || result.display_name.split(',')[0].trim();
+        setQuery(shortLabel);
         setResults([]);
     };
 

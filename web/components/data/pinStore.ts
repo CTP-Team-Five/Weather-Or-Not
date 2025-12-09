@@ -1,11 +1,12 @@
 export interface SavedPin {
   id: string;
-  area: string;
+  name?: string;        // Short user-friendly name (e.g., "Gore Mountain")
+  area: string;         // Display name (legacy, same as name for new pins)
   lat: number;
   lon: number;
   activity: string;
   createdAt: number;
-  canonical_name?: string;
+  canonical_name?: string;  // Full descriptive name for metadata
   slug?: string;
   popularity_score?: number;
   tags?: string[];

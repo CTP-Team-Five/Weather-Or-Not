@@ -184,6 +184,53 @@
   line-height: 1.5;
 }
 
+.suitabilityLabel {
+  display: inline-block;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  margin-top: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.suitabilityLabel.GREAT {
+  background: rgba(76, 175, 80, 0.2);
+  color: #81c784;
+  border: 1px solid rgba(76, 175, 80, 0.4);
+}
+
+.suitabilityLabel.OK {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffd54f;
+  border: 1px solid rgba(255, 193, 7, 0.4);
+}
+
+.suitabilityLabel.TERRIBLE {
+  background: rgba(244, 67, 54, 0.2);
+  color: #ef5350;
+  border: 1px solid rgba(244, 67, 54, 0.4);
+}
+
+.reasonsList {
+  margin-top: 1rem;
+  text-align: left;
+  padding: 0;
+  list-style: none;
+}
+
+.reasonsList li {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.reasonsList li:last-child {
+  border-bottom: none;
+}
+
 .hourlySection {
   margin-bottom: 2rem;
 }
