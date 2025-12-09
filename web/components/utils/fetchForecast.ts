@@ -21,6 +21,10 @@ export interface ExtendedWeatherData {
     windspeed: number;
     precipitation: number;
     weatherCode: number;
+    windDirection?: number;
+    // Marine data (for coastal/surf locations)
+    waveHeight?: number;
+    swellPeriod?: number;
   };
   hourly: HourlyForecast[];
   daily: DailyForecast[];
@@ -29,6 +33,7 @@ export interface ExtendedWeatherData {
 /**
  * Fetches extended weather forecast from Open-Meteo API
  * Includes current conditions, hourly (24h), and daily (7d) forecasts
+ * For coastal locations, also fetches marine data (wave height, swell period)
  */
 export async function fetchForecast(
   lat: number,
@@ -38,7 +43,7 @@ export async function fetchForecast(
     const url = new URL("https://api.open-meteo.com/v1/forecast");
     url.searchParams.set("latitude", lat.toString());
     url.searchParams.set("longitude", lon.toString());
-    url.searchParams.set("current", "temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m");
+    url.searchParams.set("current", "temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,wind_direction_10m");
     url.searchParams.set("hourly", "temperature_2m,wind_speed_10m,precipitation");
     url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_sum");
     url.searchParams.set("temperature_unit", "celsius");
@@ -54,6 +59,27 @@ export async function fetchForecast(
 
     const data = await res.json();
 
+    // Fetch marine data (wave height and swell period) from Open-Meteo Marine API
+    let marineData: { waveHeight?: number; swellPeriod?: number } = {};
+    try {
+      const marineUrl = new URL("https://marine-api.open-meteo.com/v1/marine");
+      marineUrl.searchParams.set("latitude", lat.toString());
+      marineUrl.searchParams.set("longitude", lon.toString());
+      marineUrl.searchParams.set("current", "wave_height,swell_wave_period");
+
+      const marineRes = await fetch(marineUrl.toString());
+      if (marineRes.ok) {
+        const marine = await marineRes.json();
+        marineData = {
+          waveHeight: marine.current?.wave_height ?? undefined,
+          swellPeriod: marine.current?.swell_wave_period ?? undefined,
+        };
+      }
+    } catch (err) {
+      // Marine data is optional - if it fails, just continue without it
+      console.log("Marine data not available for this location");
+    }
+
     // Parse current weather
     const current = {
       temperature: data.current.temperature_2m ?? 0,
@@ -61,6 +87,9 @@ export async function fetchForecast(
       windspeed: data.current.wind_speed_10m ?? 0,
       precipitation: data.current.precipitation ?? 0,
       weatherCode: data.current.weather_code ?? 0,
+      windDirection: data.current.wind_direction_10m ?? undefined,
+      waveHeight: marineData.waveHeight,
+      swellPeriod: marineData.swellPeriod,
     };
 
     // Parse next 24 hours (first 24 items from hourly)

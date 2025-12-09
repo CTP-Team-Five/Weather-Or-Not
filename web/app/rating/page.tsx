@@ -11,6 +11,7 @@ function RatingPageContent() {
   const router = useRouter();
   const params = useSearchParams();
 
+  const name = params.get("name");  // Short user-friendly name
   const area = params.get("area");
   const lat = params.get("lat");
   const lon = params.get("lon");
@@ -28,14 +29,18 @@ function RatingPageContent() {
     const parsedLon = lon ? parseFloat(lon) : 0;
     const tags = tagsParam ? tagsParam.split(",") : [];
 
+    // Use name for user-friendly display, area for backwards compatibility
+    const displayName = name || area || "Unknown Area";
+
     const newPin = {
       id,
-      area: area || "Unknown Area",
+      name: displayName,  // Short user-friendly name
+      area: displayName,  // For backwards compatibility
       lat: parsedLat,
       lon: parsedLon,
       activity: type,
       createdAt: Date.now(),
-      canonical_name: canonical || area || "Unknown Area",
+      canonical_name: canonical || displayName,  // Full name for metadata
       slug: slug || `unknown-${id.slice(0, 4)}`,
       popularity_score: 1,
       tags,
@@ -46,11 +51,11 @@ function RatingPageContent() {
 
     // save to Supabase
     const { error } = await supabase.from("pins").insert({
-      area: newPin.area,
+      area: newPin.area,  // Short name for display
       lat: newPin.lat,
       lon: newPin.lon,
       activity: newPin.activity,
-      canonical_name: newPin.canonical_name,
+      canonical_name: newPin.canonical_name,  // Full name for metadata
       slug: newPin.slug,
       popularity_score: newPin.popularity_score,
       tags: newPin.tags,
@@ -82,7 +87,7 @@ function RatingPageContent() {
       </h1>
       <p style={{ marginBottom: "1rem" }}>
         You pinned{" "}
-        <strong>{area || (lat && lon ? `${lat}, ${lon}` : "Unknown Area")}</strong>
+        <strong>{name || area || (lat && lon ? `${lat}, ${lon}` : "Unknown Area")}</strong>
       </p>
 
       <h3 style={{ marginBottom: "0.5rem" }}>Select your activity:</h3>

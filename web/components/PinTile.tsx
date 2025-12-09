@@ -5,9 +5,8 @@
 import { useState, useEffect, MouseEvent } from "react";
 import { HiCog6Tooth } from "react-icons/hi2";
 import { SavedPin } from "./data/pinStore";
-import { fetchWeather, scoreSession } from "./utils/fetchWeather";
-import { scoreActivity, normalizeActivity, SuitabilityResult } from "@/lib/activityScore";
-import { fetchLocationMetadata, buildWeatherSnapshot } from "@/lib/locationMetadata";
+import { SuitabilityResult } from "@/lib/activityScore";
+import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
 import styles from "./PinTile.module.css";
 
 type PinTileProps = {
@@ -30,57 +29,29 @@ const activityLabels: Record<string, string> = {
 };
 
 export default function PinTile({ pin, onOpen, onEdit, onDelete }: PinTileProps) {
-  const [weatherData, setWeatherData] = useState<{
-    temperature: number;
-    windspeed: number;
-    precipitation: number;
-    score: number;
-  } | null>(null);
-  const [suitability, setSuitability] = useState<SuitabilityResult | null>(null);
+  // Use the shared computeSuitabilityForPin helper - this ensures the same
+  // suitability score is computed here as on the detail page
+  const [computed, setComputed] = useState<ComputedSuitability | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    const loadWeather = async () => {
+    const loadSuitability = async () => {
       setIsLoading(true);
       try {
-        const weather = await fetchWeather(pin.lat, pin.lon);
-        if (weather) {
-          const { score } = scoreSession(pin.activity, weather);
-          setWeatherData({
-            temperature: weather.temperature,
-            windspeed: weather.windspeed,
-            precipitation: weather.precipitation,
-            score,
-          });
-
-          // Calculate activity suitability
-          const activity = normalizeActivity(pin.activity);
-          if (activity) {
-            const locationMeta = await fetchLocationMetadata(
-              pin.lat,
-              pin.lon,
-              pin.canonical_name || pin.area,
-              pin.tags
-            );
-            const weatherSnap = buildWeatherSnapshot(
-              weather.temperature,
-              weather.windspeed,
-              weather.precipitation
-            );
-            const result = scoreActivity(activity, locationMeta, weatherSnap);
-            setSuitability(result);
-          }
-        }
+        // Use the shared helper that fetches weather (including marine data)
+        // and computes suitability using the same logic as the detail page
+        const result = await computeSuitabilityForPinSafe(pin);
+        setComputed(result);
       } catch (err) {
-        console.error("Failed to load weather for tile:", err);
+        console.error("Failed to load suitability for tile:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadWeather();
-  }, [pin.lat, pin.lon, pin.activity, pin.canonical_name, pin.area, pin.tags]);
+    loadSuitability();
+  }, [pin]);
 
   const handleCardClick = () => {
     onOpen(pin.id);
@@ -161,48 +132,28 @@ export default function PinTile({ pin, onOpen, onEdit, onDelete }: PinTileProps)
             style={{ width: "70%" }}
           />
         </div>
-      ) : weatherData ? (
+      ) : computed ? (
         <>
           <div className={styles.scoreSection}>
-            {suitability ? (
-              <>
-                <div className={styles.scoreValue}>
-                  {suitability.score}
-                  <span
-                    style={{
-                      fontSize: "1.2rem",
-                      color: "rgba(255,255,255,0.5)",
-                    }}
-                  >
-                    {" "}
-                    / 100
-                  </span>
-                </div>
-                <div className={`${styles.suitabilityBadge} ${styles[suitability.label]}`}>
-                  {suitability.label}
-                </div>
-                {suitability.reasons.length > 0 && (
-                  <div className={styles.suitabilityReason}>
-                    {suitability.reasons[0]}
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <div className={styles.scoreValue}>
-                  {weatherData.score.toFixed(1)}
-                  <span
-                    style={{
-                      fontSize: "1.2rem",
-                      color: "rgba(255,255,255,0.5)",
-                    }}
-                  >
-                    {" "}
-                    / 10
-                  </span>
-                </div>
-                <div className={styles.scoreLabel}>Session Score</div>
-              </>
+            <div className={styles.scoreValue}>
+              {computed.suitability.score}
+              <span
+                style={{
+                  fontSize: "1.2rem",
+                  color: "rgba(255,255,255,0.5)",
+                }}
+              >
+                {" "}
+                / 100
+              </span>
+            </div>
+            <div className={`${styles.suitabilityBadge} ${styles[computed.suitability.label]}`}>
+              {computed.suitability.label}
+            </div>
+            {computed.suitability.reasons.length > 0 && (
+              <div className={styles.suitabilityReason}>
+                {computed.suitability.reasons[0]}
+              </div>
             )}
           </div>
 
@@ -210,19 +161,19 @@ export default function PinTile({ pin, onOpen, onEdit, onDelete }: PinTileProps)
             <div className={styles.weatherRow}>
               <span className={styles.weatherLabel}>Temperature</span>
               <span className={styles.weatherValue}>
-                {weatherData.temperature.toFixed(1)}°C
+                {computed.weather.current.temperature.toFixed(1)}°C
               </span>
             </div>
             <div className={styles.weatherRow}>
               <span className={styles.weatherLabel}>Wind</span>
               <span className={styles.weatherValue}>
-                {weatherData.windspeed.toFixed(1)} m/s
+                {computed.weather.current.windspeed.toFixed(1)} m/s
               </span>
             </div>
             <div className={styles.weatherRow}>
               <span className={styles.weatherLabel}>Precipitation</span>
               <span className={styles.weatherValue}>
-                {weatherData.precipitation.toFixed(1)} mm
+                {computed.weather.current.precipitation.toFixed(1)} mm
               </span>
             </div>
           </div>

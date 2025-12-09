@@ -7,11 +7,11 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { supabase } from "@/lib/supabaseClient";
 import { PinStore, SavedPin } from "@/components/data/pinStore";
-import { fetchForecast, ExtendedWeatherData, getWeatherDescription } from "@/components/utils/fetchForecast";
+import { ExtendedWeatherData, getWeatherDescription } from "@/components/utils/fetchForecast";
 import { scoreSession } from "@/components/utils/fetchWeather";
 import { incrementPopularity } from "@/lib/supabase/incrementPopularity";
-import { scoreActivity, normalizeActivity, SuitabilityResult } from "@/lib/activityScore";
-import { fetchLocationMetadata, buildWeatherSnapshot } from "@/lib/locationMetadata";
+import { SuitabilityResult } from "@/lib/activityScore";
+import { computeSuitabilityForPin } from "@/lib/computeSuitability";
 import styles from "./page.module.css";
 
 // Client-only import of Leaflet map
@@ -96,33 +96,17 @@ export default function PinDetailPage() {
         // Increment popularity score (tracks how many times pin is viewed)
         await incrementPopularity(pinData.id);
 
-        // Fetch extended weather forecast
-        const forecastData = await fetchForecast(pinData.lat, pinData.lon);
-        if (!forecastData) {
+        // Use the shared computeSuitabilityForPin helper
+        // This ensures the same suitability score is computed here as on the dashboard
+        try {
+          const computed = await computeSuitabilityForPin(pinData);
+          setWeather(computed.weather);
+          setSuitability(computed.suitability);
+        } catch (err) {
+          console.error("Failed to compute suitability:", err);
           setError("Failed to load weather data");
           setIsLoading(false);
           return;
-        }
-
-        setWeather(forecastData);
-
-        // Calculate activity suitability score
-        const activity = normalizeActivity(pinData.activity);
-        if (activity) {
-          const locationMeta = await fetchLocationMetadata(
-            pinData.lat,
-            pinData.lon,
-            pinData.canonical_name || pinData.area,
-            pinData.tags
-          );
-          const weatherSnap = buildWeatherSnapshot(
-            forecastData.current.temperature,
-            forecastData.current.windspeed,
-            forecastData.current.precipitation,
-            forecastData.current.weatherCode
-          );
-          const result = scoreActivity(activity, locationMeta, weatherSnap);
-          setSuitability(result);
         }
       } catch (err) {
         console.error("Error loading pin detail:", err);
@@ -288,6 +272,108 @@ export default function PinDetailPage() {
               </div>
               <div className={styles.scoreSummary}>{sessionScore.summary}</div>
             </>
+          )}
+
+          {/* Surf Conditions Section (shown only for surfing activity) */}
+          {pin.activity === 'surf' && weather.current && (
+            <div style={{
+              marginTop: "1.5rem",
+              paddingTop: "1.5rem",
+              borderTop: "1px solid rgba(255,255,255,0.1)"
+            }}>
+              <h3 style={{
+                fontSize: "0.9rem",
+                fontWeight: 600,
+                marginBottom: "0.75rem",
+                color: "rgba(255,255,255,0.8)"
+              }}>
+                Surf Conditions
+              </h3>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "0.75rem",
+                fontSize: "0.85rem"
+              }}>
+                {weather.current.waveHeight !== undefined ? (
+                  <div>
+                    <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: "0.25rem" }}>
+                      Wave Height
+                    </div>
+                    <div style={{ fontWeight: 600 }}>
+                      {weather.current.waveHeight.toFixed(2)} m
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: "0.25rem" }}>
+                      Wave Height
+                    </div>
+                    <div style={{ fontWeight: 600, color: "rgba(255,255,255,0.4)" }}>
+                      N/A
+                    </div>
+                  </div>
+                )}
+
+                {weather.current.swellPeriod !== undefined ? (
+                  <div>
+                    <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: "0.25rem" }}>
+                      Swell Period
+                    </div>
+                    <div style={{ fontWeight: 600 }}>
+                      {weather.current.swellPeriod.toFixed(1)} s
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: "0.25rem" }}>
+                      Swell Period
+                    </div>
+                    <div style={{ fontWeight: 600, color: "rgba(255,255,255,0.4)" }}>
+                      N/A
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: "0.25rem" }}>
+                    Wind Speed
+                  </div>
+                  <div style={{ fontWeight: 600 }}>
+                    {(weather.current.windspeed * 3.6).toFixed(1)} kph
+                  </div>
+                </div>
+
+                {weather.current.windDirection !== undefined ? (
+                  <div>
+                    <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: "0.25rem" }}>
+                      Wind Direction
+                    </div>
+                    <div style={{ fontWeight: 600 }}>
+                      {weather.current.windDirection.toFixed(0)}°
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: "0.25rem" }}>
+                      Wind Direction
+                    </div>
+                    <div style={{ fontWeight: 600, color: "rgba(255,255,255,0.4)" }}>
+                      N/A
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <div style={{ color: "rgba(255,255,255,0.6)", marginBottom: "0.25rem" }}>
+                    Air Temp
+                  </div>
+                  <div style={{ fontWeight: 600 }}>
+                    {weather.current.temperature.toFixed(1)} °C
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </div>

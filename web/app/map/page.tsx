@@ -5,13 +5,13 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useRef } from "react";
-import MapSearch from "@/components/MapSearch";
+import MapSearch, { SearchResult } from "@/components/MapSearch";
 import MapPinManager from "@/components/MapPinManager";
 import { generateCanonicalName, inferTags } from "@/lib/generateCanonicalName";
 import { generateSlug } from "@/lib/generateSlug";
 import { supabase } from "@/lib/supabaseClient";
 import { SavedPin } from "@/components/data/pinStore";
-import { extractLocationName } from "@/lib/reverseGeocode";
+import { deriveFriendlyName, deriveFriendlyNameFromSearch } from "@/lib/naming";
 
 type LatLngTuple = [number, number];
 
@@ -33,6 +33,9 @@ export default function MapPage() {
 
   // Draft pin (for search results - draggable before saving)
   const [draftPin, setDraftPin] = useState<LatLngTuple | null>(null);
+
+  // Store the search result when user selects from search (for naming only, NOT coordinates)
+  const [pendingSearchResult, setPendingSearchResult] = useState<SearchResult | null>(null);
 
   // Center coordinates (for display in the center bar)
   const [center, setCenter] = useState<LatLngTuple>([40.7128, -74.006]);
@@ -122,7 +125,7 @@ export default function MapPage() {
   }, [mapRef, pinsLoaded, handleRecenter]);
 
   /* 📍 When user drops a pin */
-  const handlePin = async (pos: [number, number]) => {
+  const handlePin = async (pos: [number, number], searchResult?: SearchResult | null) => {
     const [lat, lon] = pos;
 
     try {
@@ -133,19 +136,38 @@ export default function MapPage() {
         { headers: { "User-Agent": "WeatherOrNot/1.0 (xyz@gmail.com)" } }
       );
 
-      const data = await res.json();
+      const reverseData = await res.json();
 
-      // Use helper to extract best name (for display)
-      const displayName = extractLocationName(data);
+      // Derive user-friendly pin name using the new naming helper
+      // Priority:
+      // 1. If user came from search, use deriveFriendlyNameFromSearch (preserves explicit place names)
+      // 2. Otherwise, use deriveFriendlyName on the reverse geocode result
+      //
+      // This ensures:
+      // - "Breezy Point" shows as "Breezy Point, NY" instead of "Queens, NY"
+      // - "Gore Mountain" from search shows correctly
+      // - Specific neighbourhoods are preferred over broad boroughs
+      let pinName: string;
+      if (searchResult) {
+        // User came from search - use search result data for naming
+        // Search result has address details from forward geocode
+        pinName = deriveFriendlyNameFromSearch(searchResult);
+      } else {
+        // User clicked directly on map - use reverse geocode data
+        pinName = deriveFriendlyName(reverseData);
+      }
 
-      // Generate canonical name and slug for database
-      const canonicalName = await generateCanonicalName(data, lat, lon);
+      // Generate canonical name (full OSM display_name) for metadata and debugging
+      // This is preserved separately from pin.name
+      const canonicalName = reverseData.display_name || await generateCanonicalName(reverseData, lat, lon);
       const slug = generateSlug(canonicalName);
-      const tags = inferTags(data);
+      const tags = inferTags(reverseData);
 
       // Pass all data to rating page
+      // name = short user-friendly name (e.g., "Breezy Point, NY")
+      // canonical = full OSM display_name for metadata
       router.push(
-        `/rating?area=${encodeURIComponent(displayName)}&lat=${lat}&lon=${lon}&canonical=${encodeURIComponent(canonicalName)}&slug=${encodeURIComponent(slug)}&tags=${encodeURIComponent(tags.join(","))}`
+        `/rating?name=${encodeURIComponent(pinName)}&area=${encodeURIComponent(pinName)}&lat=${lat}&lon=${lon}&canonical=${encodeURIComponent(canonicalName)}&slug=${encodeURIComponent(slug)}&tags=${encodeURIComponent(tags.join(","))}`
       );
     } catch (err) {
       console.error("Reverse geocode failed:", err);
@@ -242,11 +264,24 @@ export default function MapPage() {
           {/* Middle: Search */}
           <div style={{ flex: 1, display: "flex", justifyContent: "center", pointerEvents: "auto" }}>
             <MapSearch
-              onSelect={(coords) => {
-                // Set draft pin for user to adjust
-                setDraftPin(coords);
+              onSelect={(coords, searchResult) => {
+                // IMPORTANT: Do NOT set draftPin to search result coordinates!
+                // Search results (especially for counties/regions) return centroids,
+                // not the actual coastal point the user wants.
+                //
+                // Instead:
+                // 1. Fly to the search result to center the map
+                // 2. Store the search result for naming purposes only
+                // 3. Let the user position the crosshair (map center) where they want the pin
+                // 4. The crosshair position becomes the final pin coordinates
 
-                // Fly to the selected location
+                // Store the search result so we can use its name when creating the pin
+                setPendingSearchResult(searchResult || null);
+
+                // Clear any existing draft pin - the crosshair is now the source of truth
+                setDraftPin(null);
+
+                // Fly to the selected location to center the map
                 if (mapRef) {
                   mapRef.flyTo(coords, 13, { animate: true, duration: 1.5 });
                 }
@@ -299,10 +334,19 @@ export default function MapPage() {
           onMapReady={setMapRef}
           onCenterMove={setCenter}
           onPin={async (pos) => {
-            // Use draft pin position if available, otherwise use passed position
-            const finalPos = draftPin || pos;
-            setDraftPin(null); // Clear draft pin
-            await handlePin(finalPos);
+            // CRITICAL FIX: Always use the map center position (pos) as the pin coordinates.
+            // This is where the crosshair is positioned - the user's intended location.
+            //
+            // The pendingSearchResult is used ONLY for naming purposes (pin.name),
+            // NOT for coordinates. This prevents county/region centroids from
+            // overwriting the user's actual selected coastal position.
+            //
+            // pos = map center (crosshair position) - THIS IS THE SOURCE OF TRUTH
+            const finalPos = pos;
+            const searchResult = pendingSearchResult;
+            setDraftPin(null); // Clear any draft pin
+            setPendingSearchResult(null); // Clear pending search result
+            await handlePin(finalPos, searchResult);
           }}
         />
 
