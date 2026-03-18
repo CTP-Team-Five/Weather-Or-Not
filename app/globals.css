@@ -167,67 +167,13 @@
   --shadow: 222 42% 6%;
 }
 
-/* ── System dark mode preference ─────────────────────────────────────────────
-   Activates when the user has dark mode enabled in their OS/browser.
-   Weather theme classes (.theme-clear etc.) override this when weather loads.
-───────────────────────────────────────────────────────────────────────────── */
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-
-    --body-texture: url('/textures/texture-severe.png');
-
-    --background: 222 22% 10%;
-    --foreground: 210 20% 96%;
-
-    --surface: 222 18% 14%;
-    --surface-elevated: 222 15% 18%;
-    --surface-inset: 223 16% 12%;
-
-    --muted: 221 14% 20%;
-    --muted-foreground: 215 12% 68%;
-
-    --subtle: 222 12% 16%;
-    --subtle-foreground: 214 10% 78%;
-
-    --border: 219 12% 26%;
-    --border-subtle: 220 10% 20%;
-    --ring: 205 82% 58%;
-
-    --accent: 205 82% 58%;
-    --accent-foreground: 0 0% 100%;
-
-    --sky: 219 20% 18%;
-    --sky-foreground: 210 20% 96%;
-
-    --danger: 5 80% 60%;
-    --danger-foreground: 0 0% 100%;
-
-    --warning: 37 88% 60%;
-    --warning-foreground: 25 40% 12%;
-
-    --success: 162 48% 44%;
-    --success-foreground: 0 0% 100%;
-
-    --score-terrible: 5 78% 63%;
-    --score-terrible-foreground: 0 0% 100%;
-    --score-ok: 37 84% 62%;
-    --score-ok-foreground: 25 40% 12%;
-    --score-great: 165 44% 48%;
-    --score-great-foreground: 0 0% 100%;
-
-    --shadow: 222 42% 4%;
-  }
-}
-
 /* ─────────────────────────────────────────────────────────────────────────────
    BASE LAYER
 ───────────────────────────────────────────────────────────────────────────── */
 
 @layer base {
   html {
-    color-scheme: light dark;
+    color-scheme: light;
   }
 
   html,
