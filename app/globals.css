@@ -12,6 +12,9 @@
 ───────────────────────────────────────────────────────────────────────────── */
 
 :root {
+  /* Texture overlay — changes with theme class */
+  --body-texture: url('/textures/texture-clear.png');
+
   /* Light-first neutral base (no weather data yet) */
   --background: 210 33% 98%;
   --foreground: 222 28% 16%;
@@ -66,6 +69,7 @@
 
 /* ── Crisp, bright: fair conditions ──────────────────────────────────────── */
 .theme-clear {
+  --body-texture: url('/textures/texture-clear.png');
   --background: 204 60% 98%;
   --foreground: 222 34% 17%;
 
@@ -92,6 +96,7 @@
 
 /* ── Softer, flatter: clouds / rain / muted conditions ───────────────────── */
 .theme-overcast {
+  --body-texture: url('/textures/texture-overcast.png');
   --background: 210 20% 95%;
   --foreground: 218 18% 24%;
 
@@ -119,6 +124,7 @@
 /* ── Dark, dramatic: storm / blizzard / severe conditions ────────────────── */
 /* This is app-state driven, not user OS preference.                          */
 .theme-severe {
+  --body-texture: url('/textures/texture-severe.png');
   --background: 222 22% 12%;
   --foreground: 210 20% 96%;
 
@@ -187,6 +193,25 @@
     transition:
       background-color 220ms ease,
       color 220ms ease;
+  }
+
+  /* Texture overlay — tiled grain on top of background, follows theme class */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: var(--body-texture);
+    background-repeat: repeat;
+    background-size: 400px 400px;
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: 0;
+    transition: opacity 220ms ease;
+  }
+
+  /* Slightly more visible grain in severe mode — adds weight */
+  body.theme-severe::before {
+    opacity: 0.09;
   }
 
   body.no-navbar-padding {
