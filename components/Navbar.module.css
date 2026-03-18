@@ -1,0 +1,17 @@
+/* Only animation keyframes remain here — all other Navbar styles use Tailwind tokens. */
+
+.logoIcon {
+  color: hsl(var(--warning));
+  transition: transform 0.3s ease;
+  animation: gentlePulse 5s ease-in-out infinite;
+}
+
+.logoIcon:hover {
+  transform: rotate(40deg) scale(1.1);
+}
+
+@keyframes gentlePulse {
+  0%   { transform: rotate(0deg); }
+  50%  { transform: rotate(20deg); }
+  100% { transform: rotate(0deg); }
+}
