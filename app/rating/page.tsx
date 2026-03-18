@@ -90,6 +90,7 @@ function RatingPageContent() {
     PinStore.add(newPin);
 
     if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from("pins").insert({
         area: newPin.area,
         lat: newPin.lat,
@@ -99,6 +100,7 @@ function RatingPageContent() {
         slug: newPin.slug,
         popularity_score: newPin.popularity_score,
         tags: newPin.tags,
+        user_id: user?.id ?? null,
       });
       if (error) console.error("Failed to save pin to Supabase:", error);
     }

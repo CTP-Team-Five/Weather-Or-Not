@@ -51,6 +51,116 @@
   transition: 0.2s ease;
 }
 
+/* ── Best Today hero ─────────────────────────────────────────────────── */
+
+.bestTodayWrap {
+  margin-bottom: 0.5rem;
+}
+
+.bestTodayCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: left;
+  background: hsl(var(--surface-elevated));
+  border: 1px solid hsl(var(--border-subtle));
+  border-radius: 1.25rem;
+  padding: 1.5rem 1.75rem;
+  cursor: pointer;
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+  box-shadow: 0 8px 24px -12px hsl(var(--shadow) / 0.18);
+}
+
+.bestTodayCard:hover {
+  box-shadow: 0 12px 32px -10px hsl(var(--shadow) / 0.26);
+  transform: translateY(-1px);
+}
+
+.bestTodayEyebrow {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: hsl(var(--muted-foreground));
+}
+
+.bestTodayMain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bestTodayName {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  font-family: var(--font-display, system-ui, sans-serif);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bestTodayBadge {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+}
+
+.bestTodayBadge.GREAT {
+  background: hsl(var(--score-great) / 0.15);
+  color: hsl(var(--score-great));
+}
+
+.bestTodayBadge.OK {
+  background: hsl(var(--score-ok) / 0.15);
+  color: hsl(var(--score-ok));
+}
+
+.bestTodayBadge.TERRIBLE {
+  background: hsl(var(--score-terrible) / 0.12);
+  color: hsl(var(--score-terrible));
+}
+
+.bestTodayScoreRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bestTodayTrack {
+  flex: 1;
+  height: 5px;
+  background: hsl(var(--muted));
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bestTodayFill {
+  height: 100%;
+  background: hsl(var(--accent));
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.bestTodayScore {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  white-space: nowrap;
+}
+
+.bestTodayReason {
+  font-size: 0.8rem;
+  color: hsl(var(--muted-foreground));
+  margin: 0;
+}
+
 /* ── Responsive ─────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
@@ -61,5 +171,15 @@
 
   .mainHeading {
     font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .bestTodayName {
+    font-size: 1.2rem;
+  }
+
+  .bestTodayCard {
+    padding: 1.25rem;
   }
 }

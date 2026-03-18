@@ -18,13 +18,16 @@ import {
   applyWeatherThemeClass,
   clearWeatherThemeClass,
 } from "@/lib/weatherThemeClass";
+import { useAuth } from "@/lib/useAuth";
 
 export default function Home() {
   const router = useRouter();
+  const { user } = useAuth();
   const [savedPins, setSavedPins] = useState<SavedPin[]>([]);
   const [mapRefreshTrigger, setMapRefreshTrigger] = useState(0);
   const [computingAll, setComputingAll] = useState(true);
   const [computedMap, setComputedMap] = useState<Map<string, ComputedSuitability | null>>(new Map());
+  const [bestPinId, setBestPinId] = useState<string | null>(null);
   const computeKeyRef = useRef("");
 
   // Shared compute pass: runs once per unique set of pin IDs.
@@ -33,6 +36,8 @@ export default function Home() {
     const key = savedPins.map((p) => p.id).join(",");
     if (computeKeyRef.current === key) return;
     computeKeyRef.current = key;
+
+    setBestPinId(null);
 
     if (savedPins.length === 0) {
       setComputingAll(false);
@@ -54,6 +59,7 @@ export default function Home() {
       setComputedMap(newMap);
       setComputingAll(false);
       if (best) {
+        setBestPinId(best.pin.id);
         const times = best.r.weather.hourly.map((h: { time: string }) => h.time);
         applyTheme(deriveTheme(best.pin.activity, best.r.weather.current.weatherCode, times));
         applyWeatherThemeClass(
@@ -75,7 +81,7 @@ export default function Home() {
     };
   }, [savedPins]);
 
-  // Load pins on mount
+  // Load pins on mount (or when user changes)
   useEffect(() => {
     // First load from localStorage for immediate display
     const localPins = PinStore.all();
@@ -86,10 +92,17 @@ export default function Home() {
     // Then load from Supabase and overwrite
     const loadRemotePins = async () => {
       try {
-        const { data, error } = await supabase!
+        let query = supabase!
           .from("pins")
           .select("*")
           .order("created_at", { ascending: false });
+
+        // Filter by user_id when logged in
+        if (user) {
+          query = query.eq("user_id", user.id);
+        }
+
+        const { data, error } = await query;
 
         if (error || !data) {
           if (error) console.error("Supabase pins fetch error:", error);
@@ -116,7 +129,7 @@ export default function Home() {
     };
 
     loadRemotePins();
-  }, []);
+  }, [user]);
 
   // Handler: Open pin detail page
   const handleOpen = (id: string) => {
@@ -158,8 +171,40 @@ export default function Home() {
     router.push("/map");
   };
 
+  const bestPin = bestPinId ? savedPins.find(p => p.id === bestPinId) ?? null : null;
+  const bestComputed = bestPin ? computedMap.get(bestPin.id) ?? null : null;
+
   return (
     <main className={styles.pageContainer}>
+      {/* ── Best Today Hero ──────────────────────────────────────────────── */}
+      {!computingAll && bestPin && bestComputed && (
+        <section className={styles.bestTodayWrap}>
+          <button className={styles.bestTodayCard} onClick={() => handleOpen(bestPin.id)}>
+            <span className={styles.bestTodayEyebrow}>Best spot today</span>
+            <div className={styles.bestTodayMain}>
+              <span className={styles.bestTodayName}>
+                {bestPin.canonical_name || bestPin.area}
+              </span>
+              <span className={`${styles.bestTodayBadge} ${styles[bestComputed.suitability.label]}`}>
+                {bestComputed.suitability.label}
+              </span>
+            </div>
+            <div className={styles.bestTodayScoreRow}>
+              <div className={styles.bestTodayTrack}>
+                <div
+                  className={styles.bestTodayFill}
+                  style={{ width: `${bestComputed.suitability.score}%` }}
+                />
+              </div>
+              <span className={styles.bestTodayScore}>{bestComputed.suitability.score}/100</span>
+            </div>
+            {bestComputed.suitability.reasons[0] && (
+              <p className={styles.bestTodayReason}>{bestComputed.suitability.reasons[0]}</p>
+            )}
+          </button>
+        </section>
+      )}
+
       {/* Top: Pin Grid */}
       <section className={styles.sectionSpacing}>
         <h2 className={styles.mainHeading}>Your Spots</h2>
@@ -181,7 +226,7 @@ export default function Home() {
 
       {/* Top Spots Today */}
       <section className={styles.sectionSpacing}>
-        <h2 className={styles.mainHeading}>🏆 Top Spots Today</h2>
+        <h2 className={styles.mainHeading}>Top Spots Today</h2>
         <TopSpots />
       </section>
     </main>

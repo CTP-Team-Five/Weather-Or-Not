@@ -5,11 +5,90 @@
 import { useEffect, useState } from "react";
 import { fetchTopSpots, TopSpot } from "@/lib/fetchTopSpots";
 
-const activityIcons: Record<string, string> = {
-  hike: "🥾",
-  surf: "🏄",
-  snowboard: "🎿",
+const ACTIVITY_LABELS: Record<string, string> = {
+  hike: "Hiking",
+  surf: "Surfing",
+  snowboard: "Snowboarding",
 };
+
+function getLabelColor(label: string | null): { bg: string; text: string } {
+  switch (label) {
+    case "GREAT":
+      return {
+        bg: "hsl(var(--score-great) / 0.15)",
+        text: "hsl(var(--score-great))",
+      };
+    case "OK":
+      return {
+        bg: "hsl(var(--score-ok) / 0.15)",
+        text: "hsl(var(--score-ok))",
+      };
+    case "TERRIBLE":
+      return {
+        bg: "hsl(var(--score-terrible) / 0.12)",
+        text: "hsl(var(--score-terrible))",
+      };
+    default:
+      return {
+        bg: "hsl(var(--muted))",
+        text: "hsl(var(--muted-foreground))",
+      };
+  }
+}
+
+function SkeletonCard() {
+  return (
+    <div
+      style={{
+        background: "hsl(var(--surface))",
+        border: "1px solid hsl(var(--border-subtle))",
+        borderRadius: "12px",
+        padding: "1.2rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.75rem",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+        <div
+          style={{
+            width: "28px",
+            height: "28px",
+            borderRadius: "50%",
+            background: "hsl(var(--muted))",
+            animation: "topSpotsPulse 1.5s ease-in-out infinite",
+          }}
+        />
+        <div
+          style={{
+            flex: 1,
+            height: "14px",
+            borderRadius: "4px",
+            background: "hsl(var(--muted))",
+            animation: "topSpotsPulse 1.5s ease-in-out infinite",
+          }}
+        />
+      </div>
+      <div
+        style={{
+          height: "12px",
+          borderRadius: "4px",
+          background: "hsl(var(--muted))",
+          width: "60%",
+          animation: "topSpotsPulse 1.5s ease-in-out infinite 0.15s",
+        }}
+      />
+      <div
+        style={{
+          height: "5px",
+          borderRadius: "3px",
+          background: "hsl(var(--muted))",
+          animation: "topSpotsPulse 1.5s ease-in-out infinite 0.3s",
+        }}
+      />
+    </div>
+  );
+}
 
 export default function TopSpots() {
   const [topSpots, setTopSpots] = useState<TopSpot[]>([]);
@@ -19,7 +98,7 @@ export default function TopSpots() {
     async function loadTopSpots() {
       setLoading(true);
       const spots = await fetchTopSpots();
-      setTopSpots(spots.slice(0, 6)); // Show top 6
+      setTopSpots(spots.slice(0, 6));
       setLoading(false);
     }
 
@@ -28,15 +107,26 @@ export default function TopSpots() {
 
   if (loading) {
     return (
-      <div
-        style={{
-          padding: "2rem",
-          textAlign: "center",
-          color: "rgba(255, 255, 255, 0.5)",
-        }}
-      >
-        Loading top spots...
-      </div>
+      <>
+        <style>{`
+          @keyframes topSpotsPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+          }
+        `}</style>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+            gap: "1rem",
+            width: "100%",
+          }}
+        >
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </>
     );
   }
 
@@ -46,7 +136,7 @@ export default function TopSpots() {
         style={{
           padding: "2rem",
           textAlign: "center",
-          color: "rgba(255, 255, 255, 0.5)",
+          color: "hsl(var(--muted-foreground))",
         }}
       >
         No spots yet. Be the first to add one!
@@ -63,127 +153,152 @@ export default function TopSpots() {
         width: "100%",
       }}
     >
-      {topSpots.map((spot, index) => (
-        <div
-          key={`${spot.spot_name}-${spot.activity}`}
-          style={{
-            background: "rgba(40, 40, 40, 0.6)",
-            borderRadius: "12px",
-            padding: "1.2rem",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            transition: "all 0.2s ease",
-            position: "relative",
-            overflow: "hidden",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(50, 50, 50, 0.7)";
-            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.15)";
-            e.currentTarget.style.transform = "translateY(-2px)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(40, 40, 40, 0.6)";
-            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
-            e.currentTarget.style.transform = "translateY(0)";
-          }}
-        >
-          {/* Rank Badge */}
+      {topSpots.map((spot, index) => {
+        const labelColors = getLabelColor(spot.label);
+
+        return (
           <div
+            key={`${spot.spot_name}-${spot.activity}`}
             style={{
-              position: "absolute",
-              top: "0.75rem",
-              left: "0.75rem",
-              width: "28px",
-              height: "28px",
-              borderRadius: "50%",
-              background: "rgba(99, 102, 241, 0.2)",
-              border: "1px solid rgba(99, 102, 241, 0.4)",
+              background: "hsl(var(--surface))",
+              borderRadius: "12px",
+              padding: "1.2rem",
+              border: "1px solid hsl(var(--border-subtle))",
+              transition: "all 0.2s ease",
+              position: "relative",
+              overflow: "hidden",
               display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              color: "#a5b4fc",
+              flexDirection: "column",
+              gap: "0.6rem",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "hsl(var(--surface-elevated))";
+              e.currentTarget.style.borderColor = "hsl(var(--border))";
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 6px 20px -8px hsl(var(--shadow) / 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "hsl(var(--surface))";
+              e.currentTarget.style.borderColor = "hsl(var(--border-subtle))";
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "none";
             }}
           >
-            #{index + 1}
-          </div>
+            {/* Header row: rank + name + verdict badge */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              {/* Rank */}
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  background: "hsl(var(--accent) / 0.12)",
+                  border: "1px solid hsl(var(--accent) / 0.3)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "0.7rem",
+                  fontWeight: 700,
+                  color: "hsl(var(--accent))",
+                  flexShrink: 0,
+                }}
+              >
+                #{index + 1}
+              </div>
 
-          {/* Activity Icon (Background) */}
-          <div
-            style={{
-              position: "absolute",
-              top: "0.5rem",
-              right: "0.5rem",
-              fontSize: "3rem",
-              opacity: 0.08,
-            }}
-          >
-            {activityIcons[spot.activity] || "📍"}
-          </div>
+              {/* Spot name */}
+              <h3
+                style={{
+                  margin: 0,
+                  flex: 1,
+                  fontSize: "1rem",
+                  fontWeight: 600,
+                  color: "hsl(var(--foreground))",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  fontFamily: "var(--font-display, system-ui, sans-serif)",
+                }}
+              >
+                {spot.spot_name}
+              </h3>
 
-          {/* Content */}
-          <div style={{ marginTop: "2rem" }}>
-            {/* Spot Name */}
-            <h3
-              style={{
-                margin: "0 0 0.5rem 0",
-                fontSize: "1.1rem",
-                fontWeight: 600,
-                color: "#e5e5e5",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {spot.spot_name}
-            </h3>
+              {/* Verdict badge */}
+              {spot.label && (
+                <span
+                  style={{
+                    flexShrink: 0,
+                    fontSize: "0.7rem",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    padding: "0.2rem 0.6rem",
+                    borderRadius: "999px",
+                    background: labelColors.bg,
+                    color: labelColors.text,
+                  }}
+                >
+                  {spot.label}
+                </span>
+              )}
+            </div>
 
-            {/* Activity + Session Count */}
+            {/* Activity + session count row */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "0.5rem",
-                fontSize: "0.85rem",
-                color: "rgba(255, 255, 255, 0.6)",
-                marginBottom: "0.75rem",
+                justifyContent: "space-between",
+                fontSize: "0.8rem",
+                color: "hsl(var(--muted-foreground))",
               }}
             >
-              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                {activityIcons[spot.activity] || "📍"}
-                <span style={{ textTransform: "capitalize" }}>
-                  {spot.activity === "snowboard" ? "Snowboarding" : spot.activity}
-                </span>
+              <span style={{ fontWeight: 500 }}>
+                {ACTIVITY_LABELS[spot.activity] ?? spot.activity}
               </span>
-              <span>•</span>
-              <span>
-                {spot.session_count} {spot.session_count === 1 ? "session" : "sessions"}
+              <span style={{ fontSize: "0.75rem" }}>
+                {spot.session_count} {spot.session_count === 1 ? "save" : "saves"}
               </span>
             </div>
 
-            {/* Popularity Bar */}
+            {/* Score bar */}
             <div
               style={{
                 width: "100%",
-                height: "4px",
-                background: "rgba(255, 255, 255, 0.1)",
-                borderRadius: "2px",
+                height: "5px",
+                background: "hsl(var(--muted))",
+                borderRadius: "3px",
                 overflow: "hidden",
               }}
             >
               <div
                 style={{
                   height: "100%",
-                  width: `${Math.min(100, (spot.session_count / topSpots[0].session_count) * 100)}%`,
-                  background: "linear-gradient(90deg, rgba(99, 102, 241, 0.6), rgba(139, 92, 246, 0.6))",
-                  borderRadius: "2px",
-                  transition: "width 0.3s ease",
+                  width: spot.score !== null ? `${spot.score}%` : "0%",
+                  background: labelColors.text,
+                  borderRadius: "3px",
+                  transition: "width 0.6s ease",
+                  opacity: 0.8,
                 }}
               />
             </div>
+
+            {/* Score number */}
+            {spot.score !== null && (
+              <span
+                style={{
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  color: "hsl(var(--muted-foreground))",
+                  alignSelf: "flex-end",
+                }}
+              >
+                {spot.score}/100
+              </span>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
