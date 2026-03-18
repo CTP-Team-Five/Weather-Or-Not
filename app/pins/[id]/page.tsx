@@ -201,32 +201,38 @@ export default function PinDetailPage() {
             <span>{activityLabels[pin.activity] || pin.activity}</span>
           </div>
 
+          {/* Verdict — the answer, first */}
+          {suitability && (
+            <div className={styles.verdictLine}>
+              <span className={`${styles.verdictWord} ${styles[suitability.label]}`}>
+                {suitability.label}
+              </span>
+            </div>
+          )}
+
+          {/* Headline — cinematic mood context, muted */}
           <h1 className={styles.headline}>
-            {hero ? hero.headline : (pin.canonical_name || pin.area)}
+            {hero ? hero.headline : (pin.canonical_name || pin.area).toLowerCase()}
           </h1>
 
+          {/* Score as thin bar-line */}
           {suitability && (
-            <>
-              <div className={styles.scoreRow}>
-                <span className={styles.scoreNum}>{suitability.score}</span>
-                <span className={styles.scoreOf}>/100</span>
-                <span className={`${styles.verdictBadge} ${styles[suitability.label]}`}>
-                  {suitability.label}
-                </span>
-              </div>
-              <div
-                className={styles.scoreBar}
-                role="progressbar"
-                aria-valuenow={suitability.score}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              >
+            <div
+              className={styles.scoreLine}
+              role="progressbar"
+              aria-valuenow={suitability.score}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Suitability score: ${suitability.score} out of 100`}
+            >
+              <div className={styles.scoreTrack}>
                 <div
                   className={styles.scoreBarFill}
                   style={{ width: `${suitability.score}%` }}
                 />
               </div>
-            </>
+              <span className={styles.scoreNum}>{suitability.score}/100</span>
+            </div>
           )}
 
           {hero?.subline && (

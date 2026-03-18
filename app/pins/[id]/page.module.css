@@ -1,0 +1,620 @@
+/* app/pins/[id]/page.module.css */
+
+/* ── Shell ────────────────────────────────────────────────────────────────── */
+
+.container {
+  min-height: 100vh;
+}
+
+/* ── Entrance animation ───────────────────────────────────────────────────── */
+
+@keyframes heroIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Hero Zone ────────────────────────────────────────────────────────────── */
+/* Text sits directly on the atmospheric gradient body background.           */
+
+.hero {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 2rem;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.loadingHero {
+  min-height: 56vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 2rem;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0;
+}
+
+.backBtn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.75);
+  padding: 0.45rem 1rem;
+  border-radius: 99px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+
+.backBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.locationChip {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.35rem 0.85rem;
+  border-radius: 99px;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+/* Pushes heroBody to the lower portion of the hero zone */
+.heroBody {
+  margin-top: auto;
+  padding-bottom: 0.5rem;
+}
+
+.activityBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 99px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  margin-bottom: 1.25rem;
+  animation: heroIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+}
+
+.activityBadge.hike {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #86efac;
+}
+
+.activityBadge.surf {
+  background: rgba(34, 211, 238, 0.15);
+  border-color: rgba(34, 211, 238, 0.3);
+  color: #67e8f9;
+}
+
+.activityBadge.snowboard {
+  background: rgba(96, 165, 250, 0.15);
+  border-color: rgba(96, 165, 250, 0.3);
+  color: #93c5fd;
+}
+
+/* ── Verdict — the answer, first ─────────────────────────────────────────── */
+
+.verdictLine {
+  margin: 0 0 0.1rem 0;
+  animation: heroIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.verdictWord {
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: clamp(4.5rem, 14vw, 9rem);
+  font-weight: 800;
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  display: block;
+}
+
+.verdictWord.GREAT {
+  color: #4ade80;
+  text-shadow: 0 0 60px rgba(74, 222, 128, 0.25), 0 2px 20px rgba(0,0,0,0.4);
+}
+
+.verdictWord.OK {
+  color: #fbbf24;
+  text-shadow: 0 0 60px rgba(251, 191, 36, 0.25), 0 2px 20px rgba(0,0,0,0.4);
+}
+
+.verdictWord.TERRIBLE {
+  color: #f87171;
+  text-shadow: 0 0 60px rgba(248, 113, 113, 0.25), 0 2px 20px rgba(0,0,0,0.4);
+}
+
+/* ── Headline — mood context ──────────────────────────────────────────────── */
+
+.headline {
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: clamp(1.1rem, 3.5vw, 1.75rem);
+  font-weight: 600;
+  font-style: italic;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: lowercase;
+  margin: 0.35rem 0 1.25rem 0;
+  animation: heroIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
+}
+
+/* ── Score bar-line ───────────────────────────────────────────────────────── */
+
+.scoreLine {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  animation: heroIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+
+.scoreTrack {
+  flex: 1;
+  max-width: 220px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.scoreBarFill {
+  height: 100%;
+  background: var(--theme-accent, #60a5fa);
+  border-radius: 1px;
+  transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.scoreNum {
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+
+/* ── Subline ──────────────────────────────────────────────────────────────── */
+
+.subline {
+  margin: 0 0 0 0;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.55;
+  animation: heroIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.38s both;
+}
+
+/* ── Risk Chips ───────────────────────────────────────────────────────────── */
+
+.chipsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  animation: heroIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.38rem 0.85rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+
+.chip.positive {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chip.caution {
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  color: #fde68a;
+}
+
+.chip.warning {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+/* ── Tags ─────────────────────────────────────────────────────────────────── */
+
+.tagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.tag {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+/* ── Content Zone ─────────────────────────────────────────────────────────── */
+
+.contentZone {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem 2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── Map ──────────────────────────────────────────────────────────────────── */
+
+.mapSection {
+  width: 100%;
+  height: 380px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+@media (min-width: 768px) {
+  .mapSection { height: 460px; }
+}
+
+/* ── Cards ────────────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--theme-glass, rgba(25, 25, 25, 0.72));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--theme-glass-border, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: background 0.8s ease, border-color 0.8s ease;
+}
+
+.cardTitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0 0 1.25rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ── Main 2-col grid ──────────────────────────────────────────────────────── */
+
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .mainGrid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Current Weather ──────────────────────────────────────────────────────── */
+
+.currentWeather {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.tempSection { text-align: center; }
+
+.tempValue {
+  font-family: var(--font-display, sans-serif);
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #f5f5f5;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.tempLabel {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.4rem;
+}
+
+.weatherGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.weatherStat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.statLabel {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.statValue {
+  font-family: var(--font-display, sans-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f0f0f0;
+  letter-spacing: -0.01em;
+}
+
+.unit {
+  font-family: var(--font-body, sans-serif);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ── Score Breakdown / Reasons ────────────────────────────────────────────── */
+
+.reasonsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.reasonsList li {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.65);
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  line-height: 1.45;
+}
+
+.reasonsList li:last-child {
+  border-bottom: none;
+}
+
+.mutedText {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.88rem;
+}
+
+/* ── Wave Grid (surf) ─────────────────────────────────────────────────────── */
+
+.waveGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+/* ── Hourly Forecast ──────────────────────────────────────────────────────── */
+
+.hourlySection {}
+
+.hourlyScroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding-bottom: 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+.hourlyScroll::-webkit-scrollbar { height: 3px; }
+.hourlyScroll::-webkit-scrollbar-track { background: transparent; }
+.hourlyScroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+}
+
+.hourlyItem {
+  min-width: 96px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 1rem 0.75rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.hourlyItem:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.hourlyTime {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hourlyTemp {
+  font-family: var(--font-display, sans-serif);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #f5f5f5;
+  letter-spacing: -0.01em;
+}
+
+.hourlyDetail {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ── 7-Day Forecast ───────────────────────────────────────────────────────── */
+
+.dailyList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.dailyRow {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.dailyRow:hover { background: rgba(255, 255, 255, 0.06); }
+
+.dailyDate {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dailyBar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.dailyBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(96, 165, 250, 0.4), rgba(244, 67, 54, 0.4));
+  border-radius: 2px;
+}
+
+.dailyTemps {
+  display: flex;
+  gap: 0.35rem;
+  font-family: var(--font-display, sans-serif);
+  font-size: 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+  align-items: center;
+  letter-spacing: -0.01em;
+}
+
+.dailyHigh { color: rgba(251, 113, 133, 0.9); }
+.dailySep  { color: rgba(255, 255, 255, 0.25); font-family: var(--font-body, sans-serif); font-weight: 400; }
+.dailyLow  { color: rgba(147, 197, 253, 0.9); }
+
+/* ── Error state ──────────────────────────────────────────────────────────── */
+
+.errorCard {
+  text-align: center;
+  padding: 3rem;
+  color: rgba(248, 113, 113, 0.9);
+  font-size: 1rem;
+}
+
+/* ── Loading skeletons ────────────────────────────────────────────────────── */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeletonBadge   { height: 28px; width: 120px; border-radius: 99px; margin-bottom: 1.25rem; }
+.skeletonHeadline{ height: 7rem; width: 65%; margin-bottom: 0.5rem; border-radius: 4px; }
+.skeletonScore   { height: 1.5rem; width: 50%; margin-bottom: 1.5rem; border-radius: 2px; }
+.skeletonSubline { height: 1rem; width: 80%; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .hero {
+    padding: 1rem 1.25rem;
+    min-height: 52vh;
+  }
+  .contentZone {
+    padding: 1.25rem 1.25rem 3rem;
+  }
+  .verdictWord {
+    font-size: clamp(4rem, 20vw, 6rem);
+  }
+  .headline {
+    font-size: clamp(1rem, 4.5vw, 1.4rem);
+  }
+  .locationChip {
+    display: none;
+  }
+  .dailyRow {
+    grid-template-columns: 90px 1fr auto;
+    gap: 0.6rem;
+  }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .activityBadge,
+  .verdictLine,
+  .headline,
+  .scoreLine,
+  .subline,
+  .chipsRow,
+  .tagsRow {
+    animation: none;
+  }
+}
