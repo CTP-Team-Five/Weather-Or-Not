@@ -1,80 +1,277 @@
 @import "leaflet/dist/leaflet.css";
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SEMANTIC TOKEN SYSTEM
+   Values live here. Names live in tailwind.config.ts.
+   Pages pick one of three theme classes: .theme-clear / .theme-overcast / .theme-severe
+   Components consume tokens only — never raw palette values.
+───────────────────────────────────────────────────────────────────────────── */
+
 :root {
-  /* Outdoor sports dark theme - night/dawn sky gradient vibe */
-  --bg-page: #020617;
-  --bg-surface: rgba(15, 23, 42, 0.85);
-  --bg-surface-hover: rgba(30, 41, 59, 0.9);
-  --text-primary: #f9fafb;
-  --text-muted: #9ca3af;
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.15);
+  /* Light-first neutral base (no weather data yet) */
+  --background: 210 33% 98%;
+  --foreground: 222 28% 16%;
 
-  /* Activity-specific accents */
-  --accent-hike: #22c55e;   /* green */
-  --accent-surf: #22d3ee;   /* aqua */
-  --accent-snow: #60a5fa;   /* icy blue */
+  --surface: 210 29% 96%;
+  --surface-elevated: 0 0% 100%;
+  --surface-inset: 210 22% 93%;
 
-  /* Legacy support */
-  --background: var(--bg-page);
-  --foreground: var(--text-primary);
+  --muted: 210 18% 92%;
+  --muted-foreground: 215 15% 42%;
+
+  --subtle: 210 18% 95%;
+  --subtle-foreground: 215 18% 36%;
+
+  --border: 215 18% 84%;
+  --border-subtle: 215 16% 89%;
+  --ring: 205 84% 58%;
+
+  --accent: 205 82% 58%;
+  --accent-foreground: 0 0% 100%;
+
+  --sky: 201 94% 92%;
+  --sky-foreground: 217 33% 22%;
+
+  --danger: 4 72% 54%;
+  --danger-foreground: 0 0% 100%;
+
+  --warning: 35 84% 56%;
+  --warning-foreground: 25 35% 14%;
+
+  --success: 160 52% 42%;
+  --success-foreground: 0 0% 100%;
+
+  /* Modern score colors — controlled, not neon */
+  --score-terrible: 6 62% 56%;
+  --score-terrible-foreground: 0 0% 100%;
+  --score-ok: 38 74% 58%;
+  --score-ok-foreground: 28 30% 16%;
+  --score-great: 167 48% 40%;
+  --score-great-foreground: 0 0% 100%;
+
+  --shadow: 222 30% 18%;
+
+  /* ── Legacy variables kept for backward compat ──────────────────────────── */
+  /* These back the existing ambient gradient system (weatherTheme.ts).        */
+  /* Migrate CSS Modules off these over time.                                  */
   --navbar-height: 64px;
+  --accent-hike: #22c55e;
+  --accent-surf: #22d3ee;
+  --accent-snow: #60a5fa;
 }
 
+/* ── Crisp, bright: fair conditions ──────────────────────────────────────── */
+.theme-clear {
+  --background: 204 60% 98%;
+  --foreground: 222 34% 17%;
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
+  --surface: 202 45% 96%;
+  --surface-elevated: 0 0% 100%;
+  --surface-inset: 201 38% 93%;
+
+  --muted: 205 26% 92%;
+  --muted-foreground: 215 17% 42%;
+
+  --subtle: 201 34% 95%;
+  --subtle-foreground: 216 22% 34%;
+
+  --border: 204 25% 85%;
+  --border-subtle: 203 28% 90%;
+  --ring: 202 92% 55%;
+
+  --accent: 203 88% 56%;
+  --accent-foreground: 0 0% 100%;
+
+  --sky: 198 100% 93%;
+  --sky-foreground: 214 35% 22%;
 }
 
-body {
-  color: var(--text-primary);
-  padding-top: var(--navbar-height);
-  /* Base gradient — theme vars override when a page sets them */
-  background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, var(--theme-accent-glow, transparent), transparent 70%),
-    linear-gradient(
-      to bottom,
-      var(--theme-gradient-top,    #020617) 0%,
-      var(--theme-gradient-mid,    #0f172a) 50%,
-      var(--theme-gradient-bottom, #1e293b) 100%
-    );
-  background-attachment: fixed;
-  transition: background 0.8s ease;
-  font-family: var(--font-body, Arial, Helvetica, sans-serif);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ── Softer, flatter: clouds / rain / muted conditions ───────────────────── */
+.theme-overcast {
+  --background: 210 20% 95%;
+  --foreground: 218 18% 24%;
+
+  --surface: 210 16% 92%;
+  --surface-elevated: 210 20% 97%;
+  --surface-inset: 214 14% 89%;
+
+  --muted: 210 12% 88%;
+  --muted-foreground: 215 10% 43%;
+
+  --subtle: 210 14% 91%;
+  --subtle-foreground: 215 11% 38%;
+
+  --border: 214 12% 80%;
+  --border-subtle: 214 10% 85%;
+  --ring: 211 42% 54%;
+
+  --accent: 208 44% 54%;
+  --accent-foreground: 0 0% 100%;
+
+  --sky: 210 24% 88%;
+  --sky-foreground: 216 18% 25%;
 }
 
-body.no-navbar-padding {
-  padding-top: 0;
+/* ── Dark, dramatic: storm / blizzard / severe conditions ────────────────── */
+/* This is app-state driven, not user OS preference.                          */
+.theme-severe {
+  --background: 222 22% 12%;
+  --foreground: 210 20% 96%;
+
+  --surface: 222 18% 16%;
+  --surface-elevated: 222 15% 20%;
+  --surface-inset: 223 16% 14%;
+
+  --muted: 221 14% 22%;
+  --muted-foreground: 215 12% 72%;
+
+  --subtle: 222 12% 18%;
+  --subtle-foreground: 214 10% 82%;
+
+  --border: 219 12% 28%;
+  --border-subtle: 220 10% 23%;
+  --ring: 35 88% 58%;
+
+  --accent: 35 88% 58%;
+  --accent-foreground: 24 40% 12%;
+
+  --sky: 219 20% 20%;
+  --sky-foreground: 210 20% 96%;
+
+  --danger: 5 84% 61%;
+  --danger-foreground: 0 0% 100%;
+
+  --warning: 37 92% 60%;
+  --warning-foreground: 25 40% 12%;
+
+  --success: 162 48% 46%;
+  --success-foreground: 0 0% 100%;
+
+  --score-terrible: 5 78% 63%;
+  --score-terrible-foreground: 0 0% 100%;
+  --score-ok: 37 84% 62%;
+  --score-ok-foreground: 25 40% 12%;
+  --score-great: 165 44% 48%;
+  --score-great-foreground: 0 0% 100%;
+
+  --shadow: 222 42% 6%;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-}
+/* ─────────────────────────────────────────────────────────────────────────────
+   BASE LAYER
+───────────────────────────────────────────────────────────────────────────── */
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   html {
-    color-scheme: dark;
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    padding-top: var(--navbar-height);
+    font-family: var(--font-body, system-ui, sans-serif);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    transition:
+      background-color 220ms ease,
+      color 220ms ease;
+  }
+
+  body.no-navbar-padding {
+    padding-top: 0;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    border-color: hsl(var(--border-subtle));
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  ::selection {
+    background-color: hsl(var(--accent) / 0.2);
   }
 }
 
-.glassy {
-  background-color: rgba(51, 51, 51, 0.65);
-  backdrop-filter: blur(9px);
-  -webkit-backdrop-filter: blur(9px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
-  color: white;
+/* ─────────────────────────────────────────────────────────────────────────────
+   COMPONENT LAYER — reusable semantic utilities
+───────────────────────────────────────────────────────────────────────────── */
+
+@layer components {
+  /* Grounded surface cards — replaces floating glassmorphism tiles */
+  .surface-card {
+    @apply rounded-2xl border border-border-subtle bg-surface shadow-card;
+  }
+
+  .surface-elevated {
+    @apply rounded-2xl border border-border-subtle bg-surface-elevated shadow-soft;
+  }
+
+  .surface-inset {
+    @apply rounded-xl border border-border-subtle bg-surface-inset;
+  }
+
+  /* Score pills */
+  .score-pill-terrible {
+    @apply rounded-full bg-score-terrible px-3 py-1 text-sm font-semibold text-score-terrible-foreground;
+  }
+
+  .score-pill-ok {
+    @apply rounded-full bg-score-ok px-3 py-1 text-sm font-semibold text-score-ok-foreground;
+  }
+
+  .score-pill-great {
+    @apply rounded-full bg-score-great px-3 py-1 text-sm font-semibold text-score-great-foreground;
+  }
+
+  /* Danger chip */
+  .chip-danger {
+    @apply rounded-full bg-danger/12 px-2.5 py-0.5 text-xs font-medium text-danger;
+  }
+
+  /* Warning chip */
+  .chip-warning {
+    @apply rounded-full bg-warning/15 px-2.5 py-0.5 text-xs font-medium text-warning-foreground;
+  }
+
+  /* Positive chip */
+  .chip-positive {
+    @apply rounded-full bg-success/12 px-2.5 py-0.5 text-xs font-medium text-success;
+  }
+
+  /* Legacy glassy utility — kept for map overlay elements that need blur */
+  /* (map toolbar, pin button, search input). Not for content cards.      */
+  .glassy {
+    background-color: hsl(var(--surface) / 0.85);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid hsl(var(--border-subtle));
+    box-shadow: 0 2px 15px hsl(var(--shadow) / 0.15);
+    color: hsl(var(--foreground));
+  }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   MAP PAGE UTILITIES
+   These use fixed dark values because the Leaflet map is always dark (CARTO tiles).
+   They are intentionally NOT tokenized — the map is its own visual context.
+───────────────────────────────────────────────────────────────────────────── */
 
 .wo-crosshair {
   position: absolute;
@@ -88,209 +285,20 @@ a {
   text-shadow: 0 0 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.8);
 }
 
-.woPinBtn {
-  position: absolute;
-  left: 50%;
-  bottom: 20px;
-  transform: translateX(-50%);
-  padding: 10px 16px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  z-index: 2000;
-}
-
-.woPinBtn.glassy {
-  background-color: rgba(51, 51, 51, 0.65);
-  color: white;
-  backdrop-filter: blur(9px);
-  transition: background 0.2s ease;
-}
-
-.woPinBtn.glassy:hover {
-  background-color: rgba(51, 51, 51, 0.85);
-}
-
-.woSearchWrapper {
-  position: absolute;
-  top: 80px;             
-  left: 50%;
-  transform: translateX(-50%);
-  width: 300px;
-  z-index: 2000;
-}
-
-.woSearchInput {
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: none;
-  font-size: 14px;
-  outline: none;
-}
-
-.woSearchInput.glassy {
-  background-color: rgba(51, 51, 51, 0.65);
-  color: white;
-}
-
-.woSearchInput::placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.woSuggestions {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  width: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.woSuggestions.glassy {
-  background-color: rgba(51, 51, 51, 0.65);
-  backdrop-filter: blur(9px);
-}
-
-.woSuggestions li {
-  padding: 10px 14px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.woSuggestions li:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.wo-my-location-btn {
-  position: absolute;
-  top: 80px;
-  right: 20px;
-  z-index: 2000;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.wo-my-location-btn.glassy {
-  background-color: rgba(51, 51, 51, 0.65);
-  color: white;
-  backdrop-filter: blur(9px);
-  transition: background 0.2s ease;
-}
-
-.wo-my-location-btn.glassy:hover {
-  background-color: rgba(51, 51, 51, 0.85);
-}
-
-.wo-coord-pill {
-  padding: 10px 14px;        
-  top: 80px;      
-  border-radius: 12px;             
-  background-color: rgba(51, 51, 51, 0.65);
-  backdrop-filter: blur(9px);
-  -webkit-backdrop-filter: blur(9px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25);
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  position: fixed;
-  white-space: nowrap;
-  z-index: 3000;
-}
-
-.emoji-pin {
-  font-size: 26px;
-  text-align: center;
-  line-height: 1;
-}
-
-.wo-top-controls {
-  position: absolute;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  z-index: 2000;
-  max-width: 90%;
-  flex-wrap: nowrap;
-}
-
-.wo-search-inline {
-  position: relative;
-  flex: 1;
-  min-width: 240px;
-  max-width: 320px;
-  z-index: 3000;
-}
-/* Bottom control cluster: zoom + pin */
 .leaflet-control-container .leaflet-control-zoom {
   position: absolute !important;
   bottom: 20px !important;
-  left: calc(50% - 140px) !important; /* shifts left of centered pin */
+  left: calc(50% - 140px) !important;
   top: auto !important;
   right: auto !important;
-
   display: flex !important;
-  flex-direction: row !important; /* makes + and - side-by-side */
-  background: rgba(51, 51, 51, 0.65) !important;
+  flex-direction: row !important;
+  background: rgba(30, 30, 30, 0.75) !important;
   border-radius: 12px !important;
   backdrop-filter: blur(9px) !important;
   -webkit-backdrop-filter: blur(9px) !important;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.35) !important;
   z-index: 3000 !important;
-}
-
-.woPinBtn {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 10px 16px;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  z-index: 2000;
-}
-
-.woPinBtn.glassy {
-  background-color: rgba(51, 51, 51, 0.65);
-  color: white;
-  backdrop-filter: blur(9px);
-  transition: background 0.2s ease;
-}
-
-.woPinBtn.glassy:hover {
-  background-color: rgba(51, 51, 51, 0.85);
-}
-
-.wo-recenter-btn {
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.wo-coord-pill {
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
 }
 
 .leaflet-container {
@@ -298,4 +306,19 @@ a {
   width: 100% !important;
   overflow: hidden !important;
   max-height: 100%;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ANIMATIONS
+───────────────────────────────────────────────────────────────────────────── */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

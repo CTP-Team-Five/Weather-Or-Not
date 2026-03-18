@@ -13,6 +13,11 @@ import { SuitabilityResult } from "@/lib/activityScore";
 import { computeSuitabilityForPin } from "@/lib/computeSuitability";
 import { AmbientTheme, deriveTheme } from "@/lib/weatherTheme";
 import { applyTheme, clearTheme } from "@/lib/applyTheme";
+import {
+  getWeatherThemeClass,
+  applyWeatherThemeClass,
+  clearWeatherThemeClass,
+} from "@/lib/weatherThemeClass";
 import { deriveHeroContent } from "@/lib/heroContent";
 import { deriveRiskChips } from "@/lib/riskChips";
 import styles from "./page.module.css";
@@ -111,8 +116,18 @@ export default function PinDetailPage() {
     const theme = deriveTheme(pin.activity, weather.current.weatherCode, hourlyTimes);
     setAmbientTheme(theme);
     applyTheme(theme);
+    applyWeatherThemeClass(
+      getWeatherThemeClass({
+        weatherCode: weather.current.weatherCode,
+        gustKph: weather.current.gustKph,
+        visibilityM: weather.current.visibilityM,
+        precipProb: weather.current.precipProb,
+        snowfallCm: weather.current.snowfallCm,
+      })
+    );
     return () => {
       clearTheme();
+      clearWeatherThemeClass();
       setAmbientTheme(null);
     };
   }, [pin, weather]);

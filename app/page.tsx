@@ -13,6 +13,11 @@ import { useRouter } from "next/navigation";
 import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
 import { deriveTheme } from "@/lib/weatherTheme";
 import { applyTheme, clearTheme } from "@/lib/applyTheme";
+import {
+  getWeatherThemeClass,
+  applyWeatherThemeClass,
+  clearWeatherThemeClass,
+} from "@/lib/weatherThemeClass";
 
 export default function Home() {
   const router = useRouter();
@@ -51,12 +56,22 @@ export default function Home() {
       if (best) {
         const times = best.r.weather.hourly.map((h: { time: string }) => h.time);
         applyTheme(deriveTheme(best.pin.activity, best.r.weather.current.weatherCode, times));
+        applyWeatherThemeClass(
+          getWeatherThemeClass({
+            weatherCode: best.r.weather.current.weatherCode,
+            gustKph: best.r.weather.current.gustKph,
+            visibilityM: best.r.weather.current.visibilityM,
+            precipProb: best.r.weather.current.precipProb,
+            snowfallCm: best.r.weather.current.snowfallCm,
+          })
+        );
       }
     });
 
     return () => {
       cancelled = true;
       clearTheme();
+      clearWeatherThemeClass();
     };
   }, [savedPins]);
 
