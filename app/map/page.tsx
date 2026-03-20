@@ -68,6 +68,10 @@ function MapPageContent() {
   });
 
   const arrivedFromSearch = useRef(mapNavigationIntent.type === 'search-result');
+  const [pendingSearchLabel, setPendingSearchLabel] = useState<string | null>(() => {
+    if (!arrivedFromSearch.current) return null;
+    return searchParams.get('label');
+  });
 
   /* ── Map control handlers ─────────────────────────────────────────────────── */
 
@@ -149,6 +153,20 @@ function MapPageContent() {
       mapRef.flyTo([lat, lon], 11, { animate: true, duration: 0.8 });
     }
 
+    // Lock scroll-wheel zoom to map center so the searched location stays put.
+    // Reverts to cursor-anchored zoom on the first user drag.
+    mapRef.scrollWheelZoom.disable();
+    mapRef.options.scrollWheelZoom = 'center';
+    mapRef.scrollWheelZoom.enable();
+
+    const revertZoom = () => {
+      mapRef.scrollWheelZoom.disable();
+      mapRef.options.scrollWheelZoom = true;
+      mapRef.scrollWheelZoom.enable();
+      mapRef.off('dragstart', revertZoom);
+    };
+    mapRef.on('dragstart', revertZoom);
+
     setMapNavigationIntent({ type: 'none' });
   }, [mapRef, mapNavigationIntent]);
 
@@ -170,7 +188,7 @@ function MapPageContent() {
 
   /* ── Pin placement ────────────────────────────────────────────────────────── */
 
-  const handlePin = async (pos: LatLngTuple, searchResult?: SearchResult | null) => {
+  const handlePin = async (pos: LatLngTuple, searchResult?: SearchResult | null, searchLabel?: string | null) => {
     const [lat, lon] = pos;
     try {
       const res = await fetch(
@@ -182,6 +200,8 @@ function MapPageContent() {
       let pinName: string;
       if (searchResult) {
         pinName = deriveFriendlyNameFromSearch(searchResult);
+      } else if (searchLabel) {
+        pinName = searchLabel;
       } else {
         pinName = deriveFriendlyName(reverseData);
       }
@@ -204,9 +224,11 @@ function MapPageContent() {
     const center = mapRef.getCenter();
     const pos: LatLngTuple = [center.lat, center.lng];
     const searchResult = pendingSearchResult;
+    const searchLabel = pendingSearchLabel;
     setDraftPin(null);
     setPendingSearchResult(null);
-    await handlePin(pos, searchResult);
+    setPendingSearchLabel(null);
+    await handlePin(pos, searchResult, searchLabel);
   };
 
   const handleFocusPin = (pinId: string) => {

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import MapSearch, { SearchResult } from '@/components/MapSearch';
+import { deriveFriendlyNameFromSearch } from '@/lib/naming';
 import styles from './HomepageHero.module.css';
 
 export default function HomepageHero() {
@@ -13,6 +14,10 @@ export default function HomepageHero() {
       lon: String(coords[1]),
       source: 'search',
     });
+    if (result) {
+      const label = deriveFriendlyNameFromSearch(result);
+      params.set('label', label);
+    }
     const bb = result?.boundingbox;
     if (bb && bb.length === 4) {
       params.set('bbox', bb.join(','));
