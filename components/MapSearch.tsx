@@ -11,6 +11,7 @@ export interface SearchResult {
     name?: string;
     lat: string;
     lon: string;
+    boundingbox?: string[];
     class?: string;
     type?: string;
     address?: Record<string, string>;
