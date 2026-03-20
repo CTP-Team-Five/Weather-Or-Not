@@ -6,9 +6,11 @@ import { PinStore, SavedPin } from "@/components/data/pinStore";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
+import { useAuth } from "@/lib/useAuth";
 import HomePageShell from "@/components/home/HomePageShell";
 
 export default function Home() {
+  const { user } = useAuth();
   const [savedPins, setSavedPins] = useState<SavedPin[]>([]);
   const [computingAll, setComputingAll] = useState(true);
   const [computedMap, setComputedMap] = useState<Map<string, ComputedSuitability | null>>(new Map());
@@ -43,7 +45,7 @@ export default function Home() {
     };
   }, [savedPins]);
 
-  // Load pins on mount
+  // Load pins on mount (or when user changes)
   useEffect(() => {
     const localPins = PinStore.all();
     setSavedPins(localPins);
@@ -52,28 +54,63 @@ export default function Home() {
 
     const loadRemotePins = async () => {
       try {
-        const { data, error } = await supabase!
-          .from("pins")
-          .select("*")
-          .order("created_at", { ascending: false });
+        let remotePins: SavedPin[] = [];
 
-        if (error || !data) {
-          if (error) console.error("Supabase pins fetch error:", error);
-          return;
+        if (user) {
+          // Logged in: load user's pins via user_pins join table
+          const { data, error } = await supabase!
+            .from("user_pins")
+            .select("pin_id, pins(*)")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
+
+          if (error || !data) {
+            if (error) console.error("Supabase pins fetch error:", error);
+            return;
+          }
+
+          remotePins = data
+            .filter((row: any) => row.pins)
+            .map((row: any) => {
+              const p = row.pins;
+              return {
+                id: p.id,
+                area: p.area,
+                lat: p.lat,
+                lon: p.lon,
+                activity: p.activity,
+                createdAt: new Date(p.created_at).getTime(),
+                canonical_name: p.canonical_name,
+                slug: p.slug,
+                popularity_score: p.popularity_score,
+                tags: p.tags,
+              };
+            });
+        } else {
+          // Not logged in: load all pins (backward compat)
+          const { data, error } = await supabase!
+            .from("pins")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error || !data) {
+            if (error) console.error("Supabase pins fetch error:", error);
+            return;
+          }
+
+          remotePins = data.map((p: any) => ({
+            id: p.id,
+            area: p.area,
+            lat: p.lat,
+            lon: p.lon,
+            activity: p.activity,
+            createdAt: new Date(p.created_at).getTime(),
+            canonical_name: p.canonical_name,
+            slug: p.slug,
+            popularity_score: p.popularity_score,
+            tags: p.tags,
+          }));
         }
-
-        const remotePins: SavedPin[] = data.map((p: any) => ({
-          id: p.id,
-          area: p.area,
-          lat: p.lat,
-          lon: p.lon,
-          activity: p.activity,
-          createdAt: new Date(p.created_at).getTime(),
-          canonical_name: p.canonical_name,
-          slug: p.slug,
-          popularity_score: p.popularity_score,
-          tags: p.tags,
-        }));
 
         setSavedPins(remotePins);
       } catch (err) {
@@ -82,7 +119,7 @@ export default function Home() {
     };
 
     loadRemotePins();
-  }, []);
+  }, [user]);
 
   return (
     <HomePageShell

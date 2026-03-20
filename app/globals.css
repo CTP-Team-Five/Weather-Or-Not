@@ -12,6 +12,9 @@
 ───────────────────────────────────────────────────────────────────────────── */
 
 :root {
+  /* Texture overlay — changes with theme class */
+  --body-texture: url('/textures/texture-clear.png');
+
   /* Light-first neutral base (no weather data yet) */
   --background: 210 33% 98%;
   --foreground: 222 28% 16%;
@@ -66,6 +69,7 @@
 
 /* ── Crisp, bright: fair conditions ──────────────────────────────────────── */
 .theme-clear {
+  --body-texture: url('/textures/texture-clear.png');
   --background: 204 60% 98%;
   --foreground: 222 34% 17%;
 
@@ -92,6 +96,7 @@
 
 /* ── Softer, flatter: clouds / rain / muted conditions ───────────────────── */
 .theme-overcast {
+  --body-texture: url('/textures/texture-overcast.png');
   --background: 210 20% 95%;
   --foreground: 218 18% 24%;
 
@@ -119,6 +124,7 @@
 /* ── Dark, dramatic: storm / blizzard / severe conditions ────────────────── */
 /* This is app-state driven, not user OS preference.                          */
 .theme-severe {
+  --body-texture: url('/textures/texture-severe.png');
   --background: 222 22% 12%;
   --foreground: 210 20% 96%;
 
@@ -187,6 +193,25 @@
     transition:
       background-color 220ms ease,
       color 220ms ease;
+  }
+
+  /* Texture overlay — tiled grain on top of background, follows theme class */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: var(--body-texture);
+    background-repeat: repeat;
+    background-size: 400px 400px;
+    opacity: 0.07;
+    pointer-events: none;
+    z-index: 0;
+    transition: opacity 220ms ease;
+  }
+
+  /* Slightly more visible grain in severe mode — adds weight */
+  body.theme-severe::before {
+    opacity: 0.09;
   }
 
   body.no-navbar-padding {
@@ -273,32 +298,59 @@
    They are intentionally NOT tokenized — the map is its own visual context.
 ───────────────────────────────────────────────────────────────────────────── */
 
+/* Legacy crosshair — replaced by SVG in map page; kept for any other consumers */
 .wo-crosshair {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -100%);
+  transform: translate(-50%, -50%);
   pointer-events: none;
-  font-size: 2rem;
-  line-height: 1;
   z-index: 2600;
-  text-shadow: 0 0 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.8);
 }
 
 .leaflet-control-container .leaflet-control-zoom {
   position: absolute !important;
-  bottom: 20px !important;
-  left: calc(50% - 140px) !important;
+  bottom: 28px !important;
+  left: 20px !important;
   top: auto !important;
   right: auto !important;
   display: flex !important;
-  flex-direction: row !important;
-  background: rgba(30, 30, 30, 0.75) !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
   border-radius: 12px !important;
-  backdrop-filter: blur(9px) !important;
-  -webkit-backdrop-filter: blur(9px) !important;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.35) !important;
-  z-index: 3000 !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1) !important;
+  z-index: 2400 !important;
+  overflow: hidden !important;
+}
+
+.leaflet-control-zoom a {
+  background: transparent !important;
+  color: rgba(30, 41, 59, 0.65) !important;
+  border: none !important;
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  transition: background 0.14s ease, color 0.14s ease !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #1e293b !important;
+}
+
+.leaflet-control-zoom-in {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.leaflet-control-zoom-out {
+  border-radius: 0 0 12px 12px !important;
 }
 
 .leaflet-container {

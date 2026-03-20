@@ -2,37 +2,84 @@
 
 import Link from 'next/link';
 import React from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { WiDaySunny } from 'react-icons/wi';
 import styles from './Navbar.module.css';
-
-const navLinks = [
-  { name: 'Home', href: '/' },
-  { name: 'Map', href: '/map' },
-];
+import { useAuth } from '@/lib/useAuth';
+import { supabase } from '@/lib/supabaseClient';
 
 const Navbar: React.FC = () => {
-  return (
-    <nav className="fixed left-0 top-0 z-[1000] flex w-full items-center justify-between border-b border-border-subtle bg-surface/90 px-8 py-4 shadow-card backdrop-blur-md">
-      <div className="z-[2001] flex items-center text-xl font-bold">
-        <Link href="/" className="flex items-center gap-2 text-foreground hover:text-accent transition-colors">
-          <WiDaySunny className={`${styles.logoIcon} text-[2rem]`} />
-          <span>WeatherOrNot</span>
-        </Link>
-      </div>
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useAuth();
 
-      <ul className="flex list-none gap-6 p-0 m-0">
-        {navLinks.map((link) => (
-          <li key={link.name}>
+  const handleSignOut = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
+    router.push('/auth');
+  };
+
+  return (
+    <header className={styles.header}>
+      {/* Accent line — color shifts with weather theme via --accent token */}
+      <div className={styles.accentLine} aria-hidden="true" />
+
+      <nav className={styles.bar} aria-label="Main navigation">
+        {/* Logo */}
+        <Link href="/" className={styles.logoLink} aria-label="WeatherOrNot home">
+          <WiDaySunny className={styles.logoIcon} aria-hidden="true" />
+          <span className={styles.logoText} aria-hidden="true">
+            <span className={styles.logoWord1}>Weather</span>
+            <span className={styles.logoWord2}>OrNot</span>
+          </span>
+        </Link>
+
+        {/* Center — nav links */}
+        <ul className={styles.navList} role="list">
+          <li>
             <Link
-              href={link.href}
-              className="text-muted-foreground font-medium transition-colors hover:text-foreground"
+              href="/"
+              className={`${styles.navLink} ${pathname === '/' ? styles.active : ''}`}
             >
-              {link.name}
+              Spots
             </Link>
           </li>
-        ))}
-      </ul>
-    </nav>
+          <li>
+            <Link
+              href="/map"
+              className={`${styles.navLink} ${pathname === '/map' ? styles.active : ''}`}
+            >
+              Map
+            </Link>
+          </li>
+        </ul>
+
+        {/* Right — auth controls */}
+        <div className={styles.rightSide}>
+          <div className={styles.authControls}>
+            {user ? (
+              <>
+                <div className={styles.avatarCircle} title={user.email}>
+                  {user.email?.[0] ?? "?"}
+                </div>
+                <button className={styles.signOutBtn} onClick={handleSignOut}>
+                  Sign out
+                </button>
+                <Link href="/map" className={styles.addBtn} aria-label="Add new spot">
+                  <span aria-hidden="true">＋</span>
+                  <span className={styles.addLabel}>New Spot</span>
+                </Link>
+              </>
+            ) : (
+              <Link href="/auth" className={styles.signInLink}>
+                Sign in
+              </Link>
+            )}
+          </div>
+        </div>
+      </nav>
+    </header>
   );
 };
 

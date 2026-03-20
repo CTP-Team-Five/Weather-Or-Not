@@ -1,152 +1,19 @@
-/* Pulse animation - enhanced for demo */
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.15);
-    opacity: 0.85;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+/* ── Teardrop SVG pin markers ────────────────────────────────────────────────── */
+
+.wo-pin-marker {
+  /* Override Leaflet's default icon background/border */
+  background: none !important;
+  border: none !important;
 }
 
-/* Glow animation for extra pizzazz */
-@keyframes glow {
-  0%, 100% {
-    filter: drop-shadow(0 0 8px currentColor) drop-shadow(0 0 12px currentColor);
-  }
-  50% {
-    filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 0 20px currentColor);
-  }
+.wo-pin-marker svg {
+  transition: transform 0.18s ease;
 }
 
-/* Modern custom map pin icon */
-.wo-map-pin-icon {
-  /* Leaflet removes default background; we control everything inside */
-  z-index: 1000 !important;
+.wo-pin-marker:hover svg {
+  transform: scale(1.08) translateY(-2px);
 }
 
-.wo-map-pin-inner {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  border-radius: 9999px;
-  background: radial-gradient(circle at 30% 30%, #ffffff, #38bdf8);
-  box-shadow:
-    0 0 0 3px rgba(15, 23, 42, 0.95),
-    0 0 20px rgba(56, 189, 248, 0.6),
-    0 15px 35px rgba(0, 0, 0, 0.8);
-  animation: pulse 3s infinite ease-in-out;
-  transition: all 0.3s ease;
-}
-
-.wo-map-pin-inner:hover {
-  transform: scale(1.2);
-  box-shadow:
-    0 0 0 3px rgba(15, 23, 42, 0.95),
-    0 0 30px rgba(56, 189, 248, 0.9),
-    0 20px 45px rgba(0, 0, 0, 0.9);
-}
-
-/* Little "tail" triangle */
-.wo-map-pin-inner::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -18%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-top: 12px solid #38bdf8;
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.8));
-}
-
-/* Activity-specific pin colors - DEMO READY! */
-.wo-map-pin-icon--hike .wo-map-pin-inner {
-  background: radial-gradient(circle at 30% 30%, #ffffff, #22c55e);
-  box-shadow:
-    0 0 0 3px rgba(15, 23, 42, 0.95),
-    0 0 20px rgba(34, 197, 94, 0.7),
-    0 15px 35px rgba(0, 0, 0, 0.8);
-}
-
-.wo-map-pin-icon--hike .wo-map-pin-inner:hover {
-  box-shadow:
-    0 0 0 3px rgba(15, 23, 42, 0.95),
-    0 0 35px rgba(34, 197, 94, 1),
-    0 20px 45px rgba(0, 0, 0, 0.9);
-}
-
-.wo-map-pin-icon--hike .wo-map-pin-inner::after {
-  border-top-color: #22c55e;
-}
-
-.wo-map-pin-icon--surf .wo-map-pin-inner {
-  background: radial-gradient(circle at 30% 30%, #ffffff, #22d3ee);
-  box-shadow:
-    0 0 0 3px rgba(15, 23, 42, 0.95),
-    0 0 20px rgba(34, 211, 238, 0.7),
-    0 15px 35px rgba(0, 0, 0, 0.8);
-}
-
-.wo-map-pin-icon--surf .wo-map-pin-inner:hover {
-  box-shadow:
-    0 0 0 3px rgba(15, 23, 42, 0.95),
-    0 0 35px rgba(34, 211, 238, 1),
-    0 20px 45px rgba(0, 0, 0, 0.9);
-}
-
-.wo-map-pin-icon--surf .wo-map-pin-inner::after {
-  border-top-color: #22d3ee;
-}
-
-.wo-map-pin-icon--snowboard .wo-map-pin-inner {
-  background: radial-gradient(circle at 30% 30%, #ffffff, #a855f7);
-  box-shadow:
-    0 0 0 3px rgba(15, 23, 42, 0.95),
-    0 0 20px rgba(168, 85, 247, 0.7),
-    0 15px 35px rgba(0, 0, 0, 0.8);
-}
-
-.wo-map-pin-icon--snowboard .wo-map-pin-inner:hover {
-  box-shadow:
-    0 0 0 3px rgba(15, 23, 42, 0.95),
-    0 0 35px rgba(168, 85, 247, 1),
-    0 20px 45px rgba(0, 0, 0, 0.9);
-}
-
-.wo-map-pin-icon--snowboard .wo-map-pin-inner::after {
-  border-top-color: #a855f7;
-}
-
-/* Legacy glassy pin (kept for backwards compatibility) */
-.glassy-pin {
-  position: relative;
-  transform: translate(-50%, -100%);
-}
-
-.glassy-pin-dot {
-  width: 12px;
-  height: 12px;
-  background: radial-gradient(circle at 40% 40%, #00c6ff, #0072ff);
-  border: 2px solid rgba(255,255,255,0.8);
-  border-radius: 50%;
-  box-shadow: 0 0 8px rgba(0,180,255,0.8);
-  animation: pulse 2s infinite ease-in-out;
-}
-
-.glassy-pin-stem {
-  width: 2px;
-  height: 6px;
-  background: rgba(0,180,255,0.8);
-  margin: 0 auto;
-}
 
 /* === Pin Manager Overlay === */
 
@@ -156,7 +23,7 @@
   top: 50%;
   transform: translateY(-50%);
   z-index: 3000;
-  pointer-events: none; /* so the map is still clickable except on the panel */
+  pointer-events: none;
 }
 
 .wo-pin-manager-inner {
@@ -165,21 +32,22 @@
   pointer-events: auto;
 }
 
-/* Collapsed pill */
+/* ── Collapsed pill ──────────────────────────────────────────────────────── */
 
 .wo-pin-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.55rem 0.9rem;
+  padding: 0.5rem 0.85rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(0, 0, 0, 0.75);
-  color: #f9fafb;
-  font-size: 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1e293b;
+  font-size: 0.82rem;
   font-weight: 500;
   backdrop-filter: blur(12px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition:
     background 0.18s ease,
@@ -189,50 +57,66 @@
 }
 
 .wo-pin-pill:hover {
-  background: rgba(15, 15, 15, 0.95);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.85);
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   transform: translateY(-1px);
 }
 
 .wo-pin-pill--hidden {
   opacity: 0;
   pointer-events: none;
-  transform: translateX(-8px);
+  transform: translateX(-10px);
 }
 
 .wo-pin-pill-icon {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
+  color: #64748b;
 }
 
 .wo-pin-pill-chevron {
-  width: 14px;
-  height: 14px;
-  opacity: 0.7;
+  width: 13px;
+  height: 13px;
+  color: #94a3b8;
 }
 
-/* Sliding panel */
+/* Pin count badge on the pill */
+.wo-pin-pill-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── Sliding panel ───────────────────────────────────────────────────────── */
 
 .wo-pin-panel {
   margin-left: 0.5rem;
-  width: 320px;
-  max-height: 70vh;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.25), transparent 55%)
-    rgba(0, 0, 0, 0.88);
+  width: 300px;
+  max-height: 68vh;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(18px);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform: translateX(-100%);
+  transform: translateX(calc(-100% - 0.5rem));
   opacity: 0;
   pointer-events: none;
   transition:
-    transform 0.22s ease-out,
-    opacity 0.22s ease-out;
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
 }
 
 .wo-pin-panel--open {
@@ -241,136 +125,195 @@
   pointer-events: auto;
 }
 
-/* Panel header */
+/* ── Panel header ────────────────────────────────────────────────────────── */
 
 .wo-pin-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 0.7rem 0.9rem 0.65rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.wo-pin-panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #1e293b;
 }
 
 .wo-pin-panel-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #f9fafb;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: -0.01em;
 }
 
-.wo-pin-panel-subtitle {
-  margin-top: 0.2rem;
-  font-size: 0.7rem;
-  color: rgba(229, 231, 235, 0.7);
+.wo-pin-panel-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.1);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #6366f1;
 }
 
 .wo-pin-panel-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
   border: none;
-  border-radius: 999px;
-  padding: 0.35rem;
+  border-radius: 8px;
   background: transparent;
   cursor: pointer;
-  color: #f9fafb;
+  color: #94a3b8;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .wo-pin-panel-close:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.05);
+  color: #1e293b;
 }
 
-/* Panel body */
+/* ── Panel body ──────────────────────────────────────────────────────────── */
 
 .wo-pin-panel-body {
-  padding: 0.6rem 0.75rem 0.75rem;
+  padding: 0.5rem 0.6rem 0.6rem;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
 }
 
 .wo-pin-panel-empty {
-  padding: 1.75rem 1rem;
+  padding: 2rem 1rem;
   text-align: center;
-  font-size: 0.8rem;
-  color: rgba(229, 231, 235, 0.65);
-}
-
-/* Pin items */
-
-.wo-pin-item {
-  margin-bottom: 0.45rem;
-  padding: 0.55rem 0.75rem;
-  border-radius: 0.85rem;
-  background: rgba(17, 24, 39, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  align-items: center;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  line-height: 1.5;
 }
 
-.wo-pin-item-header {
+/* ── Pin rows — compact horizontal layout ───────────────────────────────── */
+
+.wo-pin-item {
   display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  border-left: 2px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+  margin-bottom: 0.3rem;
+  transition: background 0.15s ease;
 }
 
-.wo-pin-item-emoji {
-  font-size: 1.4rem;
+.wo-pin-item:last-child {
+  margin-bottom: 0;
 }
 
-.wo-pin-item-main {
+.wo-pin-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Activity-specific left border accent */
+.wo-pin-item--hike      { border-left-color: #16a34a; }
+.wo-pin-item--surf      { border-left-color: #0891b2; }
+.wo-pin-item--snowboard { border-left-color: #2563eb; }
+
+/* Activity icon — colored per activity */
+.wo-pin-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.wo-pin-item--hike      .wo-pin-item-icon { color: #16a34a; background: rgba(22, 163, 74, 0.1); }
+.wo-pin-item--surf      .wo-pin-item-icon { color: #0891b2; background: rgba(8, 145, 178, 0.1); }
+.wo-pin-item--snowboard .wo-pin-item-icon { color: #2563eb; background: rgba(37, 99, 235, 0.1); }
+
+/* Text block */
+.wo-pin-item-info {
   flex: 1;
   min-width: 0;
 }
 
 .wo-pin-item-area {
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: #f9fafb;
+  color: #1e293b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.3;
 }
 
 .wo-pin-item-activity {
-  font-size: 0.7rem;
-  color: rgba(229, 231, 235, 0.7);
+  font-size: 0.65rem;
+  color: #94a3b8;
+  margin-top: 0.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-/* Buttons inside each pin */
-
+/* Action buttons — icon-only, compact */
 .wo-pin-item-actions {
-  margin-top: 0.35rem;
   display: flex;
-  gap: 0.4rem;
+  gap: 0.25rem;
+  flex-shrink: 0;
 }
 
 .wo-pin-item-btn {
-  flex: 1;
-  border-radius: 0.5rem;
-  padding: 0.35rem 0.6rem;
-  border: 1px solid rgba(129, 140, 248, 0.5);
-  background: rgba(129, 140, 248, 0.16);
-  color: rgba(191, 219, 254, 0.98);
-  font-size: 0.75rem;
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.03);
+  color: #94a3b8;
   cursor: pointer;
   transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.12s ease;
+    background 0.14s ease,
+    border-color 0.14s ease,
+    transform 0.1s ease,
+    color 0.14s ease;
 }
 
 .wo-pin-item-btn:hover {
-  background: rgba(129, 140, 248, 0.28);
-  border-color: rgba(129, 140, 248, 0.9);
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #1e293b;
   transform: translateY(-1px);
 }
 
+.wo-pin-item-btn:active {
+  transform: translateY(0);
+}
+
 .wo-pin-item-btn--danger {
-  flex: 0;
-  padding-inline: 0.6rem;
-  border-color: rgba(248, 113, 113, 0.5);
-  background: rgba(248, 113, 113, 0.16);
-  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.05);
+  color: #ef4444;
 }
 
 .wo-pin-item-btn--danger:hover {
-  border-color: rgba(248, 113, 113, 0.95);
-  background: rgba(248, 113, 113, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
 }
