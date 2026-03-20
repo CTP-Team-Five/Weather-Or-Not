@@ -15,6 +15,7 @@ import HomeTopBar from './HomeTopBar';
 import HomeSidebar from './HomeSidebar';
 import HomeHero from './HomeHero';
 import HomeEvidenceCards from './HomeEvidenceCards';
+import HomeActiveSpots from './HomeActiveSpots';
 import styles from './HomePageShell.module.css';
 
 interface Props {
@@ -26,6 +27,8 @@ interface Props {
 export default function HomePageShell({ pins, computedMap, loading }: Props) {
   const router = useRouter();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Auto-select best pin when compute finishes (preserve manual selection)
   useEffect(() => {
@@ -37,7 +40,7 @@ export default function HomePageShell({ pins, computedMap, loading }: Props) {
     else if (pins.length > 0) setActiveId(pins[0].id);
   }, [loading, pins, computedMap, activeId]);
 
-  // Build decision for active pin
+  // Build decision for active pin (drives hero)
   const decision: Decision | null = useMemo(() => {
     if (!activeId) return null;
     const pin = pins.find((p) => p.id === activeId);
@@ -46,6 +49,18 @@ export default function HomePageShell({ pins, computedMap, loading }: Props) {
     if (!computed) return null;
     return buildDecision(pin, computed);
   }, [activeId, pins, computedMap]);
+
+  // Build decisions for ALL pins (drives active spots section)
+  const allDecisions: Decision[] = useMemo(() => {
+    if (loading) return [];
+    return pins
+      .map((pin) => {
+        const computed = computedMap.get(pin.id);
+        if (!computed) return null;
+        return buildDecision(pin, computed);
+      })
+      .filter((d): d is Decision => d !== null);
+  }, [pins, computedMap, loading]);
 
   // Apply ambient theme from active decision
   useEffect(() => {
@@ -65,11 +80,17 @@ export default function HomePageShell({ pins, computedMap, loading }: Props) {
   }, [decision]);
 
   const handleAdd = () => router.push('/map');
-  const handleSelect = (id: string) => setActiveId(id);
+  const handleSelect = (id: string) => {
+    setActiveId(id);
+    setSidebarOpen(false); // close mobile drawer on selection
+  };
 
   return (
     <div className={styles.shell}>
-      <HomeTopBar />
+      <HomeTopBar
+        onToggleSidebar={() => setSidebarOpen(true)}
+        hasPins={pins.length > 0}
+      />
       <div className={styles.layout}>
         {pins.length > 0 && (
           <HomeSidebar
@@ -79,6 +100,10 @@ export default function HomePageShell({ pins, computedMap, loading }: Props) {
             loading={loading}
             onSelect={handleSelect}
             onAdd={handleAdd}
+            collapsed={sidebarCollapsed}
+            onToggle={() => setSidebarCollapsed((c) => !c)}
+            mobileOpen={sidebarOpen}
+            onMobileClose={() => setSidebarOpen(false)}
           />
         )}
         <main className={styles.main}>
@@ -91,6 +116,11 @@ export default function HomePageShell({ pins, computedMap, loading }: Props) {
             <>
               <HomeHero decision={decision} />
               <HomeEvidenceCards decision={decision} />
+              <HomeActiveSpots
+                decisions={allDecisions}
+                activeId={activeId}
+                onSelect={handleSelect}
+              />
             </>
           ) : (
             <div className={styles.empty}>

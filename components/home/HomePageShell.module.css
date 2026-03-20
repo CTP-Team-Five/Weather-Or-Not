@@ -14,7 +14,6 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   min-height: 100vh;
   overflow-y: auto;
 }
@@ -103,6 +102,6 @@
   }
 
   .main {
-    min-height: calc(100vh - 120px);
+    min-height: 100vh;
   }
 }

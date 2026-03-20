@@ -3,6 +3,7 @@
 import { SavedPin } from '@/components/data/pinStore';
 import { ComputedSuitability } from '@/lib/computeSuitability';
 import { LABEL_TO_VERDICT, Verdict } from '@/lib/decision';
+import { HiChevronLeft, HiChevronRight, HiXMark } from 'react-icons/hi2';
 import styles from './HomeSidebar.module.css';
 
 const ACTIVITY_ICONS: Record<string, string> = {
@@ -18,6 +19,10 @@ interface Props {
   loading: boolean;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  collapsed: boolean;
+  onToggle: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
 function verdictBadgeClass(v: Verdict): string {
@@ -26,54 +31,122 @@ function verdictBadgeClass(v: Verdict): string {
   return styles.badgeSkip;
 }
 
-export default function HomeSidebar({ pins, activeId, computedMap, loading, onSelect, onAdd }: Props) {
+function verdictDotClass(v: Verdict): string {
+  if (v === 'GO') return styles.dotGo;
+  if (v === 'MAYBE') return styles.dotMaybe;
+  return styles.dotSkip;
+}
+
+export default function HomeSidebar({
+  pins, activeId, computedMap, loading, onSelect, onAdd,
+  collapsed, onToggle, mobileOpen, onMobileClose,
+}: Props) {
   return (
-    <aside className={styles.sidebar}>
-      <h2 className={styles.heading}>Your Spots</h2>
+    <>
+      {/* Mobile backdrop */}
+      <div
+        className={`${styles.overlay} ${mobileOpen ? styles.overlayVisible : ''}`}
+        onClick={onMobileClose}
+      />
 
-      <div className={styles.list}>
-        {pins.map((pin) => {
-          const result = computedMap.get(pin.id);
-          const isActive = pin.id === activeId;
-          const verdict = result ? LABEL_TO_VERDICT[result.suitability.label] : null;
-          const reason = result?.suitability.reasons[0] ?? null;
+      <aside className={`
+        ${styles.sidebar}
+        ${collapsed ? styles.collapsed : ''}
+        ${mobileOpen ? styles.mobileOpen : ''}
+      `}>
+        {/* Header row */}
+        <div className={styles.header}>
+          {!collapsed && <h2 className={styles.heading}>Your Spots</h2>}
+          <button
+            type="button"
+            className={styles.toggleBtn}
+            onClick={onToggle}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <HiChevronRight size={16} /> : <HiChevronLeft size={16} />}
+          </button>
+          <button
+            type="button"
+            className={styles.mobileCloseBtn}
+            onClick={onMobileClose}
+            aria-label="Close sidebar"
+          >
+            <HiXMark size={20} />
+          </button>
+        </div>
 
-          return (
-            <button
-              key={pin.id}
-              type="button"
-              className={`${styles.item} ${isActive ? styles.active : ''}`}
-              onClick={() => onSelect(pin.id)}
-            >
-              <span className={styles.icon}>
-                {ACTIVITY_ICONS[pin.activity] || '\u{1F4CD}'}
-              </span>
-              <div className={styles.meta}>
-                <span className={styles.pinName}>
-                  {pin.canonical_name || pin.area}
+        {/* Pin list */}
+        <div className={styles.list}>
+          {pins.map((pin) => {
+            const result = computedMap.get(pin.id);
+            const isActive = pin.id === activeId;
+            const verdict = result ? LABEL_TO_VERDICT[result.suitability.label] : null;
+            const reason = result?.suitability.reasons[0] ?? null;
+
+            if (collapsed) {
+              return (
+                <button
+                  key={pin.id}
+                  type="button"
+                  className={`${styles.itemCollapsed} ${isActive ? styles.active : ''}`}
+                  onClick={() => onSelect(pin.id)}
+                  title={pin.canonical_name || pin.area}
+                >
+                  <span className={styles.icon}>
+                    {ACTIVITY_ICONS[pin.activity] || '\u{1F4CD}'}
+                  </span>
+                  {loading ? (
+                    <span className={styles.dotSkeleton} />
+                  ) : verdict ? (
+                    <span className={`${styles.verdictDot} ${verdictDotClass(verdict)}`} />
+                  ) : null}
+                </button>
+              );
+            }
+
+            return (
+              <button
+                key={pin.id}
+                type="button"
+                className={`${styles.item} ${isActive ? styles.active : ''}`}
+                onClick={() => onSelect(pin.id)}
+              >
+                <span className={styles.icon}>
+                  {ACTIVITY_ICONS[pin.activity] || '\u{1F4CD}'}
                 </span>
+                <div className={styles.meta}>
+                  <span className={styles.pinName}>
+                    {pin.canonical_name || pin.area}
+                  </span>
+                  {loading ? (
+                    <span className={styles.reasonSkeleton} />
+                  ) : reason ? (
+                    <span className={styles.reason}>{reason}</span>
+                  ) : null}
+                </div>
                 {loading ? (
-                  <span className={styles.reasonSkeleton} />
-                ) : reason ? (
-                  <span className={styles.reason}>{reason}</span>
+                  <span className={styles.badgeSkeleton} />
+                ) : verdict ? (
+                  <span className={`${styles.badge} ${verdictBadgeClass(verdict)}`}>
+                    {verdict}
+                  </span>
                 ) : null}
-              </div>
-              {loading ? (
-                <span className={styles.badgeSkeleton} />
-              ) : verdict ? (
-                <span className={`${styles.badge} ${verdictBadgeClass(verdict)}`}>
-                  {verdict}
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+              </button>
+            );
+          })}
+        </div>
 
-      <button type="button" className={styles.addButton} onClick={onAdd}>
-        <span className={styles.addPlus}>+</span>
-        <span>Drop a new spot</span>
-      </button>
-    </aside>
+        {/* Add button */}
+        <button
+          type="button"
+          className={`${styles.addButton} ${collapsed ? styles.addButtonCollapsed : ''}`}
+          onClick={onAdd}
+          title={collapsed ? 'Drop a new spot' : undefined}
+        >
+          <span className={styles.addPlus}>+</span>
+          {!collapsed && <span>Drop a new spot</span>}
+        </button>
+      </aside>
+    </>
   );
 }
