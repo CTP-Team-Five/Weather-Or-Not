@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { SavedPin } from "./data/pinStore";
 import {
   HiTrash,
@@ -8,6 +8,8 @@ import {
   HiChevronLeft,
   HiChevronRight,
   HiArrowRight,
+  HiMagnifyingGlass,
+  HiXMark,
 } from "react-icons/hi2";
 import { ActivityIcon } from "@/components/icons/ActivityIcons";
 
@@ -23,12 +25,56 @@ const activityLabels: Record<string, string> = {
   snowboard: "Snowboarding",
 };
 
+function getPinDisplayName(pin: SavedPin): string {
+  return (pin as any).canonical_name || pin.area;
+}
+
+function highlightMatch(text: string, query: string): React.ReactNode {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="wo-pin-search-match">{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
 export default function MapPinManager({
   pins,
   onFocus,
   onDelete,
 }: MapPinManagerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus search input when panel opens, clear when it closes
+  useEffect(() => {
+    if (isOpen) {
+      // Delay to let the slide animation start so the input is visible
+      const t = setTimeout(() => searchInputRef.current?.focus(), 80);
+      return () => clearTimeout(t);
+    }
+    setSearchQuery("");
+  }, [isOpen]);
+
+  const filteredPins = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return pins;
+    return pins.filter((pin) => {
+      const fields = [
+        pin.name,
+        pin.area,
+        (pin as any).canonical_name,
+        activityLabels[pin.activity] || pin.activity,
+        ...(pin.tags || []),
+      ].filter(Boolean) as string[];
+      return fields.some((f) => f.toLowerCase().includes(q));
+    });
+  }, [pins, searchQuery]);
 
   const handleDelete = (pinId: string, pinArea: string) => {
     const confirmed = window.confirm(`Delete "${pinArea}"?`);
@@ -74,6 +120,34 @@ export default function MapPinManager({
             </button>
           </div>
 
+          {/* ── Search input ──────────────────────────────────────────── */}
+          {pins.length > 0 && (
+            <div className="wo-pin-search">
+              <HiMagnifyingGlass className="wo-pin-search-icon" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Filter spots..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="wo-pin-search-input"
+                autoComplete="off"
+                spellCheck={false}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="wo-pin-search-clear"
+                  onClick={() => { setSearchQuery(""); searchInputRef.current?.focus(); }}
+                  aria-label="Clear search"
+                >
+                  <HiXMark style={{ width: 13, height: 13 }} />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* ── Pin list ───────────────────────────────────────────────── */}
           <div className="wo-pin-panel-body">
             {pins.length === 0 ? (
               <div className="wo-pin-panel-empty">
@@ -81,11 +155,17 @@ export default function MapPinManager({
                 <div>No spots saved yet.</div>
                 <div style={{ marginTop: '0.25rem', opacity: 0.6 }}>Search and drop a pin to get started.</div>
               </div>
+            ) : filteredPins.length === 0 ? (
+              <div className="wo-pin-panel-empty">
+                <HiMagnifyingGlass style={{ width: 18, height: 18, opacity: 0.3, marginBottom: '0.5rem' }} />
+                <div>No matches for &ldquo;{searchQuery}&rdquo;</div>
+              </div>
             ) : (
-              pins.map((pin) => {
+              filteredPins.map((pin) => {
                 const Icon = ActivityIcon[pin.activity];
                 const label = activityLabels[pin.activity] || pin.activity;
-                const displayName = (pin as any).canonical_name || pin.area;
+                const displayName = getPinDisplayName(pin);
+                const q = searchQuery.trim();
                 return (
                   <div
                     key={pin.id}
@@ -95,8 +175,8 @@ export default function MapPinManager({
                       {Icon && <Icon size={16} strokeWidth={2.2} />}
                     </div>
                     <div className="wo-pin-item-info">
-                      <div className="wo-pin-item-area">{displayName}</div>
-                      <div className="wo-pin-item-activity">{label}</div>
+                      <div className="wo-pin-item-area">{highlightMatch(displayName, q)}</div>
+                      <div className="wo-pin-item-activity">{highlightMatch(label, q)}</div>
                     </div>
                     <div className="wo-pin-item-actions">
                       <button
