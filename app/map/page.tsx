@@ -3,8 +3,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState, useEffect, useCallback, useRef } from "react";
 import { HiPlus, HiArrowsPointingOut } from "react-icons/hi2";
 import MapSearch, { SearchResult } from "@/components/MapSearch";
 import MapPinManager from "@/components/MapPinManager";
@@ -17,18 +17,57 @@ import styles from "./page.module.css";
 
 type LatLngTuple = [number, number];
 
+type MapNavigationIntent =
+  | { type: 'search-result'; bbox?: [number, number, number, number]; center?: [number, number] }
+  | { type: 'none' };
+
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), {
   ssr: false,
 });
 
 export default function MapPage() {
+  return (
+    <Suspense>
+      <MapPageContent />
+    </Suspense>
+  );
+}
+
+function MapPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [mapRef, setMapRef] = useState<any>(null);
   const [allSavedPins, setAllSavedPins] = useState<SavedPin[]>([]);
   const [pinsLoaded, setPinsLoaded] = useState(false);
   const hasAutoCentered = useRef(false);
   const [draftPin, setDraftPin] = useState<LatLngTuple | null>(null);
   const [pendingSearchResult, setPendingSearchResult] = useState<SearchResult | null>(null);
+
+  /* ── Search-result navigation intent (from homepage hero) ──────────────── */
+
+  const [mapNavigationIntent, setMapNavigationIntent] = useState<MapNavigationIntent>(() => {
+    if (searchParams.get('source') !== 'search') return { type: 'none' };
+
+    const bboxStr = searchParams.get('bbox');
+    if (bboxStr) {
+      const parts = bboxStr.split(',').map(Number);
+      if (parts.length === 4 && parts.every(Number.isFinite)) {
+        // Nominatim bbox order: south, north, west, east
+        const [south, north, west, east] = parts;
+        return { type: 'search-result', bbox: [west, south, east, north] };
+      }
+    }
+
+    const lat = Number(searchParams.get('lat'));
+    const lon = Number(searchParams.get('lon'));
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      return { type: 'search-result', center: [lon, lat] };
+    }
+
+    return { type: 'none' };
+  });
+
+  const arrivedFromSearch = useRef(mapNavigationIntent.type === 'search-result');
 
   /* ── Map control handlers ─────────────────────────────────────────────────── */
 
@@ -91,10 +130,36 @@ export default function MapPage() {
     loadSavedPins();
   }, []);
 
-  /* ── Auto-center once on mount ────────────────────────────────────────────── */
+  /* ── Consume search-result navigation intent (homepage hero) ─────────────── */
+
+  useEffect(() => {
+    if (!mapRef) return;
+    if (mapNavigationIntent.type !== 'search-result') return;
+
+    mapRef.invalidateSize();
+
+    if (mapNavigationIntent.bbox) {
+      const [west, south, east, north] = mapNavigationIntent.bbox;
+      mapRef.fitBounds(
+        [[south, west], [north, east]],
+        { padding: [40, 40], maxZoom: 15, animate: true, duration: 0.8 }
+      );
+    } else if (mapNavigationIntent.center) {
+      const [lon, lat] = mapNavigationIntent.center;
+      mapRef.flyTo([lat, lon], 11, { animate: true, duration: 0.8 });
+    }
+
+    setMapNavigationIntent({ type: 'none' });
+  }, [mapRef, mapNavigationIntent]);
+
+  /* ── Auto-center once on mount (skipped when arriving from search) ──────── */
 
   useEffect(() => {
     if (!mapRef || !pinsLoaded || hasAutoCentered.current) return;
+    if (arrivedFromSearch.current) {
+      hasAutoCentered.current = true;
+      return;
+    }
     hasAutoCentered.current = true;
     const timer = setTimeout(() => {
       mapRef.invalidateSize();
@@ -203,11 +268,15 @@ export default function MapPage() {
 
         {/* ── Leaflet Map ──────────────────────────────────────────────────── */}
         <LeafletMap
-          initialCenter={[40.7128, -74.006]}
+          initialCenter={
+            arrivedFromSearch.current
+              ? [Number(searchParams.get('lat')) || 40.7128, Number(searchParams.get('lon')) || -74.006]
+              : [40.7128, -74.006]
+          }
           draftPin={draftPin}
           onDraftPinMove={setDraftPin}
           allPins={allSavedPins}
-          autoFit={true}
+          autoFit={!arrivedFromSearch.current}
           onMapReady={setMapRef}
           clickToPan={true}
         />

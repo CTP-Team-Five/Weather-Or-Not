@@ -7,8 +7,17 @@ import styles from './HomepageHero.module.css';
 export default function HomepageHero() {
   const router = useRouter();
 
-  const handleSearchSelect = (coords: [number, number], _result?: SearchResult) => {
-    router.push(`/map?lat=${coords[0]}&lon=${coords[1]}`);
+  const handleSearchSelect = (coords: [number, number], result?: SearchResult) => {
+    const params = new URLSearchParams({
+      lat: String(coords[0]),
+      lon: String(coords[1]),
+      source: 'search',
+    });
+    const bb = result?.boundingbox;
+    if (bb && bb.length === 4) {
+      params.set('bbox', bb.join(','));
+    }
+    router.push(`/map?${params.toString()}`);
   };
 
   return (
