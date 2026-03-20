@@ -20,7 +20,7 @@
 }
 
 /* ── Hero Zone ────────────────────────────────────────────────────────────── */
-/* Text sits directly on the atmospheric gradient body background.           */
+/* Explicit dark cinematic gradient that fades into the page background.      */
 
 .hero {
   min-height: 60vh;
@@ -30,6 +30,14 @@
   max-width: 960px;
   margin: 0 auto;
   width: 100%;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, var(--theme-accent-glow, transparent), transparent 70%),
+    linear-gradient(
+      to bottom,
+      var(--theme-gradient-top, #0a1628) 0%,
+      var(--theme-gradient-mid, #0f1e38) 65%,
+      hsl(var(--background)) 100%
+    );
 }
 
 .loadingHero {
@@ -40,6 +48,13 @@
   max-width: 960px;
   margin: 0 auto;
   width: 100%;
+  background:
+    linear-gradient(
+      to bottom,
+      var(--theme-gradient-top, #0a1628) 0%,
+      var(--theme-gradient-mid, #0f1e38) 65%,
+      hsl(var(--background)) 100%
+    );
 }
 
 .topBar {
@@ -141,6 +156,7 @@
   display: block;
 }
 
+/* Hero is on a dark gradient — keep bright verdict colors */
 .verdictWord.GREAT {
   color: #4ade80;
   text-shadow: 0 0 60px rgba(74, 222, 128, 0.25), 0 2px 20px rgba(0,0,0,0.4);
@@ -197,6 +213,7 @@
   transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* scoreNum lives in the dark hero — keep white-muted */
 .scoreNum {
   font-family: var(--font-display, 'Barlow Condensed', sans-serif);
   font-size: 1rem;
@@ -294,8 +311,8 @@
   height: 380px;
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  border: 1px solid hsl(var(--border-subtle));
+  box-shadow: 0 2px 8px hsl(var(--shadow) / 0.08);
 }
 
 @media (min-width: 768px) {
@@ -305,25 +322,22 @@
 /* ── Cards ────────────────────────────────────────────────────────────────── */
 
 .card {
-  background: var(--theme-glass, rgba(25, 25, 25, 0.72));
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid var(--theme-glass-border, rgba(255, 255, 255, 0.08));
+  background: hsl(var(--surface-elevated));
+  border: 1px solid hsl(var(--border-subtle));
   border-radius: 16px;
   padding: 1.75rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  transition: background 0.8s ease, border-color 0.8s ease;
+  box-shadow: 0 2px 8px hsl(var(--shadow) / 0.08);
 }
 
 .cardTitle {
   font-size: 0.72rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
+  color: hsl(var(--muted-foreground));
   margin: 0 0 1.25rem 0;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid hsl(var(--border-subtle));
 }
 
 /* ── Main 2-col grid ──────────────────────────────────────────────────────── */
@@ -352,14 +366,14 @@
   font-family: var(--font-display, sans-serif);
   font-size: 3.5rem;
   font-weight: 700;
-  color: #f5f5f5;
+  color: hsl(var(--foreground));
   line-height: 1;
   letter-spacing: -0.02em;
 }
 
 .tempLabel {
   font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: hsl(var(--muted-foreground));
   margin-top: 0.4rem;
 }
 
@@ -377,7 +391,7 @@
 
 .statLabel {
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: hsl(var(--muted-foreground));
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
@@ -386,7 +400,7 @@
   font-family: var(--font-display, sans-serif);
   font-size: 1.5rem;
   font-weight: 700;
-  color: #f0f0f0;
+  color: hsl(var(--foreground));
   letter-spacing: -0.01em;
 }
 
@@ -394,7 +408,7 @@
   font-family: var(--font-body, sans-serif);
   font-size: 0.85rem;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.45);
+  color: hsl(var(--muted-foreground));
 }
 
 /* ── Score Breakdown / Reasons ────────────────────────────────────────────── */
@@ -409,9 +423,9 @@
 
 .reasonsList li {
   font-size: 0.88rem;
-  color: rgba(255, 255, 255, 0.65);
+  color: hsl(var(--foreground) / 0.8);
   padding: 0.55rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid hsl(var(--border-subtle));
   line-height: 1.45;
 }
 
@@ -420,7 +434,7 @@
 }
 
 .mutedText {
-  color: rgba(255, 255, 255, 0.4);
+  color: hsl(var(--muted-foreground));
   font-size: 0.88rem;
 }
 
@@ -442,20 +456,20 @@
   overflow-x: auto;
   padding-bottom: 0.75rem;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+  scrollbar-color: hsl(var(--border)) transparent;
 }
 
 .hourlyScroll::-webkit-scrollbar { height: 3px; }
 .hourlyScroll::-webkit-scrollbar-track { background: transparent; }
 .hourlyScroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: hsl(var(--border));
   border-radius: 2px;
 }
 
 .hourlyItem {
   min-width: 96px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: hsl(var(--surface-inset));
+  border: 1px solid hsl(var(--border-subtle));
   border-radius: 12px;
   padding: 1rem 0.75rem;
   text-align: center;
@@ -467,13 +481,13 @@
 }
 
 .hourlyItem:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: hsl(var(--muted));
 }
 
 .hourlyTime {
   font-size: 0.75rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.45);
+  color: hsl(var(--muted-foreground));
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -482,13 +496,13 @@
   font-family: var(--font-display, sans-serif);
   font-size: 1.5rem;
   font-weight: 700;
-  color: #f5f5f5;
+  color: hsl(var(--foreground));
   letter-spacing: -0.01em;
 }
 
 .hourlyDetail {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: hsl(var(--muted-foreground));
 }
 
 /* ── 7-Day Forecast ───────────────────────────────────────────────────────── */
@@ -505,30 +519,30 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: hsl(var(--surface-inset));
+  border: 1px solid hsl(var(--border-subtle));
   border-radius: 10px;
   transition: background 0.15s ease;
 }
 
-.dailyRow:hover { background: rgba(255, 255, 255, 0.06); }
+.dailyRow:hover { background: hsl(var(--muted)); }
 
 .dailyDate {
   font-size: 0.85rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: hsl(var(--foreground));
 }
 
 .dailyBar {
   height: 4px;
-  background: rgba(255, 255, 255, 0.07);
+  background: hsl(var(--border-subtle));
   border-radius: 2px;
   overflow: hidden;
 }
 
 .dailyBarFill {
   height: 100%;
-  background: linear-gradient(90deg, rgba(96, 165, 250, 0.4), rgba(244, 67, 54, 0.4));
+  background: linear-gradient(90deg, hsl(var(--accent) / 0.4), hsl(var(--danger) / 0.4));
   border-radius: 2px;
 }
 
@@ -543,16 +557,16 @@
   letter-spacing: -0.01em;
 }
 
-.dailyHigh { color: rgba(251, 113, 133, 0.9); }
-.dailySep  { color: rgba(255, 255, 255, 0.25); font-family: var(--font-body, sans-serif); font-weight: 400; }
-.dailyLow  { color: rgba(147, 197, 253, 0.9); }
+.dailyHigh { color: hsl(var(--danger) / 0.85); }
+.dailySep  { color: hsl(var(--border)); font-family: var(--font-body, sans-serif); font-weight: 400; }
+.dailyLow  { color: hsl(var(--accent) / 0.85); }
 
 /* ── Error state ──────────────────────────────────────────────────────────── */
 
 .errorCard {
   text-align: center;
   padding: 3rem;
-  color: rgba(248, 113, 113, 0.9);
+  color: hsl(var(--danger));
   font-size: 1rem;
 }
 
@@ -561,9 +575,9 @@
 .skeleton {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.04) 25%,
-    rgba(255, 255, 255, 0.09) 50%,
-    rgba(255, 255, 255, 0.04) 75%
+    hsl(var(--muted)) 25%,
+    hsl(var(--border)) 50%,
+    hsl(var(--muted)) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s infinite;

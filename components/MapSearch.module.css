@@ -1,0 +1,133 @@
+/* components/MapSearch.module.css */
+
+.root {
+  position: relative;
+  width: 100%;
+}
+
+.inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.icon {
+  position: absolute;
+  left: 0.85rem;
+  width: 15px;
+  height: 15px;
+  color: rgba(100, 116, 139, 0.5);
+  pointer-events: none;
+  z-index: 1;
+  transition: color 0.18s ease;
+}
+
+.inputWrap:focus-within .icon {
+  color: rgba(99, 102, 241, 0.65);
+}
+
+.input {
+  width: 100%;
+  padding: 0.65rem 2.4rem 0.65rem 2.5rem;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  outline: none;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #1e293b;
+  font-size: 0.88rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.input::placeholder {
+  color: rgba(100, 116, 139, 0.5);
+  font-weight: 400;
+}
+
+.input:focus {
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.08),
+    0 0 0 2px rgba(99, 102, 241, 0.12);
+  background: #fff;
+}
+
+/* ── Loading spinner ─────────────────────────────────────────────────────────── */
+
+.spinner {
+  position: absolute;
+  right: 0.85rem;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-top-color: rgba(99, 102, 241, 0.6);
+  border-radius: 50%;
+  animation: searchSpin 0.6s linear infinite;
+}
+
+@keyframes searchSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Dropdown ────────────────────────────────────────────────────────────────── */
+
+.dropdown {
+  list-style: none;
+  padding: 0.3rem 0;
+  margin: 0.35rem 0 0 0;
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  max-height: 300px;
+  overflow-y: auto;
+  position: absolute;
+  width: 100%;
+  z-index: 3000;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+}
+
+.item {
+  padding: 0.55rem 0.85rem;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.item:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.itemActive {
+  background: rgba(99, 102, 241, 0.08) !important;
+}
+
+.itemActive:hover {
+  background: rgba(99, 102, 241, 0.14) !important;
+}
+
+.itemName {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.3;
+}
+
+.itemDetail {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin-top: 0.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

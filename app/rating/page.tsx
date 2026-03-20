@@ -90,8 +90,8 @@ function RatingPageContent() {
     PinStore.add(newPin);
 
     if (supabase) {
-      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from("pins").insert({
+        id: newPin.id,
         area: newPin.area,
         lat: newPin.lat,
         lon: newPin.lon,
@@ -100,9 +100,20 @@ function RatingPageContent() {
         slug: newPin.slug,
         popularity_score: newPin.popularity_score,
         tags: newPin.tags,
-        user_id: user?.id ?? null,
       });
-      if (error) console.error("Failed to save pin to Supabase:", error);
+      if (error) {
+        console.error("Failed to save pin to Supabase:", error);
+      } else {
+        // Link pin to current user via join table
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { error: linkError } = await supabase.from("user_pins").insert({
+            user_id: user.id,
+            pin_id: newPin.id,
+          });
+          if (linkError) console.error("Failed to link pin to user:", linkError);
+        }
+      }
     }
 
     router.push("/");

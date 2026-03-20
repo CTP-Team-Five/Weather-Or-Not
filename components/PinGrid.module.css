@@ -36,21 +36,20 @@
 .emptyState {
   text-align: center;
   padding: 4rem 2rem;
-  background: rgba(25, 25, 25, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border-subtle));
   border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px hsl(var(--shadow) / 0.06);
 }
 
 .emptyState h3 {
   font-size: 1.5rem;
-  color: #f5f5f5;
+  color: hsl(var(--foreground));
   margin-bottom: 1rem;
 }
 
 .emptyState p {
-  color: rgba(255, 255, 255, 0.6);
+  color: hsl(var(--muted-foreground));
   font-size: 1rem;
   margin-bottom: 2rem;
   line-height: 1.6;
@@ -60,21 +59,19 @@
   padding: 0.875rem 2rem;
   font-size: 1rem;
   font-weight: 600;
-  color: #f5f5f5;
-  background: rgba(60, 60, 60, 0.7);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: hsl(var(--foreground));
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border-subtle));
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .addButton:hover {
-  background: rgba(80, 80, 80, 0.8);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: hsl(var(--surface-elevated));
+  border-color: hsl(var(--border));
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px hsl(var(--shadow) / 0.1);
 }
 
 .addButton:active {
@@ -87,9 +84,9 @@
 }
 
 .addTile {
-  border: 2px dashed rgba(148, 163, 184, 0.6);
-  background: rgba(15, 23, 42, 0.4);
-  color: var(--text-muted);
+  border: 2px dashed hsl(var(--border));
+  background: hsl(var(--surface-inset));
+  color: hsl(var(--muted-foreground));
   border-radius: 18px;
   padding: 1.4rem 1.6rem;
   cursor: pointer;
@@ -105,10 +102,10 @@
 }
 
 .addTile:hover {
-  border-color: var(--accent-surf);
-  background: rgba(15, 23, 42, 0.7);
+  border-color: hsl(var(--accent));
+  background: hsl(var(--sky) / 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px hsl(var(--shadow) / 0.1);
 }
 
 .addTile:active {
@@ -125,18 +122,18 @@
 .addPlus {
   font-size: 2.2rem;
   line-height: 1;
-  color: var(--text-muted);
+  color: hsl(var(--muted-foreground));
 }
 
 .addLabel {
   font-size: 0.98rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: hsl(var(--foreground));
   margin-top: 0.5rem;
 }
 
 .addHint {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: hsl(var(--muted-foreground));
   margin-top: 0.25rem;
 }

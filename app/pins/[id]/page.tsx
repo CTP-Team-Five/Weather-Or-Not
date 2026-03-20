@@ -20,15 +20,10 @@ import {
 } from "@/lib/weatherThemeClass";
 import { deriveHeroContent } from "@/lib/heroContent";
 import { deriveRiskChips } from "@/lib/riskChips";
+import { ActivityIcon } from "@/components/icons/ActivityIcons";
 import styles from "./page.module.css";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
-
-const activityIcons: Record<string, string> = {
-  hike: "🥾",
-  surf: "🏄",
-  snowboard: "🎿",
-};
 
 const activityLabels: Record<string, string> = {
   hike: "Hiking",
@@ -212,7 +207,7 @@ export default function PinDetailPage() {
 
         <div className={styles.heroBody}>
           <div className={`${styles.activityBadge} ${activityClass}`}>
-            <span aria-hidden="true">{activityIcons[pin.activity] || "📍"}</span>
+            {(() => { const Icon = ActivityIcon[pin.activity]; return Icon ? <Icon size={15} strokeWidth={2.2} /> : null; })()}
             <span>{activityLabels[pin.activity] || pin.activity}</span>
           </div>
 

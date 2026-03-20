@@ -1,0 +1,175 @@
+/* app/map/page.module.css */
+
+/* ── Layout ──────────────────────────────────────────────────────────────────── */
+
+.mapRoot {
+  position: fixed;
+  top: 64px;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+  background: #f2efe9; /* Matches CARTO Voyager land color */
+}
+
+.mapWrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Search bar — floats at top center ───────────────────────────────────────── */
+
+.searchBar {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(92%, 480px);
+  z-index: 2500;
+}
+
+/* ── Crosshair — SVG, centered on map ────────────────────────────────────────── */
+
+.crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 2600;
+  width: 52px;
+  height: 52px;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.6));
+}
+
+.crosshairArm {
+  stroke: rgba(15, 23, 42, 0.4);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.crosshairDot {
+  fill: rgba(15, 23, 42, 0.65);
+  animation: chPulse 3s ease-in-out infinite;
+}
+
+@keyframes chPulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.85; }
+}
+
+/* Ring around dot */
+.crosshairRing {
+  fill: none;
+  stroke: rgba(15, 23, 42, 0.2);
+  stroke-width: 1;
+}
+
+/* ── Bottom — pin CTA centered ───────────────────────────────────────────────── */
+
+.bottomCenter {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2500;
+}
+
+.pinBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.5rem 0.7rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: #1e293b;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  white-space: nowrap;
+}
+
+.pinBtn:hover {
+  background: #fff;
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.14),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.pinBtn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pinBtnPlus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+}
+
+/* ── Bottom-right — recenter btn ─────────────────────────────────────────────── */
+
+.bottomRight {
+  position: absolute;
+  bottom: 28px;
+  right: 20px;
+  z-index: 2500;
+}
+
+.controlBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: rgba(30, 41, 59, 0.55);
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.18s ease;
+}
+
+.controlBtn:hover {
+  background: #fff;
+  color: #1e293b;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.controlBtn:active {
+  transform: translateY(0);
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .crosshairDot {
+    animation: none;
+    opacity: 0.8;
+  }
+  .pinBtn,
+  .controlBtn {
+    transition: none;
+  }
+}

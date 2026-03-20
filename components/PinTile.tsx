@@ -9,6 +9,7 @@ import { getWeatherDescription } from "./utils/fetchForecast";
 import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
 import { deriveTheme } from "@/lib/weatherTheme";
 import { applyTheme } from "@/lib/applyTheme";
+import { ActivityIcon } from "@/components/icons/ActivityIcons";
 import styles from "./PinTile.module.css";
 
 type PinTileProps = {
@@ -20,12 +21,6 @@ type PinTileProps = {
   onDelete: (id: string) => void;
   parentLoading?: boolean;
   precomputed?: ComputedSuitability | null;
-};
-
-const activityIcons: Record<string, string> = {
-  hike: "🥾",
-  surf: "🏄",
-  snowboard: "🎿",
 };
 
 function weatherEmoji(code: number): string {
@@ -109,7 +104,7 @@ export default function PinTile({ pin, featured = false, className, onOpen, onEd
     <div className={styles.header}>
       <div className={styles.spotMeta}>
         <span className={styles.activityIcon} aria-hidden="true">
-          {activityIcons[pin.activity] || "📍"}
+          {(() => { const Icon = ActivityIcon[pin.activity]; return Icon ? <Icon size={16} strokeWidth={2.2} /> : '📍'; })()}
         </span>
         <h3 className={styles.areaName}>{pin.canonical_name || pin.area}</h3>
       </div>

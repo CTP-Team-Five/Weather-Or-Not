@@ -1,25 +1,55 @@
--- Add user_id to pins, referencing Supabase auth.users (nullable for backward compat)
-ALTER TABLE pins ADD COLUMN IF NOT EXISTS user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE;
+-- ============================================================
+-- Migration: Auth trigger + RLS for user_pins join model
+-- ============================================================
 
--- Enable Row Level Security
+-- 1. Auto-create a public.users row when someone signs up via Supabase Auth
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.users (id, username, email)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),
+    NEW.email
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 2. RLS on pins — publicly readable, authenticated users can write
 ALTER TABLE pins ENABLE ROW LEVEL SECURITY;
 
--- Anyone can read all pins (needed for TopSpots cross-user discovery)
 CREATE POLICY "Pins are publicly readable"
   ON pins FOR SELECT
   USING (true);
 
--- Only authenticated users can insert their own pins
-CREATE POLICY "Users can insert own pins"
+CREATE POLICY "Authenticated users can insert pins"
   ON pins FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (auth.role() = 'authenticated');
 
--- Only the owner can update their pins
-CREATE POLICY "Users can update own pins"
+CREATE POLICY "Authenticated users can update pins"
   ON pins FOR UPDATE
+  USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Authenticated users can delete pins"
+  ON pins FOR DELETE
+  USING (auth.role() = 'authenticated');
+
+-- 3. RLS on user_pins — users manage only their own associations
+ALTER TABLE user_pins ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can read own saved pins"
+  ON user_pins FOR SELECT
   USING (auth.uid() = user_id);
 
--- Only the owner can delete their pins
-CREATE POLICY "Users can delete own pins"
-  ON pins FOR DELETE
+CREATE POLICY "Users can save pins"
+  ON user_pins FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can unsave pins"
+  ON user_pins FOR DELETE
   USING (auth.uid() = user_id);

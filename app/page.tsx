@@ -47,7 +47,11 @@ export default function Home() {
     let cancelled = false;
     setComputingAll(true);
 
-    Promise.all(savedPins.map((p) => computeSuitabilityForPinSafe(p))).then((results) => {
+    // Compute scores (rate limiting handled globally by fetchLocationMetadata)
+    (async () => {
+      const results = await Promise.all(
+        savedPins.map((p) => computeSuitabilityForPinSafe(p))
+      );
       if (cancelled) return;
       const newMap = new Map<string, ComputedSuitability | null>();
       let best: { pin: SavedPin; r: ComputedSuitability } | null = null as { pin: SavedPin; r: ComputedSuitability } | null;
@@ -59,20 +63,21 @@ export default function Home() {
       setComputedMap(newMap);
       setComputingAll(false);
       if (best) {
-        setBestPinId(best.pin.id);
-        const times = best.r.weather.hourly.map((h: { time: string }) => h.time);
-        applyTheme(deriveTheme(best.pin.activity, best.r.weather.current.weatherCode, times));
+        const b = best as { pin: SavedPin; r: ComputedSuitability };
+        setBestPinId(b.pin.id);
+        const times = b.r.weather.hourly.map((h: { time: string }) => h.time);
+        applyTheme(deriveTheme(b.pin.activity, b.r.weather.current.weatherCode, times));
         applyWeatherThemeClass(
           getWeatherThemeClass({
-            weatherCode: best.r.weather.current.weatherCode,
-            gustKph: best.r.weather.current.gustKph,
-            visibilityM: best.r.weather.current.visibilityM,
-            precipProb: best.r.weather.current.precipProb,
-            snowfallCm: best.r.weather.current.snowfallCm,
+            weatherCode: b.r.weather.current.weatherCode,
+            gustKph: b.r.weather.current.gustKph,
+            visibilityM: b.r.weather.current.visibilityM,
+            precipProb: b.r.weather.current.precipProb,
+            snowfallCm: b.r.weather.current.snowfallCm,
           })
         );
       }
-    });
+    })();
 
     return () => {
       cancelled = true;
@@ -92,35 +97,63 @@ export default function Home() {
     // Then load from Supabase and overwrite
     const loadRemotePins = async () => {
       try {
-        let query = supabase!
-          .from("pins")
-          .select("*")
-          .order("created_at", { ascending: false });
+        let remotePins: SavedPin[] = [];
 
-        // Filter by user_id when logged in
         if (user) {
-          query = query.eq("user_id", user.id);
+          // Logged in: load user's pins via user_pins join table
+          const { data, error } = await supabase!
+            .from("user_pins")
+            .select("pin_id, pins(*)")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
+
+          if (error || !data) {
+            if (error) console.error("Supabase pins fetch error:", error);
+            return;
+          }
+
+          remotePins = data
+            .filter((row: any) => row.pins)
+            .map((row: any) => {
+              const p = row.pins;
+              return {
+                id: p.id,
+                area: p.area,
+                lat: p.lat,
+                lon: p.lon,
+                activity: p.activity,
+                createdAt: new Date(p.created_at).getTime(),
+                canonical_name: p.canonical_name,
+                slug: p.slug,
+                popularity_score: p.popularity_score,
+                tags: p.tags,
+              };
+            });
+        } else {
+          // Not logged in: load all pins (backward compat)
+          const { data, error } = await supabase!
+            .from("pins")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error || !data) {
+            if (error) console.error("Supabase pins fetch error:", error);
+            return;
+          }
+
+          remotePins = data.map((p: any) => ({
+            id: p.id,
+            area: p.area,
+            lat: p.lat,
+            lon: p.lon,
+            activity: p.activity,
+            createdAt: new Date(p.created_at).getTime(),
+            canonical_name: p.canonical_name,
+            slug: p.slug,
+            popularity_score: p.popularity_score,
+            tags: p.tags,
+          }));
         }
-
-        const { data, error } = await query;
-
-        if (error || !data) {
-          if (error) console.error("Supabase pins fetch error:", error);
-          return;
-        }
-
-        const remotePins: SavedPin[] = data.map((p: any) => ({
-          id: p.id,
-          area: p.area,
-          lat: p.lat,
-          lon: p.lon,
-          activity: p.activity,
-          createdAt: new Date(p.created_at).getTime(),
-          canonical_name: p.canonical_name,
-          slug: p.slug,
-          popularity_score: p.popularity_score,
-          tags: p.tags,
-        }));
 
         setSavedPins(remotePins);
       } catch (err) {

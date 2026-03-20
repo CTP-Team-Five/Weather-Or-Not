@@ -9,7 +9,7 @@
 .backButton {
   background: none;
   border: none;
-  color: var(--text-muted);
+  color: hsl(var(--muted-foreground));
   cursor: pointer;
   font-size: 0.95rem;
   padding: 0.5rem 0;
@@ -21,22 +21,21 @@
 }
 
 .backButton:hover {
-  color: var(--text-primary);
+  color: hsl(var(--foreground));
 }
 
 .card {
-  background: var(--bg-surface);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle);
+  background: hsl(var(--surface-elevated));
+  border: 1px solid hsl(var(--border-subtle));
   border-radius: 16px;
   padding: 2.5rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 8px hsl(var(--shadow) / 0.08);
 }
 
 .title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: hsl(var(--foreground));
   margin: 0 0 2rem 0;
 }
 
@@ -48,7 +47,7 @@
   display: block;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: hsl(var(--foreground));
   margin-bottom: 0.5rem;
 }
 
@@ -57,9 +56,9 @@
   width: 100%;
   padding: 0.75rem 1rem;
   font-size: 1rem;
-  color: var(--text-primary);
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--border-subtle);
+  color: hsl(var(--foreground));
+  background: hsl(var(--surface-inset));
+  border: 1px solid hsl(var(--border));
   border-radius: 10px;
   outline: none;
   transition: all 0.2s ease;
@@ -67,8 +66,9 @@
 
 .input:focus,
 .select:focus {
-  border-color: var(--border-hover);
-  background: rgba(0, 0, 0, 0.4);
+  border-color: hsl(var(--ring));
+  outline: none;
+  background: hsl(var(--surface));
 }
 
 .select {
@@ -93,34 +93,34 @@
 }
 
 .buttonPrimary {
-  background: var(--accent-hike);
-  color: white;
+  background: hsl(var(--score-great));
+  color: hsl(var(--score-great-foreground));
 }
 
 .buttonPrimary:hover {
-  background: #16a34a;
+  background: hsl(var(--score-great) / 0.85);
   transform: translateY(-1px);
 }
 
 .buttonSecondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-  border: 1px solid var(--border-subtle);
+  background: hsl(var(--surface));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
 }
 
 .buttonSecondary:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: var(--border-hover);
+  background: hsl(var(--muted));
+  border-color: hsl(var(--border));
 }
 
 .loading {
   text-align: center;
   padding: 3rem;
-  color: var(--text-muted);
+  color: hsl(var(--muted-foreground));
 }
 
 .error {
   text-align: center;
   padding: 3rem;
-  color: #ef4444;
+  color: hsl(var(--danger));
 }
