@@ -1,34 +1,35 @@
 'use client';
 
 import Link from 'next/link';
-import { WiDaySunny } from 'react-icons/wi';
-import { HiBars3 } from 'react-icons/hi2';
+import { WiDaySunny, WiDayStormShowers } from 'react-icons/wi';
 import styles from './HomeTopBar.module.css';
 
 interface Props {
-  onToggleSidebar?: () => void;
-  hasPins?: boolean;
+  onReset?: () => void;
 }
 
-export default function HomeTopBar({ onToggleSidebar, hasPins }: Props) {
+export default function HomeTopBar({ onReset }: Props) {
   return (
     <header className={styles.bar}>
-      <div className={styles.left}>
-        {hasPins && onToggleSidebar && (
-          <button
-            type="button"
-            className={styles.menuBtn}
-            onClick={onToggleSidebar}
-            aria-label="Open spots"
-          >
-            <HiBars3 size={22} />
-          </button>
-        )}
+      {onReset ? (
+        <button type="button" className={styles.brand} onClick={onReset}>
+          <WiDaySunny className={styles.logo} />
+          <span className={styles.name}>
+            <span className={styles.word1}>Weather</span>
+            <span className={styles.word2}>OrNot</span>
+          </span>
+          <WiDayStormShowers className={styles.logoStorm} />
+        </button>
+      ) : (
         <Link href="/" className={styles.brand}>
           <WiDaySunny className={styles.logo} />
-          <span className={styles.name}>WeatherOrNot</span>
+          <span className={styles.name}>
+            <span className={styles.word1}>Weather</span>
+            <span className={styles.word2}>OrNot</span>
+          </span>
+          <WiDayStormShowers className={styles.logoStorm} />
         </Link>
-      </div>
+      )}
       <nav className={styles.nav}>
         <Link href="/map" className={styles.navLink}>
           Map

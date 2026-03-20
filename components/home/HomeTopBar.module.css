@@ -7,38 +7,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 2rem;
-  background: transparent;
-  pointer-events: none;
-}
-
-.bar > * {
-  pointer-events: auto;
-}
-
-.left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.menuBtn {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: hsl(var(--surface) / 0.5);
-  backdrop-filter: blur(8px);
-  border-radius: 10px;
-  color: hsl(var(--foreground));
-  cursor: pointer;
-  transition: background 150ms ease;
-}
-
-.menuBtn:hover {
-  background: hsl(var(--surface) / 0.8);
+  padding: 0.75rem 1.5rem;
+  background: hsl(var(--surface) / 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid hsl(var(--border-subtle));
 }
 
 .brand {
@@ -49,6 +22,10 @@
   text-decoration: none;
   font-weight: 700;
   font-size: 1.125rem;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 .logo {
@@ -58,8 +35,33 @@
 
 .name {
   font-family: var(--font-display, system-ui, sans-serif);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
+  display: inline-flex;
 }
+
+.word1 {
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+}
+
+.word2 {
+  font-weight: 800;
+  font-style: italic;
+  color: hsl(var(--foreground));
+}
+
+.logoStorm {
+  font-size: 1.5rem;
+  color: hsl(var(--muted-foreground) / 0.55);
+  flex-shrink: 0;
+  margin-left: 0.25rem;
+  transition: color 0.3s ease;
+}
+
+.brand .logoStorm {
+    color: hsl(var(--muted-foreground));
+}
+
 
 .nav {
   display: flex;
@@ -71,24 +73,17 @@
   font-weight: 500;
   font-size: 0.9rem;
   text-decoration: none;
-  transition: color 150ms ease, background 150ms ease;
+  transition: color 150ms ease;
   padding: 0.375rem 0.75rem;
   border-radius: 8px;
-  background: hsl(var(--surface) / 0.5);
-  backdrop-filter: blur(8px);
 }
 
 .navLink:hover {
   color: hsl(var(--foreground));
-  background: hsl(var(--surface) / 0.8);
 }
 
 @media (max-width: 768px) {
   .bar {
-    padding: 0.75rem 1rem;
-  }
-
-  .menuBtn {
-    display: flex;
+    padding: 0.625rem 1rem;
   }
 }

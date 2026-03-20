@@ -29,7 +29,7 @@ function activityGradientClass(activity: string, s: typeof styles): string {
 }
 
 export default function HomeActiveSpots({ decisions, activeId, onSelect }: Props) {
-  if (decisions.length < 2) return null;
+  if (decisions.length === 0) return null;
 
   const featured = decisions.find((d) => d.pin.id === activeId) ?? decisions[0];
   const secondary = decisions

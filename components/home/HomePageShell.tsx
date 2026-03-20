@@ -87,10 +87,7 @@ export default function HomePageShell({ pins, computedMap, loading }: Props) {
 
   return (
     <div className={styles.shell}>
-      <HomeTopBar
-        onToggleSidebar={() => setSidebarOpen(true)}
-        hasPins={pins.length > 0}
-      />
+      <HomeTopBar onReset={() => {}} />
       <div className={styles.layout}>
         {pins.length > 0 && (
           <HomeSidebar
@@ -100,10 +97,6 @@ export default function HomePageShell({ pins, computedMap, loading }: Props) {
             loading={loading}
             onSelect={handleSelect}
             onAdd={handleAdd}
-            collapsed={sidebarCollapsed}
-            onToggle={() => setSidebarCollapsed((c) => !c)}
-            mobileOpen={sidebarOpen}
-            onMobileClose={() => setSidebarOpen(false)}
           />
         )}
         <main className={styles.main}>

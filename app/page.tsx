@@ -3,20 +3,36 @@
 "use client";
 
 import { PinStore, SavedPin } from "@/components/data/pinStore";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
 import { useAuth } from "@/lib/useAuth";
-import HomePageShell from "@/components/home/HomePageShell";
+import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
+import { buildDecision, Decision } from "@/lib/decision";
+import { applyTheme, clearTheme } from "@/lib/applyTheme";
+import {
+  getWeatherThemeClass,
+  applyWeatherThemeClass,
+  clearWeatherThemeClass,
+} from "@/lib/weatherThemeClass";
+import HomeTopBar from "@/components/home/HomeTopBar";
+import HomeSidebar from "@/components/home/HomeSidebar";
+import HomepageHero from "@/components/home/HomepageHero";
+import SelectedSpotBoard from "@/components/home/SelectedSpotBoard";
+import HomeOnboarding from "@/components/home/HomeOnboarding";
+import styles from "./page.module.css";
 
 export default function Home() {
   const { user } = useAuth();
+  const router = useRouter();
   const [savedPins, setSavedPins] = useState<SavedPin[]>([]);
+  const [pinsLoaded, setPinsLoaded] = useState(false);
   const [computingAll, setComputingAll] = useState(true);
   const [computedMap, setComputedMap] = useState<Map<string, ComputedSuitability | null>>(new Map());
   const computeKeyRef = useRef("");
+  const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Shared compute pass: runs once per unique set of pin IDs.
+  // Shared compute pass — key-based dedup avoids Supabase race condition.
   useEffect(() => {
     const key = savedPins.map((p) => p.id).join(",");
     if (computeKeyRef.current === key) return;
@@ -27,11 +43,10 @@ export default function Home() {
       return;
     }
 
-    let cancelled = false;
     setComputingAll(true);
 
     Promise.all(savedPins.map((p) => computeSuitabilityForPinSafe(p))).then((results) => {
-      if (cancelled) return;
+      if (computeKeyRef.current !== key) return;
       const newMap = new Map<string, ComputedSuitability | null>();
       results.forEach((r, i) => {
         newMap.set(savedPins[i].id, r);
@@ -39,16 +54,13 @@ export default function Home() {
       setComputedMap(newMap);
       setComputingAll(false);
     });
-
-    return () => {
-      cancelled = true;
-    };
   }, [savedPins]);
 
   // Load pins on mount (or when user changes)
   useEffect(() => {
     const localPins = PinStore.all();
     setSavedPins(localPins);
+    setPinsLoaded(true);
 
     if (!supabase) return;
 
@@ -57,7 +69,6 @@ export default function Home() {
         let remotePins: SavedPin[] = [];
 
         if (user) {
-          // Logged in: load user's pins via user_pins join table
           const { data, error } = await supabase!
             .from("user_pins")
             .select("pin_id, pins(*)")
@@ -87,7 +98,6 @@ export default function Home() {
               };
             });
         } else {
-          // Not logged in: load all pins (backward compat)
           const { data, error } = await supabase!
             .from("pins")
             .select("*")
@@ -112,7 +122,9 @@ export default function Home() {
           }));
         }
 
-        setSavedPins(remotePins);
+        if (remotePins.length > 0) {
+          setSavedPins(remotePins);
+        }
       } catch (err) {
         console.error("Unexpected error loading pins:", err);
       }
@@ -121,11 +133,76 @@ export default function Home() {
     loadRemotePins();
   }, [user]);
 
+  // Build decision for the active pin
+  const decision: Decision | null = useMemo(() => {
+    if (!activeId) return null;
+    const pin = savedPins.find((p) => p.id === activeId);
+    if (!pin) return null;
+    const computed = computedMap.get(activeId);
+    if (!computed) return null;
+    return buildDecision(pin, computed);
+  }, [activeId, savedPins, computedMap]);
+
+  // Apply ambient theme when a pin is selected; clear on reset
+  useEffect(() => {
+    if (!decision) {
+      clearTheme();
+      clearWeatherThemeClass();
+      return;
+    }
+    applyTheme(decision.theme);
+    applyWeatherThemeClass(
+      getWeatherThemeClass({
+        weatherCode: decision.weather.weatherCode,
+        gustKph: decision.weather.gustKph,
+        precipProb: decision.weather.precipProb,
+      })
+    );
+    return () => {
+      clearTheme();
+      clearWeatherThemeClass();
+    };
+  }, [decision]);
+
+  const hasPins = pinsLoaded && savedPins.length > 0;
+
+  // Select a pin — sticky, no toggle. Only logo resets.
+  const handleSelect = (id: string) => setActiveId(id);
+
+  // Logo click: reset to default homepage (clear selection + theme)
+  const handleReset = () => setActiveId(null);
+
   return (
-    <HomePageShell
-      pins={savedPins}
-      computedMap={computedMap}
-      loading={computingAll}
-    />
+    <div className={styles.page}>
+      <HomeTopBar onReset={handleReset} />
+
+      <div className={styles.layout}>
+        {/* Always-visible sidebar */}
+        {hasPins && (
+          <HomeSidebar
+            pins={savedPins}
+            activeId={activeId}
+            computedMap={computedMap}
+            loading={computingAll}
+            onSelect={handleSelect}
+            onAdd={() => router.push("/map")}
+          />
+        )}
+
+        {/* Main content */}
+        <main className={styles.main}>
+          {activeId && decision ? (
+            /* Pin selected — replace hero with spot intelligence */
+            <SelectedSpotBoard decision={decision} />
+          ) : (
+            /* Default — cinematic hero */
+            <HomepageHero />
+          )}
+
+          {/* No-pins onboarding */}
+          {!hasPins && pinsLoaded && !activeId && <HomeOnboarding />}
+        </main>
+      </div>
+    </div>
   );
 }

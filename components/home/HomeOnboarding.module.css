@@ -1,0 +1,105 @@
+.onboarding {
+  padding: 4rem 2rem 5rem;
+  background: hsl(var(--background));
+}
+
+.inner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.sectionTitle {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: hsl(var(--foreground));
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+/* ── Steps grid ── */
+
+.stepGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.stepNum {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: hsl(var(--accent) / 0.1);
+  color: hsl(var(--accent));
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-weight: 800;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.stepTitle {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+}
+
+.stepDesc {
+  font-size: 0.9rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.5;
+  max-width: 240px;
+}
+
+/* ── CTA ── */
+
+.ctaRow {
+  display: flex;
+  justify-content: center;
+}
+
+.ctaButton {
+  display: inline-block;
+  padding: 0.875rem 2.25rem;
+  border-radius: 12px;
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  font-weight: 600;
+  font-size: 1.0625rem;
+  text-decoration: none;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.ctaButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px hsl(var(--accent) / 0.3);
+}
+
+/* ── Mobile ── */
+
+@media (max-width: 640px) {
+  .onboarding {
+    padding: 3rem 1.5rem 4rem;
+  }
+
+  .stepGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.5rem;
+  }
+}

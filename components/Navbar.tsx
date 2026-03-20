@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { WiDaySunny } from 'react-icons/wi';
+import { WiDaySunny, WiDayStormShowers } from 'react-icons/wi';
 import styles from './Navbar.module.css';
 import { useAuth } from '@/lib/useAuth';
 import { supabase } from '@/lib/supabaseClient';
@@ -33,6 +33,7 @@ const Navbar: React.FC = () => {
             <span className={styles.logoWord1}>Weather</span>
             <span className={styles.logoWord2}>OrNot</span>
           </span>
+          <WiDayStormShowers className={styles.logoIconRight} aria-hidden="true" />
         </Link>
 
         {/* Center — nav links */}

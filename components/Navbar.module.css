@@ -69,7 +69,7 @@
 .logoText {
   font-family: var(--font-display, system-ui, sans-serif);
   font-size: 1.3rem;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.04em;
   line-height: 1;
 }
 
@@ -82,6 +82,20 @@
   font-weight: 800;
   font-style: italic;
   color: hsl(var(--foreground));
+  margin-left: -0.03em;
+}
+
+.logoIconRight {
+  font-size: 1.6rem;
+  color: hsl(var(--muted-foreground) / 0.6);
+  flex-shrink: 0;
+  margin-left: -0.1rem;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.logoLink:hover .logoIconRight {
+  color: hsl(var(--muted-foreground));
+  transform: translateX(1px);
 }
 
 /* ── Right side ───────────────────────────────────────────────────────────── */
@@ -188,6 +202,10 @@
   }
 
   .logoWord1 {
+    display: none;
+  }
+
+  .logoIconRight {
     display: none;
   }
 }
