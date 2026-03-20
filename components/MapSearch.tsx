@@ -3,13 +3,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { HiMagnifyingGlass } from "react-icons/hi2";
+import styles from "./MapSearch.module.css";
 
 export interface SearchResult {
     display_name: string;
-    name?: string;  // Short name from Nominatim (e.g., "Gore Mountain")
+    name?: string;
     lat: string;
     lon: string;
-    // Additional fields for better naming
     class?: string;
     type?: string;
     address?: Record<string, string>;
@@ -17,6 +18,13 @@ export interface SearchResult {
 
 interface MapSearchProps {
     onSelect: (coords: [number, number], searchResult?: SearchResult) => void;
+}
+
+function splitDisplayName(displayName: string) {
+    const parts = displayName.split(",");
+    const name = parts[0]?.trim() || displayName;
+    const detail = parts.slice(1).join(",").trim();
+    return { name, detail };
 }
 
 export default function MapSearch({ onSelect }: MapSearchProps) {
@@ -27,22 +35,17 @@ export default function MapSearch({ onSelect }: MapSearchProps) {
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
     const cache = useRef<Record<string, SearchResult[]>>({});
 
-    // Fetch results from Nominatim
     async function fetchResults(q: string) {
         if (!q.trim()) {
             setResults([]);
             return;
         }
-
-        // Cached?
         if (cache.current[q]) {
             setResults(cache.current[q]);
             return;
         }
-
         setLoading(true);
         try {
-            // Request addressdetails=1 to get address components for better naming
             const res = await fetch(
                 `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(q)}`,
                 { headers: { "User-Agent": "WeatherOrNot/1.0 (xyz@gmail.com)" } }
@@ -57,118 +60,76 @@ export default function MapSearch({ onSelect }: MapSearchProps) {
         }
     }
 
-    // Debounce typing
     useEffect(() => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
             if (query.length >= 2) fetchResults(query);
+            else setResults([]);
         }, 300);
     }, [query]);
 
-    // Handle selection
     const handleSelect = (result: SearchResult) => {
         const lat = parseFloat(result.lat);
         const lon = parseFloat(result.lon);
         onSelect([lat, lon], result);
-        // Show short name if available, otherwise first part of display_name
-        const shortLabel = result.name || result.display_name.split(',')[0].trim();
+        const shortLabel = result.name || result.display_name.split(",")[0].trim();
         setQuery(shortLabel);
         setResults([]);
     };
 
-    // Keyboard controls
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "ArrowDown") {
+            e.preventDefault();
             setActiveIndex((i) => Math.min(i + 1, results.length - 1));
         } else if (e.key === "ArrowUp") {
+            e.preventDefault();
             setActiveIndex((i) => Math.max(i - 1, 0));
         } else if (e.key === "Enter") {
             e.preventDefault();
             if (results[activeIndex]) handleSelect(results[activeIndex]);
+        } else if (e.key === "Escape") {
+            setResults([]);
         }
     };
 
     return (
-        <div
-            style={{
-                width: "100%",
-                maxWidth: "420px",
-                position: "relative",
-            }}
-        >
-            {/* Input */}
-            <input
-                type="text"
-                placeholder="Search for a place..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="glassy search-input"
-                style={{
-                    width: "100%",
-                    padding: "0.8rem 1rem",
-                    borderRadius: "10px",
-                    border: "none",
-                    outline: "none",
-                    background: "rgba(45, 45, 45, 0.85)",
-                    color: "#f1f1f1",
-                    fontSize: "1rem",
-                    backdropFilter: "blur(8px)",
-                    boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-                }}
-            />
+        <div className={styles.root}>
+            <div className={styles.inputWrap}>
+                <HiMagnifyingGlass className={styles.icon} />
+                <input
+                    type="text"
+                    placeholder="Search for a spot..."
+                    value={query}
+                    onChange={(e) => {
+                        setQuery(e.target.value);
+                        setActiveIndex(0);
+                    }}
+                    onKeyDown={handleKeyDown}
+                    className={styles.input}
+                    autoComplete="off"
+                    spellCheck={false}
+                />
+                {loading && <div className={styles.spinner} aria-label="Searching" />}
+            </div>
 
-            {/* Results Dropdown */}
             {results.length > 0 && (
-                <ul
-                    style={{
-                        listStyle: "none",
-                        padding: 0,
-                        marginTop: "0.4rem",
-                        background: "rgba(25, 25, 25, 0.9)",
-                        backdropFilter: "blur(8px)",
-                        borderRadius: "10px",
-                        overflow: "hidden",
-                        boxShadow: "0 8px 20px rgba(0,0,0,0.3)",
-                        maxHeight: "260px",
-                        overflowY: "auto",
-                        position: "absolute",
-                        width: "100%",
-                        zIndex: 3000,
-                    }}
-                >
-                    {results.map((r, i) => (
-                        <li
-                            key={i}
-                            onClick={() => handleSelect(r)}
-                            style={{
-                                padding: "0.7rem 1rem",
-                                background:
-                                    i === activeIndex
-                                        ? "rgba(99, 102, 241, 0.25)"
-                                        : "transparent",
-                                cursor: "pointer",
-                                color: "#f1f1f1",
-                                transition: "background 0.2s ease",
-                            }}
-                        >
-                            {r.display_name}
-                        </li>
-                    ))}
+                <ul className={styles.dropdown} role="listbox">
+                    {results.map((r, i) => {
+                        const { name, detail } = splitDisplayName(r.display_name);
+                        return (
+                            <li
+                                key={i}
+                                role="option"
+                                aria-selected={i === activeIndex}
+                                onClick={() => handleSelect(r)}
+                                className={`${styles.item} ${i === activeIndex ? styles.itemActive : ""}`}
+                            >
+                                <div className={styles.itemName}>{r.name || name}</div>
+                                {detail && <div className={styles.itemDetail}>{detail}</div>}
+                            </li>
+                        );
+                    })}
                 </ul>
-            )}
-
-            {loading && (
-                <p
-                    style={{
-                        textAlign: "center",
-                        marginTop: "0.4rem",
-                        fontSize: "0.9rem",
-                        color: "#a1a1aa",
-                    }}
-                >
-                    Searching...
-                </p>
             )}
         </div>
     );

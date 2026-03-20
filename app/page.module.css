@@ -1,65 +1,42 @@
-/* ── Dashboard page layout ─────────────────────────────────────────────── */
+/* ── Homepage layout ──────────────────────────────────────────────────── */
 
-.pageContainer {
+.page {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 3rem;
-  padding: 2rem 5%;
-  max-width: 1500px;
-  margin: 0 auto;
 }
 
-.sectionSpacing {
-  margin-bottom: 3rem;
+.layout {
+  display: flex;
+  flex: 1;
+  padding-top: 52px; /* TopBar height */
 }
 
-.mainHeading {
-  font-size: 1.75rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-  color: hsl(var(--foreground));
-  font-family: var(--font-display, system-ui, sans-serif);
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
-/* ── Grids ─────────────────────────────────────────────────────────────── */
+/* ── Pin detail view (replaces hero when a pin is selected) ── */
 
-.suggestionGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
+.pinView {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 0;
 }
 
-.infoBoxGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-}
-
-/* ── Legacy pin list (kept for backward compat) ─────────────────────── */
-
-.pinItem {
-  margin-bottom: 0.5rem;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  color: hsl(var(--foreground));
-}
-
-.activePin {
-  border: 1px solid hsl(var(--accent) / 0.5);
-  background: hsl(var(--accent) / 0.08);
-  transition: 0.2s ease;
-}
-
-/* ── Responsive ─────────────────────────────────────────────────────── */
+/* ── Mobile ── */
 
 @media (max-width: 768px) {
-  .pageContainer {
-    padding: 1.5rem;
-    gap: 2rem;
+  .layout {
+    flex-direction: column;
   }
 
-  .mainHeading {
-    font-size: 1.5rem;
+  .pinView {
+    padding: 1rem 0;
   }
 }

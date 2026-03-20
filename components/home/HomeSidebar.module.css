@@ -1,0 +1,225 @@
+/* ── Always-visible sidebar ── */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  padding: 1.25rem;
+  background: hsl(var(--surface) / 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid hsl(var(--border-subtle));
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.heading {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 1rem;
+  padding: 0 0.5rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: none;
+  background: transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  color: hsl(var(--foreground));
+  transition: background 150ms ease;
+  width: 100%;
+}
+
+.item:hover {
+  background: hsl(var(--surface) / 0.6);
+}
+
+.active {
+  background: hsl(var(--accent) / 0.1);
+  box-shadow: inset 0 0 0 1px hsl(var(--accent) / 0.25);
+}
+
+.icon {
+  font-size: 1.125rem;
+  flex-shrink: 0;
+  width: 1.75rem;
+  text-align: center;
+}
+
+.meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.pinName {
+  font-weight: 600;
+  font-size: 0.8125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reason {
+  font-size: 0.6875rem;
+  color: hsl(var(--muted-foreground));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.reasonSkeleton {
+  display: block;
+  width: 80px;
+  height: 0.6875rem;
+  border-radius: 4px;
+  background: hsl(var(--muted) / 0.2);
+  animation: pulse 1.5s ease infinite;
+}
+
+/* ── Verdict badge ── */
+
+.badge {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.badgeGo {
+  background: hsl(var(--score-great) / 0.15);
+  color: hsl(var(--score-great));
+}
+
+.badgeMaybe {
+  background: hsl(var(--score-ok) / 0.15);
+  color: hsl(var(--score-ok));
+}
+
+.badgeSkip {
+  background: hsl(var(--score-terrible) / 0.15);
+  color: hsl(var(--score-terrible));
+}
+
+.badgeSkeleton {
+  width: 2.5rem;
+  height: 1.25rem;
+  border-radius: 6px;
+  background: hsl(var(--muted) / 0.2);
+  animation: pulse 1.5s ease infinite;
+}
+
+/* ── Add button ── */
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  margin-top: 0.5rem;
+  border: 1px dashed hsl(var(--border));
+  background: transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+  transition: all 150ms ease;
+  width: 100%;
+}
+
+.addButton:hover {
+  border-color: hsl(var(--accent) / 0.4);
+  color: hsl(var(--foreground));
+  background: hsl(var(--surface) / 0.4);
+}
+
+.addPlus {
+  font-size: 1rem;
+  font-weight: 300;
+  width: 1.75rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* ── Mobile: horizontal strip ── */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-right: none;
+    border-bottom: 1px solid hsl(var(--border-subtle));
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .heading {
+    display: none;
+  }
+
+  .list {
+    flex-direction: row;
+    gap: 0.5rem;
+    flex: 0;
+  }
+
+  .item {
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    white-space: nowrap;
+    min-width: 80px;
+    align-items: center;
+  }
+
+  .meta {
+    align-items: center;
+  }
+
+  .reason {
+    display: none;
+  }
+
+  .addButton {
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    margin-top: 0;
+    min-width: 72px;
+    font-size: 0.75rem;
+  }
+
+  .addPlus {
+    width: auto;
+  }
+}

@@ -423,8 +423,33 @@ function deriveSurfFriendly(
   return false;
 }
 
+// In-memory Nominatim cache + serial queue to respect 1req/s rate limit
+const _nominatimCache = new Map<string, NominatimData | null>();
+let _nominatimQueue: Promise<void> = Promise.resolve();
+
+function nominatimFetch(url: string): Promise<NominatimData | null> {
+  return new Promise<NominatimData | null>((resolve) => {
+    _nominatimQueue = _nominatimQueue.then(async () => {
+      // 1.2s gap between requests
+      await new Promise((r) => setTimeout(r, 1200));
+      try {
+        const res = await fetch(url, {
+          headers: { 'User-Agent': 'WeatherOrNot/1.0' },
+        });
+        if (!res.ok) { resolve(null); return; }
+        resolve(await res.json());
+      } catch {
+        resolve(null);
+      }
+    });
+  });
+}
+
 /**
- * Fetch location metadata from Nominatim for a given lat/lon
+ * Fetch location metadata from Nominatim for a given lat/lon.
+ * If the pin already has tags, skips the network call entirely — tags
+ * give the scoring engine enough signal without a 1.2s Nominatim wait.
+ * Caches results and rate-limits to avoid Nominatim 429s.
  */
 export async function fetchLocationMetadata(
   lat: number,
@@ -432,6 +457,19 @@ export async function fetchLocationMetadata(
   pinName: string,
   pinTags?: string[]
 ): Promise<LocationMetadata> {
+  // Fast path: skip Nominatim for saved pins entirely.
+  // buildLocationMetadata derives coastal/park/snow/surf from pinName + pinTags.
+  // Nominatim has CORS issues from localhost and rate limits from production.
+  if (pinTags != null) {
+    return buildLocationMetadata(null, pinName, pinTags);
+  }
+
+  const cacheKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+
+  if (_nominatimCache.has(cacheKey)) {
+    return buildLocationMetadata(_nominatimCache.get(cacheKey) ?? null, pinName, pinTags);
+  }
+
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?` +
       `lat=${lat}&lon=${lon}&` +
@@ -440,19 +478,11 @@ export async function fetchLocationMetadata(
       `addressdetails=1&` +
       `extratags=1`;
 
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'WeatherOrNot/1.0' },
-    });
-
-    if (!res.ok) {
-      console.error('Nominatim error:', res.status);
-      return buildLocationMetadata(null, pinName, pinTags);
-    }
-
-    const data: NominatimData = await res.json();
+    const data = await nominatimFetch(url);
+    _nominatimCache.set(cacheKey, data);
     return buildLocationMetadata(data, pinName, pinTags);
-  } catch (err) {
-    console.error('Failed to fetch location metadata:', err);
+  } catch {
+    _nominatimCache.set(cacheKey, null);
     return buildLocationMetadata(null, pinName, pinTags);
   }
 }

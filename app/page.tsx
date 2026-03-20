@@ -2,33 +2,37 @@
 
 "use client";
 
-import styles from "./page.module.css";
-import MapSection from "@/components/MapSection";
-import PinGrid from "@/components/PinGrid";
-import TopSpots from "@/components/TopSpots";
 import { PinStore, SavedPin } from "@/components/data/pinStore";
-import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/lib/useAuth";
 import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
-import { deriveTheme } from "@/lib/weatherTheme";
+import { buildDecision, Decision } from "@/lib/decision";
 import { applyTheme, clearTheme } from "@/lib/applyTheme";
 import {
   getWeatherThemeClass,
   applyWeatherThemeClass,
   clearWeatherThemeClass,
 } from "@/lib/weatherThemeClass";
+import HomeTopBar from "@/components/home/HomeTopBar";
+import HomeSidebar from "@/components/home/HomeSidebar";
+import HomepageHero from "@/components/home/HomepageHero";
+import SelectedSpotBoard from "@/components/home/SelectedSpotBoard";
+import HomeOnboarding from "@/components/home/HomeOnboarding";
+import styles from "./page.module.css";
 
 export default function Home() {
+  const { user } = useAuth();
   const router = useRouter();
   const [savedPins, setSavedPins] = useState<SavedPin[]>([]);
-  const [mapRefreshTrigger, setMapRefreshTrigger] = useState(0);
+  const [pinsLoaded, setPinsLoaded] = useState(false);
   const [computingAll, setComputingAll] = useState(true);
   const [computedMap, setComputedMap] = useState<Map<string, ComputedSuitability | null>>(new Map());
   const computeKeyRef = useRef("");
+  const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Shared compute pass: runs once per unique set of pin IDs.
-  // Eliminates N×2 duplicate API calls from per-tile self-fetching.
+  // Shared compute pass — key-based dedup avoids Supabase race condition.
   useEffect(() => {
     const key = savedPins.map((p) => p.id).join(",");
     if (computeKeyRef.current === key) return;
@@ -39,151 +43,166 @@ export default function Home() {
       return;
     }
 
-    let cancelled = false;
     setComputingAll(true);
 
     Promise.all(savedPins.map((p) => computeSuitabilityForPinSafe(p))).then((results) => {
-      if (cancelled) return;
+      if (computeKeyRef.current !== key) return;
       const newMap = new Map<string, ComputedSuitability | null>();
-      let best: { pin: SavedPin; r: ComputedSuitability } | null = null as { pin: SavedPin; r: ComputedSuitability } | null;
       results.forEach((r, i) => {
         newMap.set(savedPins[i].id, r);
-        if (r && (!best || r.suitability.score > best.r.suitability.score))
-          best = { pin: savedPins[i], r };
       });
       setComputedMap(newMap);
       setComputingAll(false);
-      if (best) {
-        const times = best.r.weather.hourly.map((h: { time: string }) => h.time);
-        applyTheme(deriveTheme(best.pin.activity, best.r.weather.current.weatherCode, times));
-        applyWeatherThemeClass(
-          getWeatherThemeClass({
-            weatherCode: best.r.weather.current.weatherCode,
-            gustKph: best.r.weather.current.gustKph,
-            visibilityM: best.r.weather.current.visibilityM,
-            precipProb: best.r.weather.current.precipProb,
-            snowfallCm: best.r.weather.current.snowfallCm,
-          })
-        );
-      }
     });
-
-    return () => {
-      cancelled = true;
-      clearTheme();
-      clearWeatherThemeClass();
-    };
   }, [savedPins]);
 
-  // Load pins on mount
+  // Load pins on mount (or when user changes)
   useEffect(() => {
-    // First load from localStorage for immediate display
     const localPins = PinStore.all();
     setSavedPins(localPins);
+    setPinsLoaded(true);
 
     if (!supabase) return;
 
-    // Then load from Supabase and overwrite
     const loadRemotePins = async () => {
       try {
-        const { data, error } = await supabase!
-          .from("pins")
-          .select("*")
-          .order("created_at", { ascending: false });
+        let remotePins: SavedPin[] = [];
 
-        if (error || !data) {
-          if (error) console.error("Supabase pins fetch error:", error);
-          return;
+        if (user) {
+          const { data, error } = await supabase!
+            .from("user_pins")
+            .select("pin_id, pins(*)")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false });
+
+          if (error || !data) {
+            if (error) console.error("Supabase pins fetch error:", error);
+            return;
+          }
+
+          remotePins = data
+            .filter((row: any) => row.pins)
+            .map((row: any) => {
+              const p = row.pins;
+              return {
+                id: p.id,
+                area: p.area,
+                lat: p.lat,
+                lon: p.lon,
+                activity: p.activity,
+                createdAt: new Date(p.created_at).getTime(),
+                canonical_name: p.canonical_name,
+                slug: p.slug,
+                popularity_score: p.popularity_score,
+                tags: p.tags,
+              };
+            });
+        } else {
+          const { data, error } = await supabase!
+            .from("pins")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (error || !data) {
+            if (error) console.error("Supabase pins fetch error:", error);
+            return;
+          }
+
+          remotePins = data.map((p: any) => ({
+            id: p.id,
+            area: p.area,
+            lat: p.lat,
+            lon: p.lon,
+            activity: p.activity,
+            createdAt: new Date(p.created_at).getTime(),
+            canonical_name: p.canonical_name,
+            slug: p.slug,
+            popularity_score: p.popularity_score,
+            tags: p.tags,
+          }));
         }
 
-        const remotePins: SavedPin[] = data.map((p: any) => ({
-          id: p.id,
-          area: p.area,
-          lat: p.lat,
-          lon: p.lon,
-          activity: p.activity,
-          createdAt: new Date(p.created_at).getTime(),
-          canonical_name: p.canonical_name,
-          slug: p.slug,
-          popularity_score: p.popularity_score,
-          tags: p.tags,
-        }));
-
-        setSavedPins(remotePins);
+        if (remotePins.length > 0) {
+          setSavedPins(remotePins);
+        }
       } catch (err) {
         console.error("Unexpected error loading pins:", err);
       }
     };
 
     loadRemotePins();
-  }, []);
+  }, [user]);
 
-  // Handler: Open pin detail page
-  const handleOpen = (id: string) => {
-    router.push(`/pins/${id}`);
-  };
+  // Build decision for the active pin
+  const decision: Decision | null = useMemo(() => {
+    if (!activeId) return null;
+    const pin = savedPins.find((p) => p.id === activeId);
+    if (!pin) return null;
+    const computed = computedMap.get(activeId);
+    if (!computed) return null;
+    return buildDecision(pin, computed);
+  }, [activeId, savedPins, computedMap]);
 
-  // Handler: Edit pin
-  const handleEdit = (id: string) => {
-    router.push(`/pins/${id}/edit`);
-  };
-
-  // Handler: Delete pin
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this spot?")) return;
-
-    try {
-      if (supabase) {
-        const { error } = await supabase.from("pins").delete().eq("id", id);
-        if (error) {
-          console.error("Supabase delete error:", error);
-        }
-      }
-
-      PinStore.remove(id);
-
-      // Update state
-      setSavedPins((prev) => prev.filter((p) => p.id !== id));
-
-      // Trigger map refresh to remove deleted pin
-      setMapRefreshTrigger((prev) => prev + 1);
-    } catch (err) {
-      console.error("Unexpected error deleting pin:", err);
-      alert("An error occurred while deleting the pin.");
+  // Apply ambient theme when a pin is selected; clear on reset
+  useEffect(() => {
+    if (!decision) {
+      clearTheme();
+      clearWeatherThemeClass();
+      return;
     }
-  };
+    applyTheme(decision.theme);
+    applyWeatherThemeClass(
+      getWeatherThemeClass({
+        weatherCode: decision.weather.weatherCode,
+        gustKph: decision.weather.gustKph,
+        precipProb: decision.weather.precipProb,
+      })
+    );
+    return () => {
+      clearTheme();
+      clearWeatherThemeClass();
+    };
+  }, [decision]);
 
-  // Handler: Create new pin
-  const handleCreate = () => {
-    router.push("/map");
-  };
+  const hasPins = pinsLoaded && savedPins.length > 0;
+
+  // Select a pin — sticky, no toggle. Only logo resets.
+  const handleSelect = (id: string) => setActiveId(id);
+
+  // Logo click: reset to default homepage (clear selection + theme)
+  const handleReset = () => setActiveId(null);
 
   return (
-    <main className={styles.pageContainer}>
-      {/* Top: Pin Grid */}
-      <section className={styles.sectionSpacing}>
-        <h2 className={styles.mainHeading}>Your Spots</h2>
-        <PinGrid
-          pins={savedPins}
-          onOpen={handleOpen}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onCreate={handleCreate}
-          computeResults={computedMap}
-          computeLoading={computingAll}
-        />
-      </section>
+    <div className={styles.page}>
+      <HomeTopBar onReset={handleReset} />
 
-      {/* Map Section */}
-      <section className={styles.sectionSpacing}>
-        <MapSection refreshTrigger={mapRefreshTrigger} />
-      </section>
+      <div className={styles.layout}>
+        {/* Always-visible sidebar */}
+        {hasPins && (
+          <HomeSidebar
+            pins={savedPins}
+            activeId={activeId}
+            computedMap={computedMap}
+            loading={computingAll}
+            onSelect={handleSelect}
+            onAdd={() => router.push("/map")}
+          />
+        )}
 
-      {/* Top Spots Today */}
-      <section className={styles.sectionSpacing}>
-        <h2 className={styles.mainHeading}>🏆 Top Spots Today</h2>
-        <TopSpots />
-      </section>
-    </main>
+        {/* Main content */}
+        <main className={styles.main}>
+          {activeId && decision ? (
+            /* Pin selected — replace hero with spot intelligence */
+            <SelectedSpotBoard decision={decision} />
+          ) : (
+            /* Default — cinematic hero */
+            <HomepageHero />
+          )}
+
+          {/* No-pins onboarding */}
+          {!hasPins && pinsLoaded && !activeId && <HomeOnboarding />}
+        </main>
+      </div>
+    </div>
   );
 }

@@ -1,0 +1,109 @@
+/*
+ * Cinematic hero for the main content area.
+ * No TopBar inside — TopBar is at the page level.
+ * Uses dark token overrides scoped to this element.
+ */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+
+  /* ── Dark token overrides (scoped) ── */
+  --foreground: 210 20% 96%;
+  --muted-foreground: 215 14% 62%;
+  --surface: 222 18% 16%;
+  --surface-elevated: 222 15% 20%;
+  --accent: 205 82% 58%;
+  --accent-foreground: 0 0% 100%;
+  --border: 219 12% 28%;
+  --border-subtle: 220 10% 23%;
+
+  color: hsl(var(--foreground));
+
+  /* ── Cinematic gradient ── */
+  background:
+    radial-gradient(ellipse at 20% 80%, rgba(34, 197, 94, 0.07) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(34, 211, 238, 0.06) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 65%, rgba(251, 191, 36, 0.035) 0%, transparent 40%),
+    linear-gradient(175deg, #06090f 0%, #0a1520 25%, #0c1e1e 50%, #0a1418 75%, #060a10 100%);
+
+  background-size: cover;
+  background-position: center;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 1.25rem;
+  padding: 3rem 2rem;
+  max-width: 640px;
+  margin: 0 auto;
+  width: 100%;
+  animation: fadeUp 600ms ease both;
+}
+
+.headline {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: clamp(2.25rem, 6vw, 4rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.subhead {
+  font-size: clamp(0.95rem, 1.8vw, 1.125rem);
+  line-height: 1.6;
+  color: hsl(var(--muted-foreground));
+  max-width: 440px;
+}
+
+.searchWrap {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 0.5rem;
+}
+
+/* ── Activity anchors ── */
+
+.activities {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 2rem 1.5rem;
+  animation: fadeUp 600ms 200ms ease both;
+}
+
+.activity {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+}
+
+.dot {
+  color: hsl(var(--muted-foreground));
+  opacity: 0.3;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 2rem 1.5rem;
+  }
+
+  .subhead br {
+    display: none;
+  }
+}

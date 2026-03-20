@@ -11,31 +11,25 @@ export interface TopSpot {
 }
 
 /**
- * Fetches aggregated popularity data from Supabase.
- * Groups pins by area/canonical_name + activity and counts sessions.
+ * Fetches the most-pinned spots across all users, ranked by popularity.
+ * Static data only — no live weather calls.
  */
 export async function fetchTopSpots(): Promise<TopSpot[]> {
   try {
-    let data: any[] | null = null;
+    let rawPins: { canonical_name: string | null; area: string | null; activity: string; lat: number; lon: number }[] = [];
 
     if (supabase) {
-      const result = await supabase
+      const { data, error } = await supabase
         .from("pins")
-        .select("canonical_name, area, activity, lat, lon");
+        .select("canonical_name, area, activity, lat, lon")
+        .order("popularity_score", { ascending: false })
+        .limit(40);
 
-      if (result.error) {
-        console.error("Error fetching pins for top spots:", result.error);
-      } else {
-        data = result.data;
-      }
-    }
-
-    // Fallback to localStorage
-    if (!data) {
+      if (!error && data) rawPins = data;
+    } else {
       const { PinStore } = await import("@/components/data/pinStore");
-      const localPins = PinStore.all();
-      data = localPins.map((p) => ({
-        canonical_name: p.canonical_name,
+      rawPins = PinStore.all().map((p) => ({
+        canonical_name: p.canonical_name ?? null,
         area: p.area,
         activity: p.activity,
         lat: p.lat,
@@ -43,41 +37,32 @@ export async function fetchTopSpots(): Promise<TopSpot[]> {
       }));
     }
 
-    if (data.length === 0) {
-      return [];
-    }
+    if (rawPins.length === 0) return [];
 
-    // Aggregate by spot_name (canonical_name || area) + activity
+    // Aggregate by canonical_name + activity
     const aggregated = new Map<string, TopSpot>();
-
-    data.forEach((pin: any) => {
-      const spotName = pin.canonical_name || pin.area;
-      const activity = pin.activity;
-      const key = `${spotName}__${activity}`;
-
+    for (const pin of rawPins) {
+      const name = pin.canonical_name || pin.area || "Unknown";
+      const key = `${name}__${pin.activity}`;
       if (aggregated.has(key)) {
         const existing = aggregated.get(key)!;
         existing.session_count += 1;
-        // Update average lat/lon
         existing.avg_lat = (existing.avg_lat * (existing.session_count - 1) + pin.lat) / existing.session_count;
         existing.avg_lon = (existing.avg_lon * (existing.session_count - 1) + pin.lon) / existing.session_count;
       } else {
         aggregated.set(key, {
-          spot_name: spotName,
-          activity,
+          spot_name: name,
+          activity: pin.activity,
           avg_lat: pin.lat,
           avg_lon: pin.lon,
           session_count: 1,
         });
       }
-    });
+    }
 
-    // Convert to array and sort by session_count descending
-    const topSpots = Array.from(aggregated.values()).sort(
-      (a, b) => b.session_count - a.session_count
-    );
-
-    return topSpots;
+    return Array.from(aggregated.values())
+      .sort((a, b) => b.session_count - a.session_count)
+      .slice(0, 8);
   } catch (err) {
     console.error("Unexpected error fetching top spots:", err);
     return [];

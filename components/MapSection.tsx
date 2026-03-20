@@ -5,6 +5,7 @@
 import dynamic from 'next/dynamic';
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/lib/useAuth';
 import { PinStore, SavedPin } from './data/pinStore';
 
 const LeafletMap = dynamic(() => import('./LeafletMap'), {
@@ -47,34 +48,40 @@ interface MapSectionProps {
 }
 
 export default function MapSection({ refreshTrigger }: MapSectionProps) {
+  const { user } = useAuth();
   const [mapRef, setMapRef] = useState<any>(null);
   const [allPins, setAllPins] = useState<SavedPin[]>([]);
   const [pinsLoaded, setPinsLoaded] = useState(false);
   const hasAutoCentered = useRef(false);
 
-  // Load all saved pins from Supabase
+  // Load user's pins from Supabase via user_pins join
   useEffect(() => {
-    // Reset auto-center flag when refreshTrigger changes (e.g., new pin added)
     hasAutoCentered.current = false;
     setPinsLoaded(false);
 
     const loadPins = async () => {
       try {
-        if (supabase) {
+        if (supabase && user) {
           const { data, error } = await supabase
-            .from('pins')
-            .select('*')
+            .from('user_pins')
+            .select('pin_id, pins(*)')
+            .eq('user_id', user.id)
             .order('created_at', { ascending: false });
 
           if (data && !error) {
-            const pins: SavedPin[] = data.map((p: any) => ({
-              id: p.id,
-              area: p.area,
-              lat: p.lat,
-              lon: p.lon,
-              activity: p.activity,
-              createdAt: new Date(p.created_at).getTime(),
-            }));
+            const pins: SavedPin[] = data
+              .filter((row: any) => row.pins)
+              .map((row: any) => {
+                const p = row.pins;
+                return {
+                  id: p.id,
+                  area: p.area,
+                  lat: p.lat,
+                  lon: p.lon,
+                  activity: p.activity,
+                  createdAt: new Date(p.created_at).getTime(),
+                };
+              });
             setAllPins(pins);
             setPinsLoaded(true);
             return;
@@ -92,7 +99,7 @@ export default function MapSection({ refreshTrigger }: MapSectionProps) {
     };
 
     loadPins();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, user]);
 
   // Auto-center ONCE when both map and pins are ready (resets on refreshTrigger change)
   useEffect(() => {

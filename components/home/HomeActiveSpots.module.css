@@ -1,0 +1,246 @@
+.section {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 2rem 3rem;
+}
+
+.heading {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 1.25rem;
+}
+
+/* ── Activity gradient fallbacks (image-ready) ── */
+
+.gradHike {
+  background:
+    linear-gradient(145deg, rgba(34, 197, 94, 0.10) 0%, rgba(34, 197, 94, 0.02) 100%),
+    hsl(var(--surface) / 0.5);
+}
+
+.gradSurf {
+  background:
+    linear-gradient(145deg, rgba(34, 211, 238, 0.10) 0%, rgba(34, 211, 238, 0.02) 100%),
+    hsl(var(--surface) / 0.5);
+}
+
+.gradSnow {
+  background:
+    linear-gradient(145deg, rgba(96, 165, 250, 0.10) 0%, rgba(96, 165, 250, 0.02) 100%),
+    hsl(var(--surface) / 0.5);
+}
+
+/* ── Featured card ── */
+
+.featured {
+  border-radius: 16px;
+  border: 1px solid hsl(var(--border-subtle));
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: box-shadow 180ms ease, transform 120ms ease;
+  margin-bottom: 1rem;
+  /* Ready for background-image overlay when images are available */
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.featured:hover {
+  box-shadow: 0 4px 24px hsl(var(--shadow) / 0.15);
+  transform: translateY(-1px);
+}
+
+.featuredContent {
+  position: relative;
+  z-index: 1;
+}
+
+.featuredTop {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.featuredIcon {
+  font-size: 1.25rem;
+}
+
+.featuredVerdict {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 0.875rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.featuredName {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.25rem;
+}
+
+.featuredHeadline {
+  font-size: 0.9rem;
+  color: hsl(var(--muted-foreground));
+  text-transform: lowercase;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.featuredMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.featuredScore {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.featuredActivity {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  text-transform: capitalize;
+}
+
+.featuredLink {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: hsl(var(--accent));
+  text-decoration: none;
+  transition: opacity 150ms ease;
+}
+
+.featuredLink:hover {
+  opacity: 0.75;
+}
+
+/* ── Secondary cards grid ── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.card {
+  border-radius: 14px;
+  border: 1px solid hsl(var(--border-subtle));
+  padding: 1.125rem;
+  cursor: pointer;
+  transition: box-shadow 180ms ease, transform 120ms ease;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  box-shadow: 0 3px 16px hsl(var(--shadow) / 0.12);
+  transform: translateY(-1px);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.cardIcon {
+  font-size: 1rem;
+}
+
+.cardVerdict {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.cardName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardReason {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cardScore {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.cardActivity {
+  font-size: 0.6875rem;
+  color: hsl(var(--muted-foreground));
+  text-transform: capitalize;
+}
+
+/* ── Verdict color classes ── */
+
+.verdictGo {
+  color: hsl(var(--score-great));
+}
+
+.verdictMaybe {
+  color: hsl(var(--score-ok));
+}
+
+.verdictSkip {
+  color: hsl(var(--score-terrible));
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .section {
+    padding: 0 1.25rem 2rem;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .featured {
+    padding: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

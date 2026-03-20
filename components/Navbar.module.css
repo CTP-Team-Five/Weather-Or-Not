@@ -1,17 +1,278 @@
-/* Only animation keyframes remain here — all other Navbar styles use Tailwind tokens. */
+/* components/Navbar.module.css */
+
+/* ── Shell ────────────────────────────────────────────────────────────────── */
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Accent line — thin brand stripe that shifts with weather theme ───────── */
+
+.accentLine {
+  height: 3px;
+  background: hsl(var(--accent));
+  width: 100%;
+  transition: background 220ms ease;
+  flex-shrink: 0;
+}
+
+/* ── Main bar ─────────────────────────────────────────────────────────────── */
+
+.bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 2rem;
+  height: 60px;
+  background: hsl(var(--surface) / 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid hsl(var(--border-subtle));
+  box-shadow: 0 1px 0 hsl(var(--border-subtle)), 0 4px 16px hsl(var(--shadow) / 0.06);
+}
+
+/* ── Logo ─────────────────────────────────────────────────────────────────── */
+
+.logoLink {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  color: hsl(var(--foreground));
+  flex-shrink: 0;
+  transition: opacity 0.18s ease;
+}
+
+.logoLink:hover {
+  opacity: 0.72;
+}
 
 .logoIcon {
+  font-size: 2rem;
   color: hsl(var(--warning));
+  animation: gentlePulse 6s ease-in-out infinite;
+  flex-shrink: 0;
   transition: transform 0.3s ease;
-  animation: gentlePulse 5s ease-in-out infinite;
 }
 
-.logoIcon:hover {
-  transform: rotate(40deg) scale(1.1);
+.logoLink:hover .logoIcon {
+  animation-play-state: paused;
+  transform: rotate(35deg) scale(1.1);
 }
+
+.logoText {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 1.3rem;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.logoWord1 {
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+}
+
+.logoWord2 {
+  font-weight: 800;
+  font-style: italic;
+  color: hsl(var(--foreground));
+  margin-left: -0.03em;
+}
+
+.logoIconRight {
+  font-size: 1.6rem;
+  color: hsl(var(--muted-foreground) / 0.6);
+  flex-shrink: 0;
+  margin-left: -0.1rem;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.logoLink:hover .logoIconRight {
+  color: hsl(var(--muted-foreground));
+  transform: translateX(1px);
+}
+
+/* ── Right side ───────────────────────────────────────────────────────────── */
+
+.rightSide {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* ── Nav links ────────────────────────────────────────────────────────────── */
+
+.navList {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  transition: color 0.15s ease, background 0.15s ease;
+  position: relative;
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--muted));
+}
+
+.navLink.active {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
+
+/* Active indicator — thin accent dot under the link */
+.navLink.active::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 2px;
+  background: hsl(var(--accent));
+  border-radius: 1px;
+}
+
+/* ── Add Spot CTA ─────────────────────────────────────────────────────────── */
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px hsl(var(--accent) / 0.3);
+}
+
+.addBtn:hover {
+  background: hsl(var(--accent) / 0.88);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px hsl(var(--accent) / 0.35);
+}
+
+.addBtn:active {
+  transform: translateY(0);
+}
+
+.addLabel {
+  letter-spacing: 0.01em;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .bar {
+    padding: 0 1.25rem;
+  }
+
+  .addLabel {
+    display: none;
+  }
+
+  .addBtn {
+    padding: 0.45rem 0.6rem;
+  }
+
+  .logoWord1 {
+    display: none;
+  }
+
+  .logoIconRight {
+    display: none;
+  }
+}
+
+/* ── Auth controls ────────────────────────────────────────────────────────── */
+
+.authControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.avatarCircle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: hsl(var(--accent) / 0.18);
+  border: 1px solid hsl(var(--accent) / 0.35);
+  color: hsl(var(--accent));
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.signOutBtn {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.signOutBtn:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--muted));
+}
+
+.signInLink {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--border));
+  transition: color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.signInLink:hover {
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border-subtle));
+}
+
+/* ── Logo animation ───────────────────────────────────────────────────────── */
 
 @keyframes gentlePulse {
   0%   { transform: rotate(0deg); }
-  50%  { transform: rotate(20deg); }
+  40%  { transform: rotate(18deg); }
+  60%  { transform: rotate(18deg); }
   100% { transform: rotate(0deg); }
 }
