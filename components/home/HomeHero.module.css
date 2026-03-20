@@ -1,0 +1,130 @@
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem 1.5rem;
+  min-height: 46vh;
+  gap: 0.5rem;
+}
+
+/* ── Verdict cluster ── */
+
+.verdictCluster {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.label {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: clamp(0.875rem, 2vw, 1.125rem);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.labelGreat {
+  color: hsl(var(--score-great));
+}
+
+.labelOk {
+  color: hsl(var(--score-ok));
+}
+
+.labelTerrible {
+  color: hsl(var(--score-terrible));
+}
+
+.scoreRow {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.score {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: clamp(5rem, 14vw, 9rem);
+  font-weight: 800;
+  line-height: 1;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.04em;
+}
+
+.scoreUnit {
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+  align-self: flex-end;
+  margin-bottom: 0.6em;
+}
+
+/* ── Headline ── */
+
+.headline {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  line-height: 1.15;
+  max-width: 600px;
+  text-transform: lowercase;
+  margin-top: 0.25rem;
+}
+
+.subline {
+  font-size: clamp(0.85rem, 1.4vw, 1rem);
+  color: hsl(var(--muted-foreground));
+  max-width: 500px;
+  line-height: 1.5;
+}
+
+/* ── Pin context ── */
+
+.pinContext {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.pinName {
+  font-weight: 600;
+  color: hsl(var(--foreground) / 0.85);
+}
+
+.dot {
+  opacity: 0.35;
+}
+
+.weatherDesc {
+  font-style: italic;
+}
+
+/* ── Detail link ── */
+
+.detailLink {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: hsl(var(--accent));
+  text-decoration: none;
+  transition: opacity 150ms ease;
+}
+
+.detailLink:hover {
+  opacity: 0.75;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .hero {
+    min-height: 36vh;
+    padding: 2rem 1.5rem 1rem;
+  }
+}

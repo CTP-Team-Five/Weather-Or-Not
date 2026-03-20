@@ -24,16 +24,18 @@ const barlow = Barlow({
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isHomePage = pathname === '/';
   const isMapPage = pathname === '/map';
+  const hideNavbar = isHomePage;
 
   return (
     <html lang="en">
       <body
         className={`${barlowCondensed.variable} ${barlow.variable} ${
-          isMapPage ? 'no-navbar-padding' : ''
+          isMapPage || isHomePage ? 'no-navbar-padding' : ''
         }`}
       >
-        <Navbar />
+        {!hideNavbar && <Navbar />}
         {children}
       </body>
     </html>

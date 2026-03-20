@@ -1,0 +1,59 @@
+.bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: transparent;
+  pointer-events: none;
+}
+
+.bar > * {
+  pointer-events: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: hsl(var(--foreground));
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.logo {
+  font-size: 1.75rem;
+  color: hsl(var(--accent));
+}
+
+.name {
+  font-family: var(--font-display, system-ui, sans-serif);
+  letter-spacing: -0.02em;
+}
+
+.nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.navLink {
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 150ms ease, background 150ms ease;
+  padding: 0.375rem 0.75rem;
+  border-radius: 8px;
+  background: hsl(var(--surface) / 0.5);
+  backdrop-filter: blur(8px);
+}
+
+.navLink:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--surface) / 0.8);
+}
