@@ -153,20 +153,6 @@ function MapPageContent() {
       mapRef.flyTo([lat, lon], 11, { animate: true, duration: 0.8 });
     }
 
-    // Lock scroll-wheel zoom to map center so the searched location stays put.
-    // Reverts to cursor-anchored zoom on the first user drag.
-    mapRef.scrollWheelZoom.disable();
-    mapRef.options.scrollWheelZoom = 'center';
-    mapRef.scrollWheelZoom.enable();
-
-    const revertZoom = () => {
-      mapRef.scrollWheelZoom.disable();
-      mapRef.options.scrollWheelZoom = true;
-      mapRef.scrollWheelZoom.enable();
-      mapRef.off('dragstart', revertZoom);
-    };
-    mapRef.on('dragstart', revertZoom);
-
     setMapNavigationIntent({ type: 'none' });
   }, [mapRef, mapNavigationIntent]);
 
