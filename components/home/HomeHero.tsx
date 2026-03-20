@@ -1,39 +1,55 @@
 'use client';
 
 import Link from 'next/link';
-import { Decision } from '@/lib/decision';
+import { Decision, Verdict } from '@/lib/decision';
 import styles from './HomeHero.module.css';
 
 interface Props {
   decision: Decision;
 }
 
-function labelClass(label: string): string {
-  if (label === 'GREAT') return styles.labelGreat;
-  if (label === 'OK') return styles.labelOk;
-  return styles.labelTerrible;
+const VERDICT_SUBTEXT: Record<Verdict, string> = {
+  GO: 'get out there',
+  MAYBE: "it's a toss-up",
+  SKIP: 'not today',
+};
+
+function verdictClass(v: Verdict): string {
+  if (v === 'GO') return styles.verdictGo;
+  if (v === 'MAYBE') return styles.verdictMaybe;
+  return styles.verdictSkip;
+}
+
+function scoreClass(v: Verdict): string {
+  if (v === 'GO') return styles.scoreGo;
+  if (v === 'MAYBE') return styles.scoreMaybe;
+  return styles.scoreSkip;
 }
 
 export default function HomeHero({ decision }: Props) {
-  const { score, label, hero, weather, pin } = decision;
+  const { score, verdict, hero, weather, pin } = decision;
 
   return (
     <section className={styles.hero}>
-      {/* Verdict cluster: label + dominant score */}
-      <div className={styles.verdictCluster}>
-        <span className={`${styles.label} ${labelClass(label)}`}>{label}</span>
-        <div className={styles.scoreRow}>
-          <span className={styles.score}>{score}</span>
-          <span className={styles.scoreUnit}>/100</span>
-        </div>
+      {/* 1. Verdict — dominant */}
+      <div className={styles.verdictBlock}>
+        <span className={`${styles.verdict} ${verdictClass(verdict)}`}>
+          {verdict}
+        </span>
+        <span className={styles.verdictSub}>{VERDICT_SUBTEXT[verdict]}</span>
       </div>
 
-      {/* Cinematic headline */}
+      {/* 2. Headline — one-line explanation */}
       <h1 className={styles.headline}>{hero.headline}</h1>
-      <p className={styles.subline}>{hero.subline}</p>
 
-      {/* Pin context + detail link */}
-      <div className={styles.pinContext}>
+      {/* 3. Score — prominent but secondary */}
+      <div className={styles.scoreLine}>
+        <span className={`${styles.score} ${scoreClass(verdict)}`}>{score}</span>
+        <span className={styles.scoreUnit}>/100</span>
+      </div>
+
+      {/* 4. Pin + activity context */}
+      <div className={styles.context}>
         <span className={styles.pinName}>
           {pin.canonical_name || pin.area}
         </span>

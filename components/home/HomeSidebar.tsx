@@ -2,6 +2,7 @@
 
 import { SavedPin } from '@/components/data/pinStore';
 import { ComputedSuitability } from '@/lib/computeSuitability';
+import { LABEL_TO_VERDICT, Verdict } from '@/lib/decision';
 import styles from './HomeSidebar.module.css';
 
 const ACTIVITY_ICONS: Record<string, string> = {
@@ -19,11 +20,10 @@ interface Props {
   onAdd: () => void;
 }
 
-function scorePillClass(label?: string): string {
-  if (label === 'GREAT') return styles.scoreGreat;
-  if (label === 'OK') return styles.scoreOk;
-  if (label === 'TERRIBLE') return styles.scoreTerrible;
-  return '';
+function verdictBadgeClass(v: Verdict): string {
+  if (v === 'GO') return styles.badgeGo;
+  if (v === 'MAYBE') return styles.badgeMaybe;
+  return styles.badgeSkip;
 }
 
 export default function HomeSidebar({ pins, activeId, computedMap, loading, onSelect, onAdd }: Props) {
@@ -35,6 +35,9 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
         {pins.map((pin) => {
           const result = computedMap.get(pin.id);
           const isActive = pin.id === activeId;
+          const verdict = result ? LABEL_TO_VERDICT[result.suitability.label] : null;
+          const reason = result?.suitability.reasons[0] ?? null;
+
           return (
             <button
               key={pin.id}
@@ -49,13 +52,17 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
                 <span className={styles.pinName}>
                   {pin.canonical_name || pin.area}
                 </span>
-                <span className={styles.activity}>{pin.activity}</span>
+                {loading ? (
+                  <span className={styles.reasonSkeleton} />
+                ) : reason ? (
+                  <span className={styles.reason}>{reason}</span>
+                ) : null}
               </div>
               {loading ? (
-                <span className={styles.scoreSkeleton} />
-              ) : result ? (
-                <span className={`${styles.score} ${scorePillClass(result.suitability.label)}`}>
-                  {result.suitability.score}
+                <span className={styles.badgeSkeleton} />
+              ) : verdict ? (
+                <span className={`${styles.badge} ${verdictBadgeClass(verdict)}`}>
+                  {verdict}
                 </span>
               ) : null}
             </button>

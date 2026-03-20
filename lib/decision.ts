@@ -24,10 +24,20 @@ export interface WeatherSummary {
   swellPeriodS: number | null;
 }
 
+/** User-facing verdict — maps from internal scoring labels. */
+export type Verdict = 'GO' | 'MAYBE' | 'SKIP';
+
+export const LABEL_TO_VERDICT: Record<SuitabilityLabel, Verdict> = {
+  GREAT: 'GO',
+  OK: 'MAYBE',
+  TERRIBLE: 'SKIP',
+};
+
 export interface Decision {
   pin: SavedPin;
   score: number;
   label: SuitabilityLabel;
+  verdict: Verdict;
   hero: HeroContent;
   chips: RiskChip[];
   weather: WeatherSummary;
@@ -83,6 +93,7 @@ export function buildDecision(
     pin,
     score: computed.suitability.score,
     label: computed.suitability.label,
+    verdict: LABEL_TO_VERDICT[computed.suitability.label],
     hero,
     chips,
     weather,

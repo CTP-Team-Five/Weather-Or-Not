@@ -34,7 +34,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem;
+  padding: 0.625rem 0.75rem;
   border: none;
   background: transparent;
   border-radius: 12px;
@@ -55,9 +55,9 @@
 }
 
 .icon {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   flex-shrink: 0;
-  width: 2rem;
+  width: 1.75rem;
   text-align: center;
 }
 
@@ -71,63 +71,80 @@
 
 .pinName {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.activity {
-  font-size: 0.75rem;
+.reason {
+  font-size: 0.6875rem;
   color: hsl(var(--muted-foreground));
-  text-transform: capitalize;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
 }
 
-.score {
+.reasonSkeleton {
+  display: block;
+  width: 80px;
+  height: 0.6875rem;
+  border-radius: 4px;
+  background: hsl(var(--muted) / 0.2);
+  animation: pulse 1.5s ease infinite;
+}
+
+/* ── Verdict badge ── */
+
+.badge {
+  font-family: var(--font-display, system-ui, sans-serif);
   font-weight: 700;
-  font-size: 0.875rem;
-  min-width: 2rem;
-  text-align: center;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   padding: 0.2rem 0.5rem;
-  border-radius: 8px;
+  border-radius: 6px;
   flex-shrink: 0;
 }
 
-.scoreGreat {
+.badgeGo {
   background: hsl(var(--score-great) / 0.15);
   color: hsl(var(--score-great));
 }
 
-.scoreOk {
+.badgeMaybe {
   background: hsl(var(--score-ok) / 0.15);
   color: hsl(var(--score-ok));
 }
 
-.scoreTerrible {
+.badgeSkip {
   background: hsl(var(--score-terrible) / 0.15);
   color: hsl(var(--score-terrible));
 }
 
-.scoreSkeleton {
-  width: 2rem;
-  height: 1.5rem;
-  border-radius: 8px;
-  background: hsl(var(--muted) / 0.3);
+.badgeSkeleton {
+  width: 2.5rem;
+  height: 1.25rem;
+  border-radius: 6px;
+  background: hsl(var(--muted) / 0.2);
   animation: pulse 1.5s ease infinite;
 }
+
+/* ── Add button ── */
 
 .addButton {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.625rem 0.75rem;
   margin-top: 0.5rem;
   border: 1px dashed hsl(var(--border));
   background: transparent;
   border-radius: 12px;
   cursor: pointer;
   color: hsl(var(--muted-foreground));
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   transition: all 150ms ease;
   width: 100%;
 }
@@ -139,15 +156,15 @@
 }
 
 .addPlus {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 300;
-  width: 2rem;
+  width: 1.75rem;
   text-align: center;
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.7; }
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
 }
 
 /* ── Mobile: horizontal pin strip ── */
@@ -181,13 +198,14 @@
     padding: 0.5rem 0.75rem;
     white-space: nowrap;
     min-width: 80px;
+    align-items: center;
   }
 
   .meta {
     align-items: center;
   }
 
-  .activity {
+  .reason {
     display: none;
   }
 
