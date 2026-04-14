@@ -23,6 +23,7 @@
 /* Explicit dark cinematic gradient that fades into the page background.      */
 
 .hero {
+  position: relative;
   min-height: 60vh;
   display: flex;
   flex-direction: column;
@@ -30,14 +31,29 @@
   max-width: 960px;
   margin: 0 auto;
   width: 100%;
+  overflow: hidden;
+  /* Theme gradient sits on top of the background image — acts as scrim */
   background:
     radial-gradient(ellipse 80% 60% at 50% 0%, var(--theme-accent-glow, transparent), transparent 70%),
     linear-gradient(
       to bottom,
-      var(--theme-gradient-top, #0a1628) 0%,
-      var(--theme-gradient-mid, #0f1e38) 65%,
+      color-mix(in srgb, var(--theme-gradient-top, #0a1628) 82%, transparent) 0%,
+      color-mix(in srgb, var(--theme-gradient-mid, #0f1e38) 75%, transparent) 65%,
       hsl(var(--background)) 100%
     );
+}
+
+/* Activity background image — behind the gradient */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--hero-bg-image);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.35;
+  transition: opacity 600ms ease;
 }
 
 .loadingHero {

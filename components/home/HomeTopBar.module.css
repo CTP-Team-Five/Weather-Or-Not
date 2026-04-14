@@ -8,17 +8,17 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1.5rem;
-  background: hsl(var(--surface) / 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid hsl(var(--border-subtle));
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: hsl(var(--foreground));
+  color: #1e293b;
   text-decoration: none;
   font-weight: 700;
   font-size: 1.125rem;
@@ -30,7 +30,7 @@
 
 .logo {
   font-size: 1.75rem;
-  color: hsl(var(--accent));
+  color: #f59e0b;
 }
 
 .name {
@@ -41,27 +41,26 @@
 
 .word1 {
   font-weight: 400;
-  color: hsl(var(--muted-foreground));
+  color: #64748b;
 }
 
 .word2 {
   font-weight: 800;
   font-style: italic;
-  color: hsl(var(--foreground));
+  color: #1e293b;
 }
 
 .logoStorm {
   font-size: 1.5rem;
-  color: hsl(var(--muted-foreground) / 0.55);
+  color: rgba(100, 116, 139, 0.55);
   flex-shrink: 0;
   margin-left: 0.25rem;
   transition: color 0.3s ease;
 }
 
-.brand .logoStorm {
-    color: hsl(var(--muted-foreground));
+.brand:hover .logoStorm {
+  color: #64748b;
 }
-
 
 .nav {
   display: flex;
@@ -69,7 +68,7 @@
 }
 
 .navLink {
-  color: hsl(var(--muted-foreground));
+  color: #64748b;
   font-weight: 500;
   font-size: 0.9rem;
   text-decoration: none;
@@ -79,7 +78,7 @@
 }
 
 .navLink:hover {
-  color: hsl(var(--foreground));
+  color: #1e293b;
 }
 
 @media (max-width: 768px) {

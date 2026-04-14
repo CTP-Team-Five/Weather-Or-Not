@@ -26,13 +26,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const isMapPage = pathname === '/map';
+  const isRatingPage = pathname === '/rating';
   const hideNavbar = isHomePage;
 
   return (
     <html lang="en">
       <body
         className={`${barlowCondensed.variable} ${barlow.variable} ${
-          isMapPage || isHomePage ? 'no-navbar-padding' : ''
+          isMapPage || isHomePage || isRatingPage ? 'no-navbar-padding' : ''
         }`}
       >
         {!hideNavbar && <Navbar />}

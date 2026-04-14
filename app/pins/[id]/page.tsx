@@ -21,6 +21,7 @@ import {
 import { deriveHeroContent } from "@/lib/heroContent";
 import { deriveRiskChips } from "@/lib/riskChips";
 import { ActivityIcon } from "@/components/icons/ActivityIcons";
+import { getBackgroundImage, toActivitySlot } from "@/lib/activityMedia";
 import styles from "./page.module.css";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
@@ -195,7 +196,10 @@ export default function PinDetailPage() {
     <main className={styles.container}>
 
       {/* ── HERO ZONE ──────────────────────────────────────────────────────── */}
-      <section className={styles.hero}>
+      <section
+        className={styles.hero}
+        style={{ '--hero-bg-image': `url(${getBackgroundImage(toActivitySlot(pin.activity)).src})` } as React.CSSProperties}
+      >
         <div className={styles.topBar}>
           <button className={styles.backBtn} onClick={() => router.push("/")}>
             ← Back
