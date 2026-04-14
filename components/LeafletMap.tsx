@@ -196,7 +196,7 @@ export default function LeafletMap({
       <MapContainer
         center={initialCenter}
         zoom={12}
-        scrollWheelZoom
+        scrollWheelZoom="center"
         style={{
           height: "100%",
           width: "100%",
