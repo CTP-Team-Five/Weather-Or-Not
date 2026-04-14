@@ -9,17 +9,12 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/useAuth";
 import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
 import { buildDecision, Decision } from "@/lib/decision";
-import { applyTheme, clearTheme } from "@/lib/applyTheme";
-import {
-  getWeatherThemeClass,
-  applyWeatherThemeClass,
-  clearWeatherThemeClass,
-} from "@/lib/weatherThemeClass";
 import HomeTopBar from "@/components/home/HomeTopBar";
 import HomeSidebar from "@/components/home/HomeSidebar";
 import HomepageHero from "@/components/home/HomepageHero";
 import SelectedSpotBoard from "@/components/home/SelectedSpotBoard";
 import HomeOnboarding from "@/components/home/HomeOnboarding";
+import BackgroundImage from "@/components/BackgroundImage";
 import styles from "./page.module.css";
 
 export default function Home() {
@@ -143,27 +138,6 @@ export default function Home() {
     return buildDecision(pin, computed);
   }, [activeId, savedPins, computedMap]);
 
-  // Apply ambient theme when a pin is selected; clear on reset
-  useEffect(() => {
-    if (!decision) {
-      clearTheme();
-      clearWeatherThemeClass();
-      return;
-    }
-    applyTheme(decision.theme);
-    applyWeatherThemeClass(
-      getWeatherThemeClass({
-        weatherCode: decision.weather.weatherCode,
-        gustKph: decision.weather.gustKph,
-        precipProb: decision.weather.precipProb,
-      })
-    );
-    return () => {
-      clearTheme();
-      clearWeatherThemeClass();
-    };
-  }, [decision]);
-
   const hasPins = pinsLoaded && savedPins.length > 0;
 
   // Select a pin — sticky, no toggle. Only logo resets.
@@ -192,10 +166,12 @@ export default function Home() {
         {/* Main content */}
         <main className={styles.main}>
           {activeId && decision ? (
-            /* Pin selected — replace hero with spot intelligence */
-            <SelectedSpotBoard decision={decision} />
+            /* Pin selected — activity-specific background behind the board */
+            <BackgroundImage slot={decision.pin.activity} scrim="medium" foreground="light" className={styles.mainBg}>
+              <SelectedSpotBoard decision={decision} />
+            </BackgroundImage>
           ) : (
-            /* Default — cinematic hero */
+            /* Default — cinematic hero with landing image */
             <HomepageHero />
           )}
 

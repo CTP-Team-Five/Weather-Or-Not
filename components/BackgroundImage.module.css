@@ -1,0 +1,119 @@
+.wrapper {
+  position: relative;
+  overflow: hidden;
+  /* Force a new stacking context so body::before texture can't bleed through */
+  isolation: isolate;
+  /* Inherit dimensions from parent — don't impose a height */
+}
+
+/* ── Image layer ─────────────────────────────────────────────────────────── */
+
+.imageLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-repeat: no-repeat;
+  /* Subtle scale-up so slight movement/parallax doesn't show edges */
+  transform: scale(1.02);
+  /* Smooth transition for future image-cycling / mood-switching */
+  transition: opacity 600ms ease, background-image 600ms ease;
+}
+
+/* ── Scrim overlay ───────────────────────────────────────────────────────── */
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* Base: bottom-heavy gradient so text near top/center stays readable,
+     but the image still breathes at the edges */
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.55) 0%,
+      rgba(0, 0, 0, 0.30) 40%,
+      rgba(0, 0, 0, 0.50) 100%
+    );
+  transition: opacity 400ms ease;
+}
+
+/* Intensity variants */
+
+/* Light haze — bright scenic images stay bright, soft veil for readability */
+.light {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.15) 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      rgba(255, 255, 255, 0.25) 100%
+    );
+}
+
+/* Medium — default. Gentle darkening that preserves image brightness */
+.medium {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.25) 0%,
+      rgba(0, 0, 0, 0.10) 45%,
+      rgba(0, 0, 0, 0.35) 100%
+    );
+}
+
+/* Heavy — stronger scrim but NOT pitch dark. Bottom fades to page. */
+.heavy {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.35) 0%,
+      rgba(0, 0, 0, 0.18) 45%,
+      rgba(0, 0, 0, 0.50) 100%
+    );
+}
+
+/* Haze — white mist/fog feel for bright aspirational shots */
+.haze {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.30) 0%,
+      rgba(255, 255, 255, 0.10) 50%,
+      rgba(255, 255, 255, 0.40) 100%
+    );
+}
+
+/* ── Foreground mode ─────────────────────────────────────────────────────── */
+
+.fgDark {
+  /* Dark text over bright/hazy images */
+  --foreground: 222 28% 16%;
+  --muted-foreground: 215 15% 42%;
+  --surface: 210 29% 96%;
+  --surface-elevated: 0 0% 100%;
+  --border: 215 18% 84%;
+  --border-subtle: 215 16% 89%;
+  color: hsl(var(--foreground));
+}
+
+.fgLight {
+  /* Light text over dark/medium scrim images */
+  --foreground: 210 20% 96%;
+  --muted-foreground: 215 14% 72%;
+  --surface: 222 18% 16%;
+  --surface-elevated: 222 15% 20%;
+  --border: 219 12% 28%;
+  --border-subtle: 220 10% 23%;
+  color: hsl(var(--foreground));
+}
+
+/* ── Content layer ───────────────────────────────────────────────────────── */
+
+.content {
+  position: relative;
+  z-index: 2;
+  /* Content fills the wrapper and sits above image + scrim */
+  width: 100%;
+  height: 100%;
+}

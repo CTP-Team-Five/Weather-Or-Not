@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import MapSearch, { SearchResult } from '@/components/MapSearch';
+import BackgroundImage from '@/components/BackgroundImage';
 import styles from './HomepageHero.module.css';
 
 export default function HomepageHero() {
@@ -12,7 +13,7 @@ export default function HomepageHero() {
   };
 
   return (
-    <div className={styles.hero}>
+    <BackgroundImage slot="default" scrim="haze" foreground="dark" className={styles.hero}>
       <div className={styles.content}>
         <h1 className={styles.headline}>Should you go?</h1>
         <p className={styles.subhead}>
@@ -33,6 +34,6 @@ export default function HomepageHero() {
         <span className={styles.dot}>&middot;</span>
         <span className={styles.activity}>{'\u{1F3BF}'} Snow</span>
       </div>
-    </div>
+    </BackgroundImage>
   );
 }

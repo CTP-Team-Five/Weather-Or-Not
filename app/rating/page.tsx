@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import { PinStore } from "@/components/data/pinStore";
+import BackgroundImage from "@/components/BackgroundImage";
 
 // ── Activity definitions ──────────────────────────────────────────────────────
 
@@ -125,7 +126,8 @@ function RatingPageContent() {
       : null;
 
   return (
-    <main className="min-h-screen bg-background text-foreground flex flex-col">
+    <BackgroundImage slot="default" scrim="haze" foreground="dark" className="min-h-screen">
+    <main className="min-h-screen text-foreground flex flex-col">
 
       {/* ── Location confirmation ─────────────────────────────────────────── */}
       <div className="flex flex-col items-center justify-center pt-20 pb-10 px-6 text-center">
@@ -229,6 +231,7 @@ function RatingPageContent() {
         </button>
       </div>
     </main>
+    </BackgroundImage>
   );
 }
 
