@@ -87,44 +87,59 @@ export default function AuthPage() {
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <label
+                    htmlFor="authEmail"
+                    className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                  >
                     Email
                   </label>
                   <input
+                    id="authEmail"
+                    name="email"
                     type="email"
+                    autoComplete="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="rounded-xl border border-border bg-surface-inset px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition"
+                    className="min-h-[44px] rounded-xl border border-border bg-surface-inset px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 transition"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  <label
+                    htmlFor="authPassword"
+                    className="text-xs font-medium text-muted-foreground uppercase tracking-wider"
+                  >
                     Password
                   </label>
                   <input
+                    id="authPassword"
+                    name="password"
                     type="password"
+                    autoComplete={mode === "signin" ? "current-password" : "new-password"}
                     required
                     minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="rounded-xl border border-border bg-surface-inset px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition"
+                    className="min-h-[44px] rounded-xl border border-border bg-surface-inset px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 transition"
                   />
                 </div>
 
                 {error && (
-                  <p className="text-sm text-danger">{error}</p>
+                  <p role="alert" aria-live="assertive" className="text-sm text-danger">
+                    {error}
+                  </p>
                 )}
 
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="mt-2 rounded-full bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition hover:opacity-90 disabled:opacity-50"
+                  disabled={submitting || !supabase}
+                  aria-label={submitting ? "Submitting" : undefined}
+                  className="mt-2 min-h-[48px] rounded-full bg-accent py-2.5 text-sm font-semibold text-accent-foreground transition hover:opacity-92 focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? "…" : mode === "signin" ? "Sign in" : "Create account"}
+                  {submitting ? "Submitting…" : mode === "signin" ? "Sign in" : "Create account"}
                 </button>
               </form>
 
