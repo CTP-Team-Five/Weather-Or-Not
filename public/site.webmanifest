@@ -1,0 +1,13 @@
+{
+  "name": "WeatherOrNot",
+  "short_name": "WeatherOrNot",
+  "description": "Weather scores for hiking, surfing, and snow. Pin your spots. Get a straight answer.",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/apple-touch-icon.svg", "sizes": "180x180", "type": "image/svg+xml" }
+  ],
+  "theme_color": "#0a1628",
+  "background_color": "#020617",
+  "display": "standalone",
+  "start_url": "/"
+}
