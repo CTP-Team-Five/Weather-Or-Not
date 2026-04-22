@@ -5,10 +5,11 @@
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, useEffect, useCallback, useRef } from "react";
+import type { Map as LeafletMapType, LatLngBoundsExpression } from "leaflet";
 import { HiPlus, HiArrowsPointingOut } from "react-icons/hi2";
 import MapSearch, { SearchResult } from "@/components/MapSearch";
 import MapPinManager from "@/components/MapPinManager";
-import { generateCanonicalName, inferTags } from "@/lib/generateCanonicalName";
+import { inferTags } from "@/lib/generateCanonicalName";
 import { generateSlug } from "@/lib/generateSlug";
 import { supabase } from "@/lib/supabaseClient";
 import { PinStore, SavedPin } from "@/components/data/pinStore";
@@ -16,6 +17,19 @@ import { deriveFriendlyName, deriveFriendlyNameFromSearch } from "@/lib/naming";
 import styles from "./page.module.css";
 
 type LatLngTuple = [number, number];
+
+type SupabasePinRow = {
+  id: string;
+  area: string;
+  lat: number;
+  lon: number;
+  activity: string;
+  created_at: string;
+  canonical_name?: string;
+  slug?: string;
+  popularity_score?: number;
+  tags?: string[];
+};
 
 type MapNavigationIntent =
   | { type: 'search-result'; bbox?: [number, number, number, number]; center?: [number, number] }
@@ -36,7 +50,7 @@ export default function MapPage() {
 function MapPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [mapRef, setMapRef] = useState<any>(null);
+  const [mapRef, setMapRef] = useState<LeafletMapType | null>(null);
   const [allSavedPins, setAllSavedPins] = useState<SavedPin[]>([]);
   const [pinsLoaded, setPinsLoaded] = useState(false);
   const hasAutoCentered = useRef(false);
@@ -87,10 +101,12 @@ function MapPageContent() {
       mapRef.setView([p.lat, p.lon], 13, { animate: true });
       return;
     }
-    const L = require("leaflet");
-    const bounds = L.latLngBounds(
-      allSavedPins.map((p) => [p.lat, p.lon] as LatLngTuple)
-    );
+    const lats = allSavedPins.map((p) => p.lat);
+    const lons = allSavedPins.map((p) => p.lon);
+    const bounds: LatLngBoundsExpression = [
+      [Math.min(...lats), Math.min(...lons)],
+      [Math.max(...lats), Math.max(...lons)],
+    ];
     mapRef.fitBounds(bounds, { padding: [50, 50], maxZoom: 13, animate: true });
   }, [mapRef, allSavedPins]);
 
@@ -106,7 +122,7 @@ function MapPageContent() {
             .order("created_at", { ascending: false });
 
           if (!error && data) {
-            const pins: SavedPin[] = data.map((p: any) => ({
+            const pins: SavedPin[] = (data as SupabasePinRow[]).map((p) => ({
               id: p.id,
               area: p.area,
               lat: p.lat,
@@ -176,10 +192,14 @@ function MapPageContent() {
 
   const handlePin = async (pos: LatLngTuple, searchResult?: SearchResult | null, searchLabel?: string | null) => {
     const [lat, lon] = pos;
+    const uaContact =
+      process.env.NEXT_PUBLIC_NOMINATIM_CONTACT ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "https://weatherornot.app";
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=14&addressdetails=1&extratags=1&namedetails=1`,
-        { headers: { "User-Agent": "WeatherOrNot/1.0 (xyz@gmail.com)" } }
+        { headers: { "User-Agent": `WeatherOrNot/1.0 (${uaContact})` } }
       );
       const reverseData = await res.json();
 

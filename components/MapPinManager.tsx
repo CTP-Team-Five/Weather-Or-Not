@@ -26,7 +26,7 @@ const activityLabels: Record<string, string> = {
 };
 
 function getPinDisplayName(pin: SavedPin): string {
-  return (pin as any).canonical_name || pin.area;
+  return pin.canonical_name || pin.area;
 }
 
 function highlightMatch(text: string, query: string): React.ReactNode {
@@ -68,7 +68,7 @@ export default function MapPinManager({
       const fields = [
         pin.name,
         pin.area,
-        (pin as any).canonical_name,
+        pin.canonical_name,
         activityLabels[pin.activity] || pin.activity,
         ...(pin.tags || []),
       ].filter(Boolean) as string[];

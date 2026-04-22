@@ -3,7 +3,7 @@
 "use client";
 
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
-import L from "leaflet";
+import L, { type Map as LeafletMapInstance, type DragEndEvent, type LeafletEvent } from "leaflet";
 import { useEffect, useRef, useMemo } from "react";
 import "@/components/leafletPins.css";
 
@@ -27,7 +27,7 @@ interface Props {
   autoFit?: boolean;
   singlePinMode?: boolean;
   height?: string;
-  onMapReady?: (map: any) => void;
+  onMapReady?: (map: LeafletMapInstance) => void;
   draftPin?: LatLngTuple | null;
   onDraftPinMove?: (pos: LatLngTuple) => void;
   clickToPan?: boolean;
@@ -81,14 +81,14 @@ function MapObserver({
   mapInstanceRef,
   onCenterMove,
 }: {
-  onMapReady?: (map: any) => void;
-  mapInstanceRef?: React.RefObject<any>;
+  onMapReady?: (map: LeafletMapInstance) => void;
+  mapInstanceRef?: React.RefObject<LeafletMapInstance | null>;
   onCenterMove?: (center: LatLngTuple) => void;
 }) {
   const map = useMapEvents({
-    moveend: (e) => {
+    moveend: (e: LeafletEvent) => {
       if (onCenterMove) {
-        const center = e.target.getCenter();
+        const center = (e.target as LeafletMapInstance).getCenter();
         onCenterMove([center.lat, center.lng]);
       }
     },
@@ -166,7 +166,7 @@ export default function LeafletMap({
   clickToPan = false,
 }: Props) {
   const draftPinPosRef = useRef<LatLngTuple | null>(draftPin || null);
-  const mapInstanceRef = useRef<any>(null);
+  const mapInstanceRef = useRef<LeafletMapInstance | null>(null);
 
   useEffect(() => {
     draftPinPosRef.current = draftPin || null;
@@ -233,8 +233,10 @@ export default function LeafletMap({
             icon={pinIcons.default}
             draggable={true}
             eventHandlers={{
-              dragend: (e: any) => {
-                const newPos: LatLngTuple = [e.target.getLatLng().lat, e.target.getLatLng().lng];
+              dragend: (e: DragEndEvent) => {
+                const marker = e.target as L.Marker;
+                const latLng = marker.getLatLng();
+                const newPos: LatLngTuple = [latLng.lat, latLng.lng];
                 if (onDraftPinMove) onDraftPinMove(newPos);
               },
             }}

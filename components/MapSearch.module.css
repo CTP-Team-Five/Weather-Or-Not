@@ -1,5 +1,3 @@
-/* components/MapSearch.module.css */
-
 .root {
   position: relative;
   width: 100%;
@@ -14,120 +12,122 @@
 .icon {
   position: absolute;
   left: 0.85rem;
-  width: 15px;
-  height: 15px;
-  color: rgba(100, 116, 139, 0.5);
+  width: 16px;
+  height: 16px;
+  color: hsl(var(--muted-foreground));
   pointer-events: none;
   z-index: 1;
-  transition: color 0.18s ease;
+  transition: color var(--dur-quick) var(--ease-standard);
 }
 
 .inputWrap:focus-within .icon {
-  color: rgba(99, 102, 241, 0.65);
+  color: hsl(var(--accent));
 }
 
 .input {
   width: 100%;
-  padding: 0.65rem 2.4rem 0.65rem 2.5rem;
-  border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0.75rem 2.5rem 0.75rem 2.65rem;
+  min-height: 48px;
+  border-radius: var(--radius-lg);
+  border: 1px solid hsl(var(--border));
   outline: none;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  color: #1e293b;
-  font-size: 0.88rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  background: hsl(var(--surface-elevated) / 0.96);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  color: hsl(var(--foreground));
+  font-size: var(--text-body);
+  box-shadow: var(--elev-2);
+  transition: border-color var(--dur-quick) var(--ease-standard),
+              box-shadow var(--dur-quick) var(--ease-standard);
 }
 
 .input::placeholder {
-  color: rgba(100, 116, 139, 0.5);
-  font-weight: 400;
+  color: hsl(var(--muted-foreground));
 }
 
-.input:focus {
-  border-color: rgba(99, 102, 241, 0.35);
-  box-shadow:
-    0 2px 12px rgba(0, 0, 0, 0.08),
-    0 0 0 2px rgba(99, 102, 241, 0.12);
-  background: #fff;
+.input:focus-visible {
+  border-color: hsl(var(--accent) / 0.5);
+  box-shadow: var(--elev-2), 0 0 0 3px hsl(var(--accent) / 0.18);
+  background: hsl(var(--surface-elevated));
 }
 
-/* ── Loading spinner ─────────────────────────────────────────────────────────── */
+/* ── Loading spinner ── */
 
 .spinner {
   position: absolute;
-  right: 0.85rem;
-  width: 14px;
-  height: 14px;
-  border: 2px solid rgba(0, 0, 0, 0.08);
-  border-top-color: rgba(99, 102, 241, 0.6);
+  right: 1rem;
+  width: 16px;
+  height: 16px;
+  border: 2px solid hsl(var(--border));
+  border-top-color: hsl(var(--accent));
   border-radius: 50%;
-  animation: searchSpin 0.6s linear infinite;
+  animation: searchSpin 0.7s linear infinite;
 }
 
 @keyframes searchSpin {
   to { transform: rotate(360deg); }
 }
 
-/* ── Dropdown ────────────────────────────────────────────────────────────────── */
+/* ── Dropdown ── */
 
 .dropdown {
   list-style: none;
-  padding: 0.3rem 0;
-  margin: 0.35rem 0 0 0;
-  background: rgba(255, 255, 255, 0.97);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 14px;
+  padding: 0.35rem;
+  margin: 0.5rem 0 0;
+  background: hsl(var(--surface-elevated) / 0.98);
+  backdrop-filter: blur(var(--blur-lg));
+  -webkit-backdrop-filter: blur(var(--blur-lg));
+  border: 1px solid hsl(var(--border-subtle));
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  max-height: 300px;
+  box-shadow: var(--elev-3);
+  max-height: 320px;
   overflow-y: auto;
   position: absolute;
   width: 100%;
   z-index: 3000;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+  scrollbar-color: hsl(var(--border)) transparent;
 }
 
 .item {
-  padding: 0.55rem 0.85rem;
+  padding: 0.65rem 0.85rem;
   cursor: pointer;
-  transition: background 0.12s ease;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-}
-
-.item:last-child {
-  border-bottom: none;
+  transition: background var(--dur-instant) var(--ease-standard);
+  border-radius: var(--radius-sm);
 }
 
 .item:hover {
-  background: rgba(0, 0, 0, 0.03);
+  background: hsl(var(--muted));
 }
 
 .itemActive {
-  background: rgba(99, 102, 241, 0.08) !important;
+  background: hsl(var(--accent) / 0.12);
 }
 
 .itemActive:hover {
-  background: rgba(99, 102, 241, 0.14) !important;
+  background: hsl(var(--accent) / 0.18);
 }
 
 .itemName {
-  font-size: 0.82rem;
+  font-size: var(--text-body);
   font-weight: 600;
-  color: #1e293b;
+  color: hsl(var(--foreground));
   line-height: 1.3;
 }
 
 .itemDetail {
-  font-size: 0.68rem;
-  color: #94a3b8;
-  margin-top: 0.1rem;
+  font-size: var(--text-caption);
+  color: hsl(var(--muted-foreground));
+  margin-top: 0.15rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+    border-top-color: hsl(var(--border));
+  }
 }
