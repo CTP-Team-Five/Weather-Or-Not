@@ -9,15 +9,12 @@
 /* ── Image layer ─────────────────────────────────────────────────────────── */
 
 .imageLayer {
-  position: absolute;
+  position: absolute !important;
   inset: 0;
   z-index: 0;
-  background-size: cover;
-  background-repeat: no-repeat;
   /* Subtle scale-up so slight movement/parallax doesn't show edges */
   transform: scale(1.02);
-  /* Smooth transition for future image-cycling / mood-switching */
-  transition: opacity 600ms ease, background-image 600ms ease;
+  transition: opacity var(--dur-enter-hero) var(--ease-standard);
 }
 
 /* ── Scrim overlay ───────────────────────────────────────────────────────── */

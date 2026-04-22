@@ -1,7 +1,13 @@
 'use client';
 
 import React from 'react';
-import { getBackgroundImage, toActivitySlot, type ActivitySlot, type BackgroundImage as BgImage } from '@/lib/activityMedia';
+import Image from 'next/image';
+import {
+  getBackgroundImage,
+  toActivitySlot,
+  type ActivitySlot,
+  type BackgroundImage as BgImage,
+} from '@/lib/activityMedia';
 import styles from './BackgroundImage.module.css';
 
 type ScrimMode = 'light' | 'medium' | 'heavy' | 'haze';
@@ -16,6 +22,8 @@ interface Props {
   scrim?: ScrimMode;
   /** Foreground token mode. Default: 'dark' */
   foreground?: ForegroundMode;
+  /** Preload this image (use on the above-the-fold LCP hero) */
+  priority?: boolean;
   /** Additional CSS class for the wrapper */
   className?: string;
   /** Content rendered on top of the background */
@@ -27,14 +35,22 @@ export default function BackgroundImage({
   image,
   scrim = 'medium',
   foreground = 'dark',
+  priority = false,
   className,
   children,
 }: Props) {
-  const bg = image ?? getBackgroundImage(
-    slot ? (slot === 'hike' || slot === 'surf' || slot === 'snowboard' || slot === 'default'
-      ? slot
-      : toActivitySlot(slot)) : 'default'
-  );
+  const bg =
+    image ??
+    getBackgroundImage(
+      slot
+        ? slot === 'hike' ||
+          slot === 'surf' ||
+          slot === 'snowboard' ||
+          slot === 'default'
+          ? slot
+          : toActivitySlot(slot)
+        : 'default',
+    );
 
   const fgClass = foreground === 'light' ? styles.fgLight : styles.fgDark;
 
@@ -43,23 +59,25 @@ export default function BackgroundImage({
       className={`${styles.wrapper} ${fgClass} ${className ?? ''}`}
       role="img"
       aria-label={bg.alt}
+      data-on={foreground === 'light' ? 'dark' : undefined}
     >
-      {/* Image layer */}
-      <div
+      <Image
+        src={bg.src}
+        alt=""
+        fill
+        priority={priority}
+        sizes="100vw"
         className={styles.imageLayer}
         style={{
-          backgroundImage: `url(${bg.src})`,
-          backgroundPosition: bg.position ?? 'center',
+          objectFit: 'cover',
+          objectPosition: bg.position ?? 'center',
         }}
+        aria-hidden="true"
       />
 
-      {/* Scrim overlay */}
-      <div className={`${styles.scrim} ${styles[scrim]}`} />
+      <div className={`${styles.scrim} ${styles[scrim]}`} aria-hidden="true" />
 
-      {/* Content layer */}
-      <div className={styles.content}>
-        {children}
-      </div>
+      <div className={styles.content}>{children}</div>
     </div>
   );
 }

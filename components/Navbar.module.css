@@ -39,12 +39,20 @@
   box-shadow: var(--elev-1);
 }
 
-/* Transparent variant — floats over photo-scrim hero */
+/* Transparent variant — floats over photo-scrim hero.
+   Vertical gradient keeps the top edge readable without a hard bar,
+   then fades out so the hero photo breathes below. */
 .transparent .bar {
-  background-color: hsl(var(--glass-dark) / 0.22);
+  background:
+    linear-gradient(
+      to bottom,
+      hsl(var(--glass-dark) / 0.55) 0%,
+      hsl(var(--glass-dark) / 0.22) 60%,
+      hsl(var(--glass-dark) / 0.0) 100%
+    );
   backdrop-filter: blur(var(--blur-sm));
   -webkit-backdrop-filter: blur(var(--blur-sm));
-  border-bottom: 1px solid hsl(var(--glass-border-dark) / 0.08);
+  border-bottom: none;
 }
 
 /* ── Logo ─────────────────────────────────────────────────────────────────── */

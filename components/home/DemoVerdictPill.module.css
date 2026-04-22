@@ -1,0 +1,145 @@
+/* ── DemoVerdictPill ──────────────────────────────────────────────────────
+   Compact visual preview of the SelectedSpotBoard — used in the homepage
+   hero when the user has no pins yet, so they see the product's answer
+   format before they commit. Static values, data-on="dark" for scrim use.
+───────────────────────────────────────────────────────────────────────── */
+
+.pill {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 1.5rem auto 0;
+  padding: 1.1rem 1.25rem;
+  text-align: left;
+  border-radius: var(--radius-xl);
+  background: hsl(var(--glass-dark) / 0.55);
+  backdrop-filter: blur(var(--blur-lg)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(1.2);
+  border: 1px solid hsl(var(--glass-border-dark) / 0.18);
+  box-shadow: var(--elev-3);
+  color: #fff;
+  animation: pillIn 0.6s var(--ease-entrance) 0.25s both;
+}
+
+@keyframes pillIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+.tag {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.85rem;
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: hsl(var(--glass-border-dark) / 0.55);
+  padding: 0.18rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: hsl(var(--glass-border-dark) / 0.08);
+  border: 1px solid hsl(var(--glass-border-dark) / 0.12);
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin-bottom: 0.5rem;
+}
+
+.verdict {
+  font-family: var(--font-display, 'Manrope', system-ui, sans-serif);
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  text-shadow: 0 0 40px hsl(var(--status-go-bg) / 0.35), 0 2px 12px hsl(var(--shadow) / 0.4);
+}
+
+.verdictGo {
+  color: hsl(var(--status-go-bg));
+}
+
+.score {
+  font-family: var(--font-display, 'Manrope', system-ui, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: hsl(var(--glass-border-dark) / 0.72);
+}
+
+.scoreMax {
+  color: hsl(var(--glass-border-dark) / 0.5);
+  font-weight: 500;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.place {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--text-body-sm);
+  font-weight: 500;
+  color: hsl(var(--glass-border-dark) / 0.88);
+  min-width: 0;
+}
+
+.placeName {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity {
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: hsl(var(--glass-border-dark) / 0.62);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: hsl(var(--glass-border-dark) / 0.08);
+  border: 1px solid hsl(var(--glass-border-dark) / 0.14);
+}
+
+.headline {
+  font-family: var(--font-body, 'Inter', system-ui, sans-serif);
+  font-size: var(--text-body);
+  font-weight: 400;
+  color: hsl(var(--glass-border-dark) / 0.75);
+  text-transform: lowercase;
+  line-height: 1.4;
+  margin: 0.1rem 0 0.75rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  color: hsl(var(--glass-border-dark) / 0.9);
+  background: hsl(var(--glass-border-dark) / 0.08);
+  border: 1px solid hsl(var(--glass-border-dark) / 0.14);
+  backdrop-filter: blur(var(--blur-sm));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

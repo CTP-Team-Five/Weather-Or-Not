@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import MapSearch, { SearchResult } from '@/components/MapSearch';
 import BackgroundImage from '@/components/BackgroundImage';
+import DemoVerdictPill from '@/components/home/DemoVerdictPill';
 import { deriveFriendlyNameFromSearch } from '@/lib/naming';
 import styles from './HomepageHero.module.css';
 
@@ -41,6 +42,8 @@ export default function HomepageHero() {
         <p className={styles.hint}>
           Search a beach, trailhead, or resort — we&rsquo;ll grade the conditions.
         </p>
+
+        <DemoVerdictPill />
       </div>
 
       <div className={styles.activities} aria-hidden="true">
