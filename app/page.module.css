@@ -4,12 +4,13 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-top: var(--navbar-height);
 }
 
 .layout {
   display: flex;
   flex: 1;
-  padding-top: 52px; /* TopBar height */
+  min-height: calc(100vh - var(--navbar-height));
 }
 
 .main {
@@ -17,9 +18,8 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  position: relative;
 }
-
-/* ── Background wrapper for selected-spot view ── */
 
 .mainBg {
   flex: 1;
@@ -27,14 +27,27 @@
   flex-direction: column;
 }
 
-/* ── Pin detail view (replaces hero when a pin is selected) ── */
+.errorBanner {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  max-width: min(92%, 420px);
+  padding: 0.875rem 1.25rem;
+  background: hsl(var(--surface-elevated) / 0.96);
+  border: 1px solid hsl(var(--border-subtle));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-3);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+  color: hsl(var(--foreground));
+  font-size: var(--text-body);
+  line-height: 1.5;
+  z-index: 500;
+}
 
-.pinView {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 2rem 0;
+.errorBanner strong {
+  font-weight: 600;
 }
 
 /* ── Mobile ── */
@@ -42,9 +55,5 @@
 @media (max-width: 768px) {
   .layout {
     flex-direction: column;
-  }
-
-  .pinView {
-    padding: 1rem 0;
   }
 }

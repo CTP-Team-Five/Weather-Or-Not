@@ -1,17 +1,18 @@
 .onboarding {
-  padding: 4rem 2rem 5rem;
+  padding: 3rem 1.5rem 4rem;
   background: hsl(var(--background));
 }
 
 .inner {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
 }
 
 .sectionTitle {
-  font-family: var(--font-display, system-ui, sans-serif);
-  font-size: 1.75rem;
-  font-weight: 800;
+  font-family: var(--font-display, 'Manrope', system-ui, sans-serif);
+  font-size: var(--text-h2);
+  font-weight: 700;
+  letter-spacing: -0.02em;
   color: hsl(var(--foreground));
   text-align: center;
   margin-bottom: 2.5rem;
@@ -20,47 +21,49 @@
 /* ── Steps grid ── */
 
 .stepGrid {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2.5rem;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-  margin-bottom: 3rem;
+  gap: 1.5rem;
 }
 
 .step {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.5rem;
+  align-items: flex-start;
+  text-align: left;
+  gap: 0.4rem;
+  padding: 1.5rem;
+  background: hsl(var(--surface-elevated));
+  border: 1px solid hsl(var(--border-subtle));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elev-1);
 }
 
 .stepNum {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: hsl(var(--accent) / 0.1);
+  font-family: var(--font-display, 'Manrope', system-ui, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: var(--text-body);
   color: hsl(var(--accent));
-  font-family: var(--font-display, system-ui, sans-serif);
-  font-weight: 800;
-  font-size: 1rem;
-  margin-bottom: 0.5rem;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.25rem;
 }
 
 .stepTitle {
-  font-family: var(--font-display, system-ui, sans-serif);
-  font-size: 1.125rem;
+  font-family: var(--font-display, 'Manrope', system-ui, sans-serif);
+  font-size: var(--text-lede);
   font-weight: 700;
+  letter-spacing: -0.01em;
   color: hsl(var(--foreground));
 }
 
 .stepDesc {
-  font-size: 0.9rem;
+  font-size: var(--text-body-sm);
   color: hsl(var(--muted-foreground));
-  line-height: 1.5;
-  max-width: 240px;
+  line-height: 1.55;
 }
 
 /* ── CTA ── */
@@ -71,35 +74,42 @@
 }
 
 .ctaButton {
-  display: inline-block;
-  padding: 0.875rem 2.25rem;
-  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.85rem 2rem;
+  border-radius: var(--radius-pill);
   background: hsl(var(--accent));
   color: hsl(var(--accent-foreground));
   font-weight: 600;
-  font-size: 1.0625rem;
+  font-size: var(--text-body-lg);
+  letter-spacing: 0.01em;
   text-decoration: none;
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition: transform var(--dur-quick) var(--ease-standard),
+              box-shadow var(--dur-quick) var(--ease-standard),
+              background var(--dur-quick) var(--ease-standard);
+  box-shadow: var(--elev-accent);
 }
 
-.ctaButton:hover {
+.ctaButton:hover,
+.ctaButton:focus-visible {
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px hsl(var(--accent) / 0.3);
+  box-shadow: var(--elev-3), var(--elev-accent);
+  background: hsl(var(--accent) / 0.92);
 }
 
-/* ── Mobile ── */
+/* ── Responsive ── */
 
-@media (max-width: 640px) {
-  .onboarding {
-    padding: 3rem 1.5rem 4rem;
-  }
-
+@media (max-width: 768px) {
   .stepGrid {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 1rem;
   }
+}
 
-  .sectionTitle {
-    font-size: 1.5rem;
+@media (prefers-reduced-motion: reduce) {
+  .ctaButton {
+    transition: none;
   }
 }

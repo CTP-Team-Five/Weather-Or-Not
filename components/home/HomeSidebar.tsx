@@ -71,13 +71,15 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
 
       {pins.length > 0 && (
         <div className={styles.searchWrap}>
-          <svg className={styles.searchIcon} viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+          <label htmlFor="sidebarFilter" className="sr-only">Filter your spots</label>
+          <svg className={styles.searchIcon} viewBox="0 0 20 20" fill="currentColor" width="14" height="14" aria-hidden="true">
             <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
           </svg>
           <input
+            id="sidebarFilter"
             ref={searchInputRef}
-            type="text"
-            placeholder="Filter spots..."
+            type="search"
+            placeholder="Filter spots"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={styles.searchInput}
@@ -89,7 +91,7 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
               type="button"
               className={styles.searchClear}
               onClick={() => { setSearchQuery(''); searchInputRef.current?.focus(); }}
-              aria-label="Clear search"
+              aria-label="Clear filter"
             >
               &times;
             </button>
@@ -114,8 +116,9 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
               type="button"
               className={`${styles.item} ${isActive ? styles.active : ''}`}
               onClick={() => onSelect(pin.id)}
+              aria-pressed={isActive}
             >
-              <span className={styles.icon}>
+              <span className={styles.icon} aria-hidden="true">
                 {ACTIVITY_ICONS[pin.activity] || '\u{1F4CD}'}
               </span>
               <div className={styles.meta}>

@@ -1,24 +1,27 @@
-/* ── Always-visible sidebar ── */
+/* ── Always-visible sidebar — field instrument ──────────────────────────── */
 
 .sidebar {
   display: flex;
   flex-direction: column;
-  width: 280px;
-  padding: 1.25rem;
-  background: hsl(var(--surface) / 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  width: 300px;
+  padding: 1.5rem 1.25rem;
+  background: hsl(var(--surface) / 0.72);
+  backdrop-filter: blur(var(--blur-lg)) saturate(1.1);
+  -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(1.1);
   border-right: 1px solid hsl(var(--border-subtle));
   overflow-y: auto;
   flex-shrink: 0;
+  max-height: calc(100vh - var(--navbar-height));
+  position: sticky;
+  top: var(--navbar-height);
 }
 
 .heading {
-  font-family: var(--font-display, system-ui, sans-serif);
-  font-size: 0.75rem;
+  font-family: var(--font-display, 'Manrope', system-ui, sans-serif);
+  font-size: var(--text-caption);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   color: hsl(var(--muted-foreground));
   margin-bottom: 1rem;
   padding: 0 0.5rem;
@@ -30,23 +33,23 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.4rem 0.6rem;
-  margin: 0 0.25rem 0.75rem;
-  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  margin: 0 0.25rem 0.85rem;
+  border-radius: var(--radius-md);
   border: 1px solid hsl(var(--border-subtle));
-  background: hsl(var(--surface) / 0.4);
-  transition: border-color 150ms ease, background 150ms ease;
+  background: hsl(var(--surface-elevated));
+  transition: border-color var(--dur-quick) var(--ease-standard),
+              box-shadow var(--dur-quick) var(--ease-standard);
 }
 
 .searchWrap:focus-within {
-  border-color: hsl(var(--accent) / 0.4);
-  background: hsl(var(--accent) / 0.06);
+  border-color: hsl(var(--accent) / 0.5);
+  box-shadow: 0 0 0 3px hsl(var(--accent) / 0.14);
 }
 
 .searchIcon {
   flex-shrink: 0;
   color: hsl(var(--muted-foreground));
-  opacity: 0.6;
 }
 
 .searchInput {
@@ -55,49 +58,50 @@
   border: none;
   background: transparent;
   outline: none;
-  font-size: 0.78rem;
+  font-size: var(--text-body-sm);
   color: hsl(var(--foreground));
   line-height: 1.4;
 }
 
 .searchInput::placeholder {
   color: hsl(var(--muted-foreground));
-  opacity: 0.6;
 }
 
 .searchClear {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: hsl(var(--muted-foreground));
   cursor: pointer;
   font-size: 1rem;
   line-height: 1;
-  transition: background 120ms ease, color 120ms ease;
+  transition: background var(--dur-instant) var(--ease-standard),
+              color var(--dur-instant) var(--ease-standard);
 }
 
-.searchClear:hover {
-  background: hsl(var(--surface) / 0.8);
+.searchClear:hover,
+.searchClear:focus-visible {
+  background: hsl(var(--muted));
   color: hsl(var(--foreground));
 }
 
 .searchMatch {
   background: hsl(var(--accent) / 0.2);
   color: inherit;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   padding: 0 1px;
 }
 
 .noResults {
   padding: 1.5rem 0.75rem;
   text-align: center;
-  font-size: 0.78rem;
+  font-size: var(--text-body-sm);
   color: hsl(var(--muted-foreground));
 }
 
@@ -112,28 +116,36 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
+  padding: 0.75rem 0.75rem;
+  min-height: 52px;
   border: none;
   background: transparent;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   text-align: left;
   color: hsl(var(--foreground));
-  transition: background 150ms ease;
+  transition: background var(--dur-quick) var(--ease-standard),
+              box-shadow var(--dur-quick) var(--ease-standard);
   width: 100%;
 }
 
-.item:hover {
-  background: hsl(var(--surface) / 0.6);
+.item:hover,
+.item:focus-visible {
+  background: hsl(var(--surface-inset));
 }
 
 .active {
-  background: hsl(var(--accent) / 0.1);
-  box-shadow: inset 0 0 0 1px hsl(var(--accent) / 0.25);
+  background: hsl(var(--accent) / 0.10);
+  box-shadow: inset 0 0 0 1px hsl(var(--accent) / 0.28);
+}
+
+.active:hover,
+.active:focus-visible {
+  background: hsl(var(--accent) / 0.14);
 }
 
 .icon {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   flex-shrink: 0;
   width: 1.75rem;
   text-align: center;
@@ -149,64 +161,67 @@
 
 .pinName {
   font-weight: 600;
-  font-size: 0.8125rem;
+  font-size: var(--text-body-sm);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .reason {
-  font-size: 0.6875rem;
+  font-size: var(--text-micro);
   color: hsl(var(--muted-foreground));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 160px;
+  max-width: 170px;
 }
 
 .reasonSkeleton {
   display: block;
   width: 80px;
-  height: 0.6875rem;
-  border-radius: 4px;
-  background: hsl(var(--muted) / 0.2);
-  animation: pulse 1.5s ease infinite;
+  height: var(--text-micro);
+  border-radius: var(--radius-xs);
+  background: hsl(var(--muted));
+  animation: pulse 1.6s var(--ease-standard) infinite;
 }
 
 /* ── Verdict badge ── */
 
 .badge {
-  font-family: var(--font-display, system-ui, sans-serif);
+  font-family: var(--font-display, 'Manrope', system-ui, sans-serif);
   font-weight: 700;
-  font-size: 0.6875rem;
+  font-size: var(--text-micro);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0.2rem 0.5rem;
-  border-radius: 6px;
+  letter-spacing: 0.06em;
+  padding: 0.22rem 0.55rem;
+  border-radius: var(--radius-sm);
   flex-shrink: 0;
 }
 
 .badgeGo {
-  background: hsl(var(--score-great) / 0.15);
-  color: hsl(var(--score-great));
+  background: hsl(var(--status-go-bg) / 0.14);
+  color: hsl(var(--status-go-bg));
+  border: 1px solid hsl(var(--status-go-bg) / 0.24);
 }
 
 .badgeMaybe {
-  background: hsl(var(--score-ok) / 0.15);
-  color: hsl(var(--score-ok));
+  background: hsl(var(--status-maybe-bg) / 0.14);
+  color: hsl(var(--status-maybe-bg));
+  border: 1px solid hsl(var(--status-maybe-bg) / 0.24);
 }
 
 .badgeSkip {
-  background: hsl(var(--score-terrible) / 0.15);
-  color: hsl(var(--score-terrible));
+  background: hsl(var(--status-skip-bg) / 0.14);
+  color: hsl(var(--status-skip-bg));
+  border: 1px solid hsl(var(--status-skip-bg) / 0.24);
 }
 
 .badgeSkeleton {
   width: 2.5rem;
   height: 1.25rem;
-  border-radius: 6px;
-  background: hsl(var(--muted) / 0.2);
-  animation: pulse 1.5s ease infinite;
+  border-radius: var(--radius-sm);
+  background: hsl(var(--muted));
+  animation: pulse 1.6s var(--ease-standard) infinite;
 }
 
 /* ── Add button ── */
@@ -215,27 +230,31 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 0.75rem;
-  margin-top: 0.5rem;
+  padding: 0.75rem 0.75rem;
+  min-height: 52px;
+  margin-top: 0.75rem;
   border: 1px dashed hsl(var(--border));
   background: transparent;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   color: hsl(var(--muted-foreground));
-  font-size: 0.8125rem;
-  transition: all 150ms ease;
+  font-size: var(--text-body-sm);
+  transition: border-color var(--dur-quick) var(--ease-standard),
+              color var(--dur-quick) var(--ease-standard),
+              background var(--dur-quick) var(--ease-standard);
   width: 100%;
 }
 
-.addButton:hover {
-  border-color: hsl(var(--accent) / 0.4);
+.addButton:hover,
+.addButton:focus-visible {
+  border-color: hsl(var(--accent) / 0.5);
   color: hsl(var(--foreground));
-  background: hsl(var(--surface) / 0.4);
+  background: hsl(var(--accent) / 0.06);
 }
 
 .addPlus {
-  font-size: 1rem;
-  font-weight: 300;
+  font-size: 1.1rem;
+  font-weight: 400;
   width: 1.75rem;
   text-align: center;
   flex-shrink: 0;
@@ -243,10 +262,11 @@
 
 @keyframes pulse {
   0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.6; }
+  50% { opacity: 0.65; }
 }
 
 /* ── Mobile: horizontal strip ── */
+
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
@@ -258,45 +278,51 @@
     border-bottom: 1px solid hsl(var(--border-subtle));
     overflow-x: auto;
     overflow-y: hidden;
+    position: static;
+    max-height: none;
+    scroll-snap-type: x proximity;
   }
 
-  .heading {
-    display: none;
-  }
+  .heading { display: none; }
+  .searchWrap { display: none; }
 
   .list {
     flex-direction: row;
     gap: 0.5rem;
-    flex: 0;
+    flex: 0 0 auto;
   }
 
   .item {
     flex-direction: column;
     gap: 0.25rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 0.75rem;
+    min-height: 68px;
+    min-width: 96px;
     white-space: nowrap;
-    min-width: 80px;
     align-items: center;
+    scroll-snap-align: start;
   }
 
-  .meta {
-    align-items: center;
-  }
-
-  .reason {
-    display: none;
-  }
+  .meta { align-items: center; }
+  .reason { display: none; }
 
   .addButton {
     flex-direction: column;
     gap: 0.25rem;
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 0.75rem;
     margin-top: 0;
-    min-width: 72px;
-    font-size: 0.75rem;
+    min-width: 80px;
+    min-height: 68px;
+    font-size: var(--text-caption);
   }
 
-  .addPlus {
-    width: auto;
+  .addPlus { width: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reasonSkeleton,
+  .badgeSkeleton {
+    animation: none;
+    opacity: 0.4;
   }
 }

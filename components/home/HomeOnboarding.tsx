@@ -5,37 +5,39 @@ import styles from './HomeOnboarding.module.css';
 
 export default function HomeOnboarding() {
   return (
-    <section className={styles.onboarding}>
+    <section className={styles.onboarding} aria-labelledby="onboardingHeading">
       <div className={styles.inner}>
-        <h2 className={styles.sectionTitle}>How it works</h2>
+        <h2 id="onboardingHeading" className={styles.sectionTitle}>
+          Three steps to get outside
+        </h2>
 
-        <div className={styles.stepGrid}>
-          <div className={styles.step}>
-            <span className={styles.stepNum}>1</span>
-            <h3 className={styles.stepTitle}>Pin a spot</h3>
+        <ol className={styles.stepGrid}>
+          <li className={styles.step}>
+            <span className={styles.stepNum} aria-hidden="true">01</span>
+            <h3 className={styles.stepTitle}>Drop a pin</h3>
             <p className={styles.stepDesc}>
-              Drop a pin anywhere &mdash; beach, trailhead, resort.
+              Anywhere — beach, trailhead, resort, or a random patch of wilderness.
             </p>
-          </div>
-          <div className={styles.step}>
-            <span className={styles.stepNum}>2</span>
-            <h3 className={styles.stepTitle}>Pick your activity</h3>
+          </li>
+          <li className={styles.step}>
+            <span className={styles.stepNum} aria-hidden="true">02</span>
+            <h3 className={styles.stepTitle}>Pick your sport</h3>
             <p className={styles.stepDesc}>
-              Hiking, surfing, or snow. We score conditions for that.
+              Hike, surf, or snow. We grade the conditions for that activity.
             </p>
-          </div>
-          <div className={styles.step}>
-            <span className={styles.stepNum}>3</span>
-            <h3 className={styles.stepTitle}>Get your answer</h3>
+          </li>
+          <li className={styles.step}>
+            <span className={styles.stepNum} aria-hidden="true">03</span>
+            <h3 className={styles.stepTitle}>Get a verdict</h3>
             <p className={styles.stepDesc}>
-              GO, MAYBE, or SKIP. No guessing, no data overload.
+              GO, MAYBE, or SKIP — with the reasons behind it.
             </p>
-          </div>
-        </div>
+          </li>
+        </ol>
 
         <div className={styles.ctaRow}>
           <Link href="/map" className={styles.ctaButton}>
-            Explore the map
+            Drop your first pin
           </Link>
         </div>
       </div>
