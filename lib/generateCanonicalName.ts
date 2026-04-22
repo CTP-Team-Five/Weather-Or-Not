@@ -50,8 +50,12 @@ export async function lookupNearbyPOI(
       `extratags=1&` +
       `namedetails=1`;
 
+    const uaContact =
+      process.env.NEXT_PUBLIC_NOMINATIM_CONTACT ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "https://weatherornot.app";
     const res = await fetch(reverseUrl, {
-      headers: { "User-Agent": "WeatherOrNot/1.0" },
+      headers: { "User-Agent": `WeatherOrNot/1.0 (${uaContact})` },
     });
 
     const item = await res.json();

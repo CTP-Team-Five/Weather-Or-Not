@@ -1,0 +1,188 @@
+.shell {
+  min-height: 100vh;
+}
+
+.main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 1.5rem 2.5rem;
+  text-align: center;
+}
+
+.eyebrow {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: hsl(var(--glass-border-dark) / 0.7);
+  margin-bottom: 0.75rem;
+}
+
+.place {
+  font-family: var(--font-display, 'Manrope', system-ui, sans-serif);
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  max-width: 640px;
+}
+
+.coord {
+  font-family: var(--font-body, 'Inter', system-ui, sans-serif);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-body-sm);
+  color: hsl(var(--glass-border-dark) / 0.65);
+  letter-spacing: 0.02em;
+}
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  padding: 0 1.5rem 4rem;
+}
+
+.prompt {
+  font-size: var(--text-body-lg);
+  color: hsl(var(--glass-border-dark) / 0.78);
+  margin-bottom: 2rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.875rem;
+  width: 100%;
+  max-width: 720px;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 0.3rem;
+  padding: 1.5rem;
+  background: hsl(var(--glass-dark) / 0.55);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  border: 1px solid hsl(var(--glass-border-dark) / 0.14);
+  border-radius: var(--radius-xl);
+  color: #fff;
+  cursor: pointer;
+  min-height: 140px;
+  transition:
+    background var(--dur-quick) var(--ease-standard),
+    border-color var(--dur-quick) var(--ease-standard),
+    transform var(--dur-quick) var(--ease-standard),
+    box-shadow var(--dur-quick) var(--ease-standard);
+}
+
+.card:hover,
+.card:focus-visible {
+  border-color: hsl(var(--glass-border-dark) / 0.4);
+  transform: translateY(-2px);
+  box-shadow: var(--elev-3);
+}
+
+.card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.card[data-active] {
+  border-color: hsl(var(--glass-border-dark) / 0.5);
+  background: hsl(var(--glass-dark) / 0.72);
+}
+
+.accent {
+  width: 2rem;
+  height: 3px;
+  border-radius: var(--radius-xs);
+  margin-bottom: 0.75rem;
+}
+
+.hike .accent    { background: #4ade80; }
+.surf .accent    { background: #67e8f9; }
+.snowboard .accent { background: #93c5fd; }
+
+.cardTitle {
+  font-family: var(--font-display, 'Manrope', system-ui, sans-serif);
+  font-size: var(--text-h3);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.cardDetail {
+  font-size: var(--text-body-sm);
+  color: hsl(var(--glass-border-dark) / 0.7);
+  line-height: 1.45;
+}
+
+.suggested {
+  position: absolute;
+  top: 0.875rem;
+  right: 0.875rem;
+  font-size: var(--text-caption);
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  background: hsl(var(--glass-border-dark) / 0.14);
+  border: 1px solid hsl(var(--glass-border-dark) / 0.2);
+  color: hsl(var(--glass-border-dark) / 0.9);
+}
+
+.back {
+  margin-top: 2.5rem;
+  background: none;
+  border: none;
+  color: hsl(var(--glass-border-dark) / 0.65);
+  font-size: var(--text-body);
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-quick) var(--ease-standard);
+}
+
+.back:hover,
+.back:focus-visible {
+  color: #fff;
+}
+
+.back:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fallback {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-body);
+}

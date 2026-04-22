@@ -75,10 +75,92 @@ function nullable<T>(value: T | null | undefined): T | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Cache — localStorage TTL + in-flight dedup
+// Keeps the public fetchForecast() contract unchanged; just short-circuits
+// repeated calls so the dashboard doesn't fire 2N requests per mount.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FORECAST_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const CACHE_PREFIX = 'wxor:forecast:';
+const CACHE_MAX_ENTRIES = 50;
+const inflight = new Map<string, Promise<ExtendedWeatherData | null>>();
+
+function cacheKey(lat: number, lon: number): string {
+  return `${CACHE_PREFIX}${lat.toFixed(3)}:${lon.toFixed(3)}`;
+}
+
+function readCache(key: string): ExtendedWeatherData | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { ts: number; data: ExtendedWeatherData };
+    if (!parsed.ts || Date.now() - parsed.ts > FORECAST_TTL_MS) {
+      window.localStorage.removeItem(key);
+      return null;
+    }
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(key: string, data: ExtendedWeatherData): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+    // Lightweight LRU eviction — if we've exceeded budget, drop the oldest.
+    const keys: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith(CACHE_PREFIX)) keys.push(k);
+    }
+    if (keys.length > CACHE_MAX_ENTRIES) {
+      const withTs = keys
+        .map((k) => {
+          try {
+            const raw = window.localStorage.getItem(k);
+            const ts = raw ? (JSON.parse(raw) as { ts?: number }).ts ?? 0 : 0;
+            return { k, ts };
+          } catch {
+            return { k, ts: 0 };
+          }
+        })
+        .sort((a, b) => a.ts - b.ts);
+      const toRemove = withTs.slice(0, keys.length - CACHE_MAX_ENTRIES);
+      toRemove.forEach((e) => window.localStorage.removeItem(e.k));
+    }
+  } catch {
+    /* quota or parse error — ignore */
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Public API
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function fetchForecast(
+  lat: number,
+  lon: number,
+): Promise<ExtendedWeatherData | null> {
+  const key = cacheKey(lat, lon);
+
+  const cached = readCache(key);
+  if (cached) return cached;
+
+  const existing = inflight.get(key);
+  if (existing) return existing;
+
+  const promise = fetchForecastUncached(lat, lon).then((data) => {
+    if (data) writeCache(key, data);
+    inflight.delete(key);
+    return data;
+  });
+  inflight.set(key, promise);
+  return promise;
+}
+
+async function fetchForecastUncached(
   lat: number,
   lon: number,
 ): Promise<ExtendedWeatherData | null> {

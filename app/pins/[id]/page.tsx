@@ -141,17 +141,25 @@ export default function PinDetailPage() {
   if (isLoading) {
     return (
       <main className={styles.container}>
-        <div className={styles.loadingHero}>
-          <div className={styles.topBar}>
-            <button className={styles.backBtn} onClick={() => router.push("/")}>← Back</button>
+        <section className={styles.loadingHero} data-on="dark">
+          <div className={styles.inner}>
+            <div className={styles.topBar}>
+              <button className={styles.backBtn} onClick={() => router.push("/")}>← Back</button>
+            </div>
           </div>
-          <div className={styles.heroBody}>
-            <div className={`${styles.skeleton} ${styles.skeletonBadge}`} />
-            <div className={`${styles.skeleton} ${styles.skeletonHeadline}`} />
-            <div className={`${styles.skeleton} ${styles.skeletonScore}`} />
-            <div className={`${styles.skeleton} ${styles.skeletonSubline}`} />
+          <div className={styles.inner}>
+            <div className={styles.heroBody}>
+              <div className={styles.heroLeft}>
+                <div className={`${styles.skeleton} ${styles.skeletonHeadline}`} />
+                <div className={`${styles.skeleton} ${styles.skeletonScore}`} />
+                <div className={`${styles.skeleton} ${styles.skeletonSubline}`} />
+              </div>
+              <div className={styles.heroRight}>
+                <div className={`${styles.skeleton} ${styles.skeletonBadge}`} />
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
       </main>
     );
   }
@@ -159,14 +167,18 @@ export default function PinDetailPage() {
   if (error || !pin || !weather) {
     return (
       <main className={styles.container}>
-        <div className={styles.hero}>
-          <div className={styles.topBar}>
-            <button className={styles.backBtn} onClick={() => router.push("/")}>← Back</button>
+        <section className={styles.hero} data-on="dark">
+          <div className={styles.inner}>
+            <div className={styles.topBar}>
+              <button className={styles.backBtn} onClick={() => router.push("/")}>← Back</button>
+            </div>
           </div>
-        </div>
+        </section>
         <div className={styles.contentZone}>
-          <div className={`${styles.card} ${styles.errorCard}`}>
-            <p>{error || "Unable to load pin details"}</p>
+          <div className={styles.inner}>
+            <div className={`${styles.card} ${styles.errorCard}`}>
+              <p>{error || "Unable to load pin details"}</p>
+            </div>
           </div>
         </div>
       </main>
@@ -198,79 +210,91 @@ export default function PinDetailPage() {
       {/* ── HERO ZONE ──────────────────────────────────────────────────────── */}
       <section
         className={styles.hero}
+        data-on="dark"
         style={{ '--hero-bg-image': `url(${getBackgroundImage(toActivitySlot(pin.activity)).src})` } as React.CSSProperties}
       >
-        <div className={styles.topBar}>
-          <button className={styles.backBtn} onClick={() => router.push("/")}>
-            ← Back
-          </button>
-          <span className={styles.locationChip}>
-            📍 {pin.canonical_name || pin.area}
-          </span>
+        <div className={styles.inner}>
+          <div className={styles.topBar}>
+            <button className={styles.backBtn} onClick={() => router.push("/")} aria-label="Back to spots">
+              <span aria-hidden="true">←</span> Back
+            </button>
+            <span className={styles.locationChip} aria-hidden="true">
+              {pin.canonical_name || pin.area}
+            </span>
+          </div>
         </div>
 
-        <div className={styles.heroBody}>
-          <div className={`${styles.activityBadge} ${activityClass}`}>
-            {(() => { const Icon = ActivityIcon[pin.activity]; return Icon ? <Icon size={15} strokeWidth={2.2} /> : null; })()}
-            <span>{activityLabels[pin.activity] || pin.activity}</span>
-          </div>
+        <div className={styles.inner}>
+          <div className={styles.heroBody}>
+            <h1 className="sr-only">{pin.canonical_name || pin.area}</h1>
 
-          {/* Verdict — the answer, first */}
-          {suitability && (
-            <div className={styles.verdictLine}>
-              <span className={`${styles.verdictWord} ${styles[suitability.label]}`}>
-                {suitability.label}
-              </span>
-            </div>
-          )}
+            {/* Left column — verdict-first */}
+            <div className={styles.heroLeft}>
+              {suitability && (
+                <div className={styles.verdictLine}>
+                  <span className={`${styles.verdictWord} ${styles[suitability.label]}`}>
+                    {suitability.label}
+                  </span>
+                </div>
+              )}
 
-          {/* Headline — cinematic mood context, muted */}
-          <h1 className={styles.headline}>
-            {hero ? hero.headline : (pin.canonical_name || pin.area).toLowerCase()}
-          </h1>
-
-          {/* Score as thin bar-line */}
-          {suitability && (
-            <div
-              className={styles.scoreLine}
-              role="progressbar"
-              aria-valuenow={suitability.score}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`Suitability score: ${suitability.score} out of 100`}
-            >
-              <div className={styles.scoreTrack}>
+              {suitability && (
                 <div
-                  className={styles.scoreBarFill}
-                  style={{ width: `${suitability.score}%` }}
-                />
+                  className={styles.scoreLine}
+                  role="progressbar"
+                  aria-valuenow={suitability.score}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`Suitability score: ${suitability.score} out of 100`}
+                >
+                  <div className={styles.scoreTrack}>
+                    <div
+                      className={styles.scoreBarFill}
+                      style={{ width: `${suitability.score}%` }}
+                    />
+                  </div>
+                  <span className={styles.scoreNum}>{suitability.score}/100</span>
+                </div>
+              )}
+
+              {hero?.subline && (
+                <p className={styles.subline}>{hero.subline}</p>
+              )}
+            </div>
+
+            {/* Right column — activity badge, place, headline, chips, tags */}
+            <div className={styles.heroRight}>
+              <div className={`${styles.activityBadge} ${activityClass}`}>
+                {(() => { const Icon = ActivityIcon[pin.activity]; return Icon ? <Icon size={15} strokeWidth={2.2} /> : null; })()}
+                <span>{activityLabels[pin.activity] || pin.activity}</span>
               </div>
-              <span className={styles.scoreNum}>{suitability.score}/100</span>
-            </div>
-          )}
 
-          {hero?.subline && (
-            <p className={styles.subline}>{hero.subline}</p>
-          )}
+              <p className={styles.placeLabel}>{pin.canonical_name || pin.area}</p>
 
-          {chips.length > 0 && (
-            <div className={styles.chipsRow} role="list">
-              {chips.map((chip, i) => (
-                <span key={i} className={`${styles.chip} ${styles[chip.type]}`} role="listitem">
-                  <span aria-hidden="true">{chip.emoji}</span>
-                  {chip.label}
-                </span>
-              ))}
-            </div>
-          )}
+              <p className={styles.headline}>
+                {hero ? hero.headline : (pin.canonical_name || pin.area).toLowerCase()}
+              </p>
 
-          {pin.tags && pin.tags.length > 0 && (
-            <div className={styles.tagsRow}>
-              {pin.tags.map((tag, idx) => (
-                <span key={idx} className={styles.tag}>{tag}</span>
-              ))}
+              {chips.length > 0 && (
+                <div className={styles.chipsRow} role="list">
+                  {chips.map((chip, i) => (
+                    <span key={i} className={`${styles.chip} ${styles[chip.type]}`} role="listitem">
+                      <span aria-hidden="true">{chip.emoji}</span>
+                      {chip.label}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {pin.tags && pin.tags.length > 0 && (
+                <div className={styles.tagsRow}>
+                  {pin.tags.map((tag, idx) => (
+                    <span key={idx} className={styles.tag}>{tag}</span>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </section>
 
@@ -278,95 +302,101 @@ export default function PinDetailPage() {
       <div className={styles.contentZone}>
 
         {/* Map */}
-        <div className={styles.mapSection}>
-          <LeafletMap
-            initialCenter={[pin.lat, pin.lon]}
-            allPins={[pin]}
-            onCenterMove={() => {}}
-            singlePinMode={true}
-          />
+        <div className={styles.inner}>
+          <div className={styles.mapSection}>
+            <LeafletMap
+              initialCenter={[pin.lat, pin.lon]}
+              allPins={[pin]}
+              onCenterMove={() => {}}
+              singlePinMode={true}
+            />
+          </div>
         </div>
 
         {/* 2-col: Current Weather + Score Breakdown */}
-        <div className={styles.mainGrid}>
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Current Conditions</h2>
-            <div className={styles.currentWeather}>
-              <div className={styles.tempSection}>
-                <div className={styles.tempValue}>
-                  {weather.current.temperature.toFixed(0)}°C
+        <div className={styles.inner}>
+          <div className={styles.mainGrid}>
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Current Conditions</h2>
+              <div className={styles.currentWeather}>
+                <div className={styles.tempSection}>
+                  <div className={styles.tempValue}>
+                    {weather.current.temperature.toFixed(0)}°C
+                  </div>
+                  <div className={styles.tempLabel}>
+                    Feels like {weather.current.apparentTemperature.toFixed(0)}°C · {weatherDesc}
+                  </div>
                 </div>
-                <div className={styles.tempLabel}>
-                  Feels like {weather.current.apparentTemperature.toFixed(0)}°C · {weatherDesc}
+                <div className={styles.weatherGrid}>
+                  <div className={styles.weatherStat}>
+                    <div className={styles.statLabel}>Wind</div>
+                    <div className={styles.statValue}>
+                      {weather.current.windKph.toFixed(1)}
+                      <span className={styles.unit}> km/h</span>
+                    </div>
+                  </div>
+                  <div className={styles.weatherStat}>
+                    <div className={styles.statLabel}>Precipitation</div>
+                    <div className={styles.statValue}>
+                      {weather.current.precipitation.toFixed(1)}
+                      <span className={styles.unit}> mm</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className={styles.weatherGrid}>
+            </div>
+
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Why this score</h2>
+              {suitability?.reasons.length ? (
+                <ul className={styles.reasonsList}>
+                  {suitability.reasons.map((reason, idx) => (
+                    <li key={idx}>{reason}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className={styles.mutedText}>No breakdown available.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Wave Conditions (surf only) */}
+        {pin.activity === "surf" && (
+          <div className={styles.inner}>
+            <div className={styles.card}>
+              <h2 className={styles.cardTitle}>Wave Conditions</h2>
+              <div className={styles.waveGrid}>
                 <div className={styles.weatherStat}>
-                  <div className={styles.statLabel}>Wind</div>
+                  <div className={styles.statLabel}>Wave Height</div>
+                  <div className={styles.statValue}>
+                    {weather.current.waveHeight != null
+                      ? <>{weather.current.waveHeight.toFixed(2)}<span className={styles.unit}> m</span></>
+                      : <span className={styles.unit}>N/A</span>}
+                  </div>
+                </div>
+                <div className={styles.weatherStat}>
+                  <div className={styles.statLabel}>Swell Period</div>
+                  <div className={styles.statValue}>
+                    {weather.current.swellPeriod != null
+                      ? <>{weather.current.swellPeriod.toFixed(1)}<span className={styles.unit}> s</span></>
+                      : <span className={styles.unit}>N/A</span>}
+                  </div>
+                </div>
+                <div className={styles.weatherStat}>
+                  <div className={styles.statLabel}>Wind Speed</div>
                   <div className={styles.statValue}>
                     {weather.current.windKph.toFixed(1)}
                     <span className={styles.unit}> km/h</span>
                   </div>
                 </div>
                 <div className={styles.weatherStat}>
-                  <div className={styles.statLabel}>Precipitation</div>
+                  <div className={styles.statLabel}>Wind Direction</div>
                   <div className={styles.statValue}>
-                    {weather.current.precipitation.toFixed(1)}
-                    <span className={styles.unit}> mm</span>
+                    {weather.current.windDirection != null
+                      ? <>{weather.current.windDirection.toFixed(0)}<span className={styles.unit}>°</span></>
+                      : <span className={styles.unit}>N/A</span>}
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Why this score</h2>
-            {suitability?.reasons.length ? (
-              <ul className={styles.reasonsList}>
-                {suitability.reasons.map((reason, idx) => (
-                  <li key={idx}>{reason}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className={styles.mutedText}>No breakdown available.</p>
-            )}
-          </div>
-        </div>
-
-        {/* Wave Conditions (surf only) */}
-        {pin.activity === "surf" && (
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Wave Conditions</h2>
-            <div className={styles.waveGrid}>
-              <div className={styles.weatherStat}>
-                <div className={styles.statLabel}>Wave Height</div>
-                <div className={styles.statValue}>
-                  {weather.current.waveHeight != null
-                    ? <>{weather.current.waveHeight.toFixed(2)}<span className={styles.unit}> m</span></>
-                    : <span className={styles.unit}>N/A</span>}
-                </div>
-              </div>
-              <div className={styles.weatherStat}>
-                <div className={styles.statLabel}>Swell Period</div>
-                <div className={styles.statValue}>
-                  {weather.current.swellPeriod != null
-                    ? <>{weather.current.swellPeriod.toFixed(1)}<span className={styles.unit}> s</span></>
-                    : <span className={styles.unit}>N/A</span>}
-                </div>
-              </div>
-              <div className={styles.weatherStat}>
-                <div className={styles.statLabel}>Wind Speed</div>
-                <div className={styles.statValue}>
-                  {weather.current.windKph.toFixed(1)}
-                  <span className={styles.unit}> km/h</span>
-                </div>
-              </div>
-              <div className={styles.weatherStat}>
-                <div className={styles.statLabel}>Wind Direction</div>
-                <div className={styles.statValue}>
-                  {weather.current.windDirection != null
-                    ? <>{weather.current.windDirection.toFixed(0)}<span className={styles.unit}>°</span></>
-                    : <span className={styles.unit}>N/A</span>}
                 </div>
               </div>
             </div>
@@ -374,37 +404,41 @@ export default function PinDetailPage() {
         )}
 
         {/* Hourly Forecast */}
-        <div className={`${styles.card} ${styles.hourlySection}`}>
-          <h2 className={styles.cardTitle}>Next 24 Hours</h2>
-          <div className={styles.hourlyScroll}>
-            {weather.hourly.map((hour, idx) => (
-              <div key={idx} className={styles.hourlyItem}>
-                <div className={styles.hourlyTime}>{formatTime(hour.time)}</div>
-                <div className={styles.hourlyTemp}>{hour.temperature.toFixed(0)}°</div>
-                <div className={styles.hourlyDetail}>💨 {hour.windKph.toFixed(1)} km/h</div>
-                <div className={styles.hourlyDetail}>💧 {hour.precipitation.toFixed(1)} mm</div>
-              </div>
-            ))}
+        <div className={styles.inner}>
+          <div className={`${styles.card} ${styles.hourlySection}`}>
+            <h2 className={styles.cardTitle}>Next 24 Hours</h2>
+            <div className={styles.hourlyScroll}>
+              {weather.hourly.map((hour, idx) => (
+                <div key={idx} className={styles.hourlyItem}>
+                  <div className={styles.hourlyTime}>{formatTime(hour.time)}</div>
+                  <div className={styles.hourlyTemp}>{hour.temperature.toFixed(0)}°</div>
+                  <div className={styles.hourlyDetail}>💨 {hour.windKph.toFixed(1)} km/h</div>
+                  <div className={styles.hourlyDetail}>💧 {hour.precipitation.toFixed(1)} mm</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* 7-Day Forecast */}
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>7-Day Forecast</h2>
-          <div className={styles.dailyList}>
-            {weather.daily.map((day, idx) => (
-              <div key={idx} className={styles.dailyRow}>
-                <div className={styles.dailyDate}>{formatDate(day.date)}</div>
-                <div className={styles.dailyBar}>
-                  <div className={styles.dailyBarFill} style={{ width: "100%" }} />
+        <div className={styles.inner}>
+          <div className={styles.card}>
+            <h2 className={styles.cardTitle}>7-Day Forecast</h2>
+            <div className={styles.dailyList}>
+              {weather.daily.map((day, idx) => (
+                <div key={idx} className={styles.dailyRow}>
+                  <div className={styles.dailyDate}>{formatDate(day.date)}</div>
+                  <div className={styles.dailyBar}>
+                    <div className={styles.dailyBarFill} style={{ width: "100%" }} />
+                  </div>
+                  <div className={styles.dailyTemps}>
+                    <span className={styles.dailyHigh}>{day.tempMax.toFixed(0)}°</span>
+                    <span className={styles.dailySep}>/</span>
+                    <span className={styles.dailyLow}>{day.tempMin.toFixed(0)}°</span>
+                  </div>
                 </div>
-                <div className={styles.dailyTemps}>
-                  <span className={styles.dailyHigh}>{day.tempMax.toFixed(0)}°</span>
-                  <span className={styles.dailySep}>/</span>
-                  <span className={styles.dailyLow}>{day.tempMin.toFixed(0)}°</span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 

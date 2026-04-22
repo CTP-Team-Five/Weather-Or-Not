@@ -430,11 +430,15 @@ let _nominatimQueue: Promise<void> = Promise.resolve();
 function nominatimFetch(url: string): Promise<NominatimData | null> {
   return new Promise<NominatimData | null>((resolve) => {
     _nominatimQueue = _nominatimQueue.then(async () => {
-      // 1.2s gap between requests
+      // 1.2s gap between requests — respects Nominatim free-tier 1 req/s policy
       await new Promise((r) => setTimeout(r, 1200));
+      const uaContact =
+        process.env.NEXT_PUBLIC_NOMINATIM_CONTACT ||
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        'https://weatherornot.app';
       try {
         const res = await fetch(url, {
-          headers: { 'User-Agent': 'WeatherOrNot/1.0' },
+          headers: { 'User-Agent': `WeatherOrNot/1.0 (${uaContact})` },
         });
         if (!res.ok) { resolve(null); return; }
         resolve(await res.json());

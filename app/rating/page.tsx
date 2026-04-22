@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense } from "react";
 import { PinStore } from "@/components/data/pinStore";
 import BackgroundImage from "@/components/BackgroundImage";
+import ratingStyles from "./page.module.css";
 
 // ── Activity definitions ──────────────────────────────────────────────────────
 
@@ -12,25 +13,22 @@ const ACTIVITIES = [
   {
     id: "hike",
     label: "Hiking",
-    description: "Trail conditions, temperature, wind, and precipitation",
-    detail: "Best for day hikes, summit runs, and backcountry routes",
-    color: "#22c55e",
+    detail: "Day hikes, summit runs, backcountry",
+    color: "#15803d",
     suggestTags: ["mountain", "peak", "trail", "park", "forest", "nature_reserve", "national_park"],
   },
   {
     id: "surf",
     label: "Surfing",
-    description: "Wave height, swell period, wind direction, and water temp",
-    detail: "Best for ocean breaks, beach surf, and coastal conditions",
-    color: "#22d3ee",
+    detail: "Ocean breaks, beach surf, coastal",
+    color: "#0e7490",
     suggestTags: ["beach", "ocean", "coast", "surf", "sea", "coastal", "bay"],
   },
   {
     id: "snowboard",
     label: "Snowboarding",
-    description: "Snow depth, fresh powder, visibility, and lift conditions",
-    detail: "Best for resort runs, backcountry lines, and powder days",
-    color: "#60a5fa",
+    detail: "Resort runs, backcountry lines, powder",
+    color: "#1e3a8a",
     suggestTags: ["ski", "ski_resort", "piste", "aerialway", "snow", "alpine"],
   },
 ] as const;
@@ -117,7 +115,7 @@ function RatingPageContent() {
       }
     }
 
-    router.push("/");
+    router.push(`/?selected=${encodeURIComponent(id)}`);
   };
 
   const coordLabel =
@@ -126,32 +124,19 @@ function RatingPageContent() {
       : null;
 
   return (
-    <BackgroundImage slot="default" scrim="haze" foreground="dark" className="min-h-screen">
-    <main className="min-h-screen text-foreground flex flex-col">
+    <BackgroundImage slot="default" scrim="medium" foreground="light" className={ratingStyles.shell}>
+    <main className={ratingStyles.main} data-on="dark">
 
-      {/* ── Location confirmation ─────────────────────────────────────────── */}
-      <div className="flex flex-col items-center justify-center pt-20 pb-10 px-6 text-center">
-        <p className="text-sm font-medium uppercase tracking-widest text-muted-foreground mb-3">
-          Pin dropped
-        </p>
-        <h1
-          className="text-3xl font-bold text-foreground mb-2"
-          style={{ fontFamily: "var(--font-display, system-ui)" }}
-        >
-          {displayName}
-        </h1>
-        {coordLabel && (
-          <p className="text-sm text-muted-foreground font-mono">{coordLabel}</p>
-        )}
+      <div className={ratingStyles.confirm}>
+        <p className={ratingStyles.eyebrow}>Pin dropped</p>
+        <h1 className={ratingStyles.place}>{displayName}</h1>
+        {coordLabel && <p className={ratingStyles.coord}>{coordLabel}</p>}
       </div>
 
-      {/* ── Activity selection ────────────────────────────────────────────── */}
-      <div className="flex flex-col items-center flex-1 px-6 pb-16">
-        <p className="text-base text-muted-foreground mb-8">
-          What will you be doing here?
-        </p>
+      <div className={ratingStyles.picker}>
+        <p className={ratingStyles.prompt}>What are you doing here?</p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
+        <div className={ratingStyles.grid}>
           {ACTIVITIES.map((activity) => {
             const isSaving = saving === activity.id;
             const isSuggested = suggested === activity.id && !saving;
@@ -161,71 +146,25 @@ function RatingPageContent() {
                 key={activity.id}
                 onClick={() => handleSelect(activity.id)}
                 disabled={saving !== null}
-                className="group relative flex flex-col items-start text-left rounded-2xl border bg-surface p-6 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                style={{
-                  borderColor: isSaving
-                    ? activity.color
-                    : `color-mix(in srgb, ${activity.color} 30%, transparent)`,
-                  backgroundColor: isSaving
-                    ? `color-mix(in srgb, ${activity.color} 12%, hsl(var(--surface)))`
-                    : undefined,
-                }}
-                onMouseEnter={(e) => {
-                  if (!saving) {
-                    (e.currentTarget as HTMLElement).style.borderColor = activity.color;
-                    (e.currentTarget as HTMLElement).style.backgroundColor =
-                      `color-mix(in srgb, ${activity.color} 8%, hsl(var(--surface)))`;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!saving) {
-                    (e.currentTarget as HTMLElement).style.borderColor =
-                      `color-mix(in srgb, ${activity.color} 30%, transparent)`;
-                    (e.currentTarget as HTMLElement).style.backgroundColor = "";
-                  }
-                }}
+                className={`${ratingStyles.card} ${ratingStyles[activity.id]}`}
+                data-active={isSaving || undefined}
+                aria-label={`Choose ${activity.label}`}
               >
-                {/* Suggested badge */}
-                {isSuggested && (
-                  <span
-                    className="absolute top-3 right-3 text-xs font-semibold px-2 py-0.5 rounded-full"
-                    style={{
-                      backgroundColor: `color-mix(in srgb, ${activity.color} 18%, transparent)`,
-                      color: activity.color,
-                    }}
-                  >
-                    Suggested
-                  </span>
-                )}
-
-                {/* Activity color bar */}
-                <div
-                  className="w-8 h-1 rounded-full mb-4"
-                  style={{ backgroundColor: activity.color }}
-                />
-
-                <h2
-                  className="text-xl font-bold text-foreground mb-1"
-                  style={{ fontFamily: "var(--font-display, system-ui)" }}
-                >
+                {isSuggested && <span className={ratingStyles.suggested}>Suggested</span>}
+                <span className={ratingStyles.accent} aria-hidden="true" />
+                <h2 className={ratingStyles.cardTitle}>
                   {isSaving ? "Saving…" : activity.label}
                 </h2>
-                <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
-                  {activity.description}
-                </p>
-                <p className="text-xs text-subtle-foreground leading-relaxed">
-                  {activity.detail}
-                </p>
+                <p className={ratingStyles.cardDetail}>{activity.detail}</p>
               </button>
             );
           })}
         </div>
 
-        {/* Back link */}
         <button
           onClick={() => router.back()}
           disabled={saving !== null}
-          className="mt-10 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40"
+          className={ratingStyles.back}
         >
           ← Back to map
         </button>
@@ -239,8 +178,8 @@ export default function RatingPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-background">
-          <p className="text-muted-foreground text-sm">Loading…</p>
+        <div className={ratingStyles.fallback}>
+          <p>Loading…</p>
         </div>
       }
     >
