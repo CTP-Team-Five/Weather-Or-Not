@@ -5,17 +5,16 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   SEMANTIC TOKEN SYSTEM
-   Values live here. Names live in tailwind.config.ts.
-   Pages pick one of three theme classes: .theme-clear / .theme-overcast / .theme-severe
-   Components consume tokens only — never raw palette values.
+   DESIGN SYSTEM TOKENS
+   One source of truth for color, type, elevation, motion, and surfaces.
+   Pages/components consume tokens only — never raw hex/rgba.
 ───────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* Texture overlay — changes with theme class */
+  /* ── Texture overlay (swaps with theme class) ──────────────────────────── */
   --body-texture: url('/textures/texture-clear.png');
 
-  /* Light-first neutral base (no weather data yet) */
+  /* ── Core surface + text (light default) ───────────────────────────────── */
   --background: 210 33% 98%;
   --foreground: 222 28% 16%;
 
@@ -24,147 +23,176 @@
   --surface-inset: 210 22% 93%;
 
   --muted: 210 18% 92%;
-  --muted-foreground: 215 15% 42%;
+  --muted-foreground: 215 17% 38%; /* was 15% 42% — bumped for AA */
 
   --subtle: 210 18% 95%;
   --subtle-foreground: 215 18% 36%;
 
   --border: 215 18% 84%;
   --border-subtle: 215 16% 89%;
-  --ring: 205 84% 58%;
+  --ring: 205 84% 52%;
 
-  --accent: 205 82% 58%;
+  --accent: 205 82% 52%;
   --accent-foreground: 0 0% 100%;
 
   --sky: 201 94% 92%;
   --sky-foreground: 217 33% 22%;
 
-  --danger: 4 72% 54%;
-  --danger-foreground: 0 0% 100%;
+  /* ── Status — a single system for verdict + alerts ─────────────────────── */
+  --status-go-bg: 164 56% 30%;         /* darker → readable over light tint */
+  --status-go-fg: 0 0% 100%;
+  --status-go-accent: 164 56% 36%;
 
-  --warning: 35 84% 56%;
-  --warning-foreground: 25 35% 14%;
+  --status-maybe-bg: 32 86% 38%;        /* darkened from 38/74/58 — hits AA */
+  --status-maybe-fg: 0 0% 100%;
+  --status-maybe-accent: 32 86% 44%;
 
-  --success: 160 52% 42%;
-  --success-foreground: 0 0% 100%;
+  --status-skip-bg: 4 70% 44%;          /* darkened from 4/72/54 → AA */
+  --status-skip-fg: 0 0% 100%;
+  --status-skip-accent: 4 70% 50%;
 
-  /* Modern score colors — controlled, not neon */
-  --score-terrible: 6 62% 56%;
-  --score-terrible-foreground: 0 0% 100%;
-  --score-ok: 38 74% 58%;
-  --score-ok-foreground: 28 30% 16%;
-  --score-great: 167 48% 40%;
-  --score-great-foreground: 0 0% 100%;
+  /* Legacy score tokens alias into status for backward compat */
+  --score-great: var(--status-go-bg);
+  --score-great-foreground: var(--status-go-fg);
+  --score-ok: var(--status-maybe-bg);
+  --score-ok-foreground: var(--status-maybe-fg);
+  --score-terrible: var(--status-skip-bg);
+  --score-terrible-foreground: var(--status-skip-fg);
 
+  --danger: var(--status-skip-bg);
+  --danger-foreground: var(--status-skip-fg);
+  --warning: var(--status-maybe-bg);
+  --warning-foreground: var(--status-maybe-fg);
+  --success: var(--status-go-bg);
+  --success-foreground: var(--status-go-fg);
+
+  /* ── Shadow + elevation ────────────────────────────────────────────────── */
   --shadow: 222 30% 18%;
+  --elev-0: none;
+  --elev-1: 0 1px 2px hsl(var(--shadow) / 0.06);
+  --elev-2: 0 2px 10px hsl(var(--shadow) / 0.10);
+  --elev-3: 0 8px 24px -6px hsl(var(--shadow) / 0.14);
+  --elev-4: 0 16px 40px -12px hsl(var(--shadow) / 0.22);
+  --elev-accent: 0 4px 18px hsl(var(--accent) / 0.28);
+  --elev-verdict: 0 0 60px hsl(var(--accent) / 0.22), 0 2px 20px hsl(var(--shadow) / 0.40);
 
-  /* ── Legacy variables kept for backward compat ──────────────────────────── */
-  /* These back the existing ambient gradient system (weatherTheme.ts).        */
-  /* Migrate CSS Modules off these over time.                                  */
-  --navbar-height: 64px;
-  --accent-hike: #22c55e;
-  --accent-surf: #22d3ee;
-  --accent-snow: #60a5fa;
+  /* ── Glass surface primitives ──────────────────────────────────────────── */
+  --glass-light: 0 0% 100%;
+  --glass-dark: 222 28% 10%;
+  --glass-border-light: 222 20% 14%;
+  --glass-border-dark: 0 0% 100%;
+  --blur-sm: 8px;
+  --blur-md: 14px;
+  --blur-lg: 20px;
+
+  /* ── Radius scale ──────────────────────────────────────────────────────── */
+  --radius-xs: 2px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 9999px;
+
+  /* ── Typography ramp ───────────────────────────────────────────────────── */
+  --text-micro: 0.6875rem;
+  --text-caption: 0.75rem;
+  --text-body-sm: 0.8125rem;
+  --text-body: 0.875rem;
+  --text-body-lg: 1rem;
+  --text-lede: 1.125rem;
+  --text-h3: 1.375rem;
+  --text-h2: 1.75rem;
+  --text-h1: clamp(2.25rem, 6vw, 4rem);
+  --text-display: clamp(4rem, 13vw, 8.5rem);
+
+  /* ── Motion tokens ─────────────────────────────────────────────────────── */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-entrance: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-linear: linear;
+
+  --dur-instant: 120ms;
+  --dur-quick: 180ms;
+  --dur-normal: 240ms;
+  --dur-enter: 400ms;
+  --dur-enter-hero: 600ms;
+  --stagger: 60ms;
+
+  /* ── Layout ────────────────────────────────────────────────────────────── */
+  --navbar-height: 60px;
+
+  /* ── Weather-adaptive (set by applyTheme at runtime) ───────────────────── */
+  --theme-accent: var(--accent);
+  --theme-accent-glow: hsl(var(--accent) / 0.22);
 }
 
-/* ── Crisp, bright: fair conditions ──────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────────
+   AMBIENT THEME CLASSES — swap tokens based on weather mood
+───────────────────────────────────────────────────────────────────────────── */
+
 .theme-clear {
   --body-texture: url('/textures/texture-clear.png');
   --background: 204 60% 98%;
   --foreground: 222 34% 17%;
-
   --surface: 202 45% 96%;
   --surface-elevated: 0 0% 100%;
   --surface-inset: 201 38% 93%;
-
   --muted: 205 26% 92%;
-  --muted-foreground: 215 17% 42%;
-
-  --subtle: 201 34% 95%;
-  --subtle-foreground: 216 22% 34%;
-
+  --muted-foreground: 215 17% 38%;
   --border: 204 25% 85%;
   --border-subtle: 203 28% 90%;
-  --ring: 202 92% 55%;
-
-  --accent: 203 88% 56%;
+  --ring: 202 92% 50%;
+  --accent: 203 88% 50%;
   --accent-foreground: 0 0% 100%;
-
   --sky: 198 100% 93%;
   --sky-foreground: 214 35% 22%;
 }
 
-/* ── Softer, flatter: clouds / rain / muted conditions ───────────────────── */
 .theme-overcast {
   --body-texture: url('/textures/texture-overcast.png');
   --background: 210 20% 95%;
-  --foreground: 218 18% 24%;
-
+  --foreground: 218 18% 22%;
   --surface: 210 16% 92%;
   --surface-elevated: 210 20% 97%;
   --surface-inset: 214 14% 89%;
-
   --muted: 210 12% 88%;
-  --muted-foreground: 215 10% 43%;
-
-  --subtle: 210 14% 91%;
-  --subtle-foreground: 215 11% 38%;
-
+  --muted-foreground: 215 11% 38%;
   --border: 214 12% 80%;
   --border-subtle: 214 10% 85%;
-  --ring: 211 42% 54%;
-
-  --accent: 208 44% 54%;
+  --ring: 211 42% 48%;
+  --accent: 208 44% 48%;
   --accent-foreground: 0 0% 100%;
-
   --sky: 210 24% 88%;
   --sky-foreground: 216 18% 25%;
 }
 
-/* ── Dark, dramatic: storm / blizzard / severe conditions ────────────────── */
-/* This is app-state driven, not user OS preference.                          */
 .theme-severe {
+  color-scheme: dark;
   --body-texture: url('/textures/texture-severe.png');
-  --background: 222 22% 12%;
+  --background: 222 22% 10%;
   --foreground: 210 20% 96%;
-
-  --surface: 222 18% 16%;
-  --surface-elevated: 222 15% 20%;
-  --surface-inset: 223 16% 14%;
-
-  --muted: 221 14% 22%;
-  --muted-foreground: 215 12% 72%;
-
-  --subtle: 222 12% 18%;
-  --subtle-foreground: 214 10% 82%;
-
-  --border: 219 12% 28%;
-  --border-subtle: 220 10% 23%;
+  --surface: 222 18% 14%;
+  --surface-elevated: 222 15% 18%;
+  --surface-inset: 223 16% 12%;
+  --muted: 221 14% 20%;
+  --muted-foreground: 215 12% 74%;
+  --border: 219 12% 26%;
+  --border-subtle: 220 10% 22%;
   --ring: 35 88% 58%;
-
   --accent: 35 88% 58%;
   --accent-foreground: 24 40% 12%;
-
   --sky: 219 20% 20%;
   --sky-foreground: 210 20% 96%;
 
-  --danger: 5 84% 61%;
-  --danger-foreground: 0 0% 100%;
+  /* Verdict tokens lighten on dark */
+  --status-go-bg: 164 50% 54%;
+  --status-go-fg: 165 40% 12%;
+  --status-maybe-bg: 35 90% 60%;
+  --status-maybe-fg: 28 40% 12%;
+  --status-skip-bg: 4 82% 66%;
+  --status-skip-fg: 0 0% 100%;
 
-  --warning: 37 92% 60%;
-  --warning-foreground: 25 40% 12%;
-
-  --success: 162 48% 46%;
-  --success-foreground: 0 0% 100%;
-
-  --score-terrible: 5 78% 63%;
-  --score-terrible-foreground: 0 0% 100%;
-  --score-ok: 37 84% 62%;
-  --score-ok-foreground: 25 40% 12%;
-  --score-great: 165 44% 48%;
-  --score-great-foreground: 0 0% 100%;
-
-  --shadow: 222 42% 6%;
+  --shadow: 222 42% 4%;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -173,29 +201,29 @@
 
 @layer base {
   html {
-    color-scheme: light;
+    color-scheme: light dark;
   }
 
-  html,
-  body {
+  html, body {
     max-width: 100vw;
     overflow-x: hidden;
   }
 
   body {
+    color-scheme: light;
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     padding-top: var(--navbar-height);
-    font-family: var(--font-body, system-ui, sans-serif);
+    font-family: var(--font-body, 'Inter', system-ui, sans-serif);
+    font-feature-settings: 'ss01', 'cv11';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     transition:
-      background-color 220ms ease,
-      color 220ms ease;
+      background-color var(--dur-normal) var(--ease-standard),
+      color var(--dur-normal) var(--ease-standard);
   }
 
-  /* Texture overlay — tiled grain on top of background, follows theme class */
   body::before {
     content: '';
     position: fixed;
@@ -206,10 +234,9 @@
     opacity: 0.07;
     pointer-events: none;
     z-index: 0;
-    transition: opacity 220ms ease;
+    transition: opacity var(--dur-normal) var(--ease-standard);
   }
 
-  /* Slightly more visible grain in severe mode — adds weight */
   body.theme-severe::before {
     opacity: 0.09;
   }
@@ -230,75 +257,144 @@
   }
 
   ::selection {
-    background-color: hsl(var(--accent) / 0.2);
+    background-color: hsl(var(--accent) / 0.22);
+  }
+
+  /* ── Global focus-visible ring — keyboard users always see their place ── */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+  /* kill default outlines that are replaced by our token */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Autofill doesn't blow out glass surfaces */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: hsl(var(--foreground));
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--surface-elevated)) inset;
+    caret-color: hsl(var(--foreground));
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   COMPONENT LAYER — reusable semantic utilities
+   COMPONENT LAYER — glass primitives, status pills
+   These are token-driven utilities; components can compose them.
 ───────────────────────────────────────────────────────────────────────────── */
 
 @layer components {
-  /* Grounded surface cards — replaces floating glassmorphism tiles */
+  /* Grounded token-driven surfaces */
   .surface-card {
     @apply rounded-2xl border border-border-subtle bg-surface shadow-card;
   }
-
   .surface-elevated {
     @apply rounded-2xl border border-border-subtle bg-surface-elevated shadow-soft;
   }
-
   .surface-inset {
     @apply rounded-xl border border-border-subtle bg-surface-inset;
   }
 
-  /* Score pills */
-  .score-pill-terrible {
-    @apply rounded-full bg-score-terrible px-3 py-1 text-sm font-semibold text-score-terrible-foreground;
+  /* ── Glass family — three recipes, one language ─────────────────────── */
+  .glass-chrome {
+    background-color: hsl(var(--glass-light) / 0.80);
+    backdrop-filter: blur(var(--blur-md)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.4);
+    border: 1px solid hsl(var(--glass-border-light) / 0.08);
+    box-shadow: var(--elev-2);
   }
 
-  .score-pill-ok {
-    @apply rounded-full bg-score-ok px-3 py-1 text-sm font-semibold text-score-ok-foreground;
+  .glass-surface {
+    background-color: hsl(var(--surface) / 0.68);
+    backdrop-filter: blur(var(--blur-lg));
+    -webkit-backdrop-filter: blur(var(--blur-lg));
+    border: 1px solid hsl(var(--border-subtle));
+    box-shadow: var(--elev-1);
   }
 
-  .score-pill-great {
-    @apply rounded-full bg-score-great px-3 py-1 text-sm font-semibold text-score-great-foreground;
+  .glass-chip {
+    background-color: hsl(var(--glass-light) / 0.10);
+    backdrop-filter: blur(var(--blur-sm));
+    -webkit-backdrop-filter: blur(var(--blur-sm));
+    border: 1px solid hsl(var(--glass-border-dark) / 0.14);
   }
 
-  /* Danger chip */
-  .chip-danger {
-    @apply rounded-full bg-danger/12 px-2.5 py-0.5 text-xs font-medium text-danger;
+  /* Dark variants — used on photo-scrim hero surfaces */
+  [data-on="dark"] .glass-chrome,
+  [data-on="dark"].glass-chrome {
+    background-color: hsl(var(--glass-dark) / 0.55);
+    border-color: hsl(var(--glass-border-dark) / 0.12);
+  }
+  [data-on="dark"] .glass-chip,
+  [data-on="dark"].glass-chip {
+    background-color: hsl(var(--glass-border-dark) / 0.08);
+    border-color: hsl(var(--glass-border-dark) / 0.14);
   }
 
-  /* Warning chip */
-  .chip-warning {
-    @apply rounded-full bg-warning/15 px-2.5 py-0.5 text-xs font-medium text-warning-foreground;
-  }
+  /* Status pills (text-only — chip wraps fill as needed) */
+  .status-go    { color: hsl(var(--status-go-bg)); }
+  .status-maybe { color: hsl(var(--status-maybe-bg)); }
+  .status-skip  { color: hsl(var(--status-skip-bg)); }
+}
 
-  /* Positive chip */
-  .chip-positive {
-    @apply rounded-full bg-success/12 px-2.5 py-0.5 text-xs font-medium text-success;
-  }
+/* ─────────────────────────────────────────────────────────────────────────────
+   Dark-surface verdict tokens
+   SelectedSpotBoard + pin detail hero live on a photo scrim, so verdict
+   colors need to lighten. Anything wrapped in data-on="dark" gets the
+   bright variant without touching the light-surface readings elsewhere.
+───────────────────────────────────────────────────────────────────────────── */
 
-  /* Legacy glassy utility — kept for map overlay elements that need blur */
-  /* (map toolbar, pin button, search input). Not for content cards.      */
+[data-on="dark"] {
+  --status-go-bg: 164 58% 58%;
+  --status-go-fg: 165 40% 12%;
+  --status-maybe-bg: 35 95% 62%;
+  --status-maybe-fg: 28 40% 12%;
+  --status-skip-bg: 4 86% 68%;
+  --status-skip-fg: 0 0% 100%;
+
+  --score-great: var(--status-go-bg);
+  --score-great-foreground: var(--status-go-fg);
+  --score-ok: var(--status-maybe-bg);
+  --score-ok-foreground: var(--status-maybe-fg);
+  --score-terrible: var(--status-skip-bg);
+  --score-terrible-foreground: var(--status-skip-fg);
+
+  --success: var(--status-go-bg);
+  --warning: var(--status-maybe-bg);
+  --danger: var(--status-skip-bg);
+
+  /* Legacy .glassy kept for Leaflet overrides */
   .glassy {
     background-color: hsl(var(--surface) / 0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(var(--blur-md));
+    -webkit-backdrop-filter: blur(var(--blur-md));
     border: 1px solid hsl(var(--border-subtle));
-    box-shadow: 0 2px 15px hsl(var(--shadow) / 0.15);
+    box-shadow: var(--elev-2);
     color: hsl(var(--foreground));
   }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
    MAP PAGE UTILITIES
-   These use fixed dark values because the Leaflet map is always dark (CARTO tiles).
-   They are intentionally NOT tokenized — the map is its own visual context.
+   Leaflet lives in a distinct visual context; keep tokens where possible.
 ───────────────────────────────────────────────────────────────────────────── */
 
-/* Legacy crosshair — replaced by SVG in map page; kept for any other consumers */
 .wo-crosshair {
   position: absolute;
   top: 50%;
@@ -317,40 +413,41 @@
   display: flex !important;
   flex-direction: column !important;
   gap: 0 !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  border-radius: 12px !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1) !important;
+  background: hsl(var(--glass-light) / 0.92) !important;
+  border: 1px solid hsl(var(--glass-border-light) / 0.08) !important;
+  border-radius: var(--radius-lg) !important;
+  backdrop-filter: blur(var(--blur-md)) !important;
+  -webkit-backdrop-filter: blur(var(--blur-md)) !important;
+  box-shadow: var(--elev-2) !important;
   z-index: 2400 !important;
   overflow: hidden !important;
 }
 
 .leaflet-control-zoom a {
   background: transparent !important;
-  color: rgba(30, 41, 59, 0.65) !important;
+  color: hsl(var(--foreground) / 0.72) !important;
   border: none !important;
   width: 36px !important;
   height: 36px !important;
   line-height: 36px !important;
   font-size: 16px !important;
   font-weight: 600 !important;
-  transition: background 0.14s ease, color 0.14s ease !important;
+  transition: background var(--dur-quick) var(--ease-standard),
+              color var(--dur-quick) var(--ease-standard) !important;
 }
 
 .leaflet-control-zoom a:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-  color: #1e293b !important;
+  background: hsl(var(--glass-border-light) / 0.04) !important;
+  color: hsl(var(--foreground)) !important;
 }
 
 .leaflet-control-zoom-in {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
-  border-radius: 12px 12px 0 0 !important;
+  border-bottom: 1px solid hsl(var(--glass-border-light) / 0.06) !important;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
 }
 
 .leaflet-control-zoom-out {
-  border-radius: 0 0 12px 12px !important;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
 }
 
 .leaflet-container {
@@ -365,12 +462,19 @@
 ───────────────────────────────────────────────────────────────────────────── */
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Respect reduced-motion globally — individual files can override further */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  :root {
+    --stagger: 0ms;
   }
 }

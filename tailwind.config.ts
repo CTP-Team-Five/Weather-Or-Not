@@ -49,14 +49,25 @@ const config: Config = {
         "score-great": "hsl(var(--score-great) / <alpha-value>)",
         "score-great-foreground":
           "hsl(var(--score-great-foreground) / <alpha-value>)",
+
+        "status-go": "hsl(var(--status-go-bg) / <alpha-value>)",
+        "status-maybe": "hsl(var(--status-maybe-bg) / <alpha-value>)",
+        "status-skip": "hsl(var(--status-skip-bg) / <alpha-value>)",
       },
       boxShadow: {
-        soft: "0 10px 30px -15px hsl(var(--shadow) / 0.22)",
-        card: "0 8px 24px -12px hsl(var(--shadow) / 0.18)",
+        "elev-1": "0 1px 2px hsl(var(--shadow) / 0.06)",
+        "elev-2": "0 2px 10px hsl(var(--shadow) / 0.10)",
+        "elev-3": "0 8px 24px -6px hsl(var(--shadow) / 0.14)",
+        "elev-4": "0 16px 40px -12px hsl(var(--shadow) / 0.22)",
+        soft: "0 8px 24px -6px hsl(var(--shadow) / 0.14)",
+        card: "0 2px 10px hsl(var(--shadow) / 0.10)",
       },
       borderRadius: {
-        xl: "1rem",
-        "2xl": "1.25rem",
+        xs: "2px",
+        sm: "6px",
+        md: "10px",
+        lg: "14px",
+        xl: "20px",
       },
       backgroundImage: {
         "page-clear":
@@ -67,8 +78,13 @@ const config: Config = {
           "linear-gradient(to bottom, hsl(var(--background)), hsl(var(--surface-elevated)))",
       },
       fontFamily: {
-        display: ["var(--font-display)", "system-ui", "sans-serif"],
-        body: ["var(--font-body)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "'Manrope'", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "'Inter'", "system-ui", "sans-serif"],
+      },
+      transitionTimingFunction: {
+        standard: "cubic-bezier(0.2, 0, 0, 1)",
+        entrance: "cubic-bezier(0.22, 1, 0.36, 1)",
+        exit: "cubic-bezier(0.4, 0, 1, 1)",
       },
     },
   },

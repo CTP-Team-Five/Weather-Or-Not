@@ -8,26 +8,33 @@ import styles from './Navbar.module.css';
 import { useAuth } from '@/lib/useAuth';
 import { supabase } from '@/lib/supabaseClient';
 
-const Navbar: React.FC = () => {
+export type NavVariant = 'solid' | 'transparent';
+
+interface NavbarProps {
+  variant?: NavVariant;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ variant = 'solid' }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
 
   const handleSignOut = async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
+    if (supabase) await supabase.auth.signOut();
     router.push('/auth');
   };
 
+  const dataOn = variant === 'transparent' ? 'dark' : undefined;
+
   return (
-    <header className={styles.header}>
-      {/* Accent line — color shifts with weather theme via --accent token */}
-      <div className={styles.accentLine} aria-hidden="true" />
+    <header
+      className={`${styles.header} ${variant === 'transparent' ? styles.transparent : styles.solid}`}
+      data-on={dataOn}
+    >
+      {variant === 'solid' && <div className={styles.accentLine} aria-hidden="true" />}
 
       <nav className={styles.bar} aria-label="Main navigation">
-        {/* Logo */}
-        <Link href="/" className={styles.logoLink} aria-label="WeatherOrNot home">
+        <Link href="/" className={styles.logoLink} aria-label="WeatherOrNot — home">
           <WiDaySunny className={styles.logoIcon} aria-hidden="true" />
           <span className={styles.logoText} aria-hidden="true">
             <span className={styles.logoWord1}>Weather</span>
@@ -36,7 +43,6 @@ const Navbar: React.FC = () => {
           <WiDayStormShowers className={styles.logoIconRight} aria-hidden="true" />
         </Link>
 
-        {/* Center — nav links */}
         <ul className={styles.navList} role="list">
           <li>
             <Link
@@ -56,20 +62,23 @@ const Navbar: React.FC = () => {
           </li>
         </ul>
 
-        {/* Right — auth controls */}
         <div className={styles.rightSide}>
           <div className={styles.authControls}>
             {user ? (
               <>
                 <div className={styles.avatarCircle} title={user.email}>
-                  {user.email?.[0] ?? "?"}
+                  {user.email?.[0] ?? '?'}
                 </div>
-                <button className={styles.signOutBtn} onClick={handleSignOut}>
+                <button
+                  type="button"
+                  className={styles.signOutBtn}
+                  onClick={handleSignOut}
+                >
                   Sign out
                 </button>
-                <Link href="/map" className={styles.addBtn} aria-label="Add new spot">
-                  <span aria-hidden="true">＋</span>
-                  <span className={styles.addLabel}>New Spot</span>
+                <Link href="/map" className={styles.addBtn} aria-label="Add a new spot">
+                  <span aria-hidden="true">+</span>
+                  <span className={styles.addLabel}>New spot</span>
                 </Link>
               </>
             ) : (

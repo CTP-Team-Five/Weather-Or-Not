@@ -1,5 +1,3 @@
-/* components/Navbar.module.css */
-
 /* ── Shell ────────────────────────────────────────────────────────────────── */
 
 .header {
@@ -12,13 +10,12 @@
   flex-direction: column;
 }
 
-/* ── Accent line — thin brand stripe that shifts with weather theme ───────── */
-
+/* Accent line — only in solid mode */
 .accentLine {
-  height: 3px;
+  height: 2px;
   background: hsl(var(--accent));
   width: 100%;
-  transition: background 220ms ease;
+  transition: background var(--dur-normal) var(--ease-standard);
   flex-shrink: 0;
 }
 
@@ -29,12 +26,25 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 0 2rem;
-  height: 60px;
-  background: hsl(var(--surface) / 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  height: var(--navbar-height);
+  transition: background var(--dur-normal) var(--ease-standard);
+}
+
+/* Solid variant — used on content pages (pin detail, auth, edit) */
+.solid .bar {
+  background-color: hsl(var(--surface) / 0.92);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.2);
   border-bottom: 1px solid hsl(var(--border-subtle));
-  box-shadow: 0 1px 0 hsl(var(--border-subtle)), 0 4px 16px hsl(var(--shadow) / 0.06);
+  box-shadow: var(--elev-1);
+}
+
+/* Transparent variant — floats over photo-scrim hero */
+.transparent .bar {
+  background-color: hsl(var(--glass-dark) / 0.22);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  border-bottom: 1px solid hsl(var(--glass-border-dark) / 0.08);
 }
 
 /* ── Logo ─────────────────────────────────────────────────────────────────── */
@@ -46,64 +56,76 @@
   text-decoration: none;
   color: hsl(var(--foreground));
   flex-shrink: 0;
-  transition: opacity 0.18s ease;
+  transition: opacity var(--dur-quick) var(--ease-standard);
+}
+
+.transparent .logoLink {
+  color: #fff;
 }
 
 .logoLink:hover {
-  opacity: 0.72;
+  opacity: 0.78;
 }
 
 .logoIcon {
-  font-size: 2rem;
+  font-size: 1.85rem;
   color: hsl(var(--warning));
-  animation: gentlePulse 6s ease-in-out infinite;
   flex-shrink: 0;
-  transition: transform 0.3s ease;
+  transition: transform var(--dur-normal) var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .logoIcon {
+    animation: gentlePulse 8s var(--ease-standard) infinite;
+  }
 }
 
 .logoLink:hover .logoIcon {
   animation-play-state: paused;
-  transform: rotate(35deg) scale(1.1);
+  transform: rotate(18deg) scale(1.05);
 }
 
 .logoText {
-  font-family: var(--font-display, system-ui, sans-serif);
-  font-size: 1.3rem;
-  letter-spacing: -0.04em;
+  font-family: var(--font-display, 'Manrope', system-ui, sans-serif);
+  font-size: 1.2rem;
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 
 .logoWord1 {
-  font-weight: 400;
+  font-weight: 500;
   color: hsl(var(--muted-foreground));
+}
+
+.transparent .logoWord1 {
+  color: hsl(var(--glass-border-dark) / 0.75);
 }
 
 .logoWord2 {
   font-weight: 800;
-  font-style: italic;
   color: hsl(var(--foreground));
   margin-left: -0.03em;
 }
 
+.transparent .logoWord2 {
+  color: #fff;
+}
+
 .logoIconRight {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   color: hsl(var(--muted-foreground) / 0.6);
   flex-shrink: 0;
   margin-left: -0.1rem;
-  transition: transform 0.3s ease, color 0.3s ease;
+  transition: transform var(--dur-normal) var(--ease-standard), color var(--dur-normal) var(--ease-standard);
+}
+
+.transparent .logoIconRight {
+  color: hsl(var(--glass-border-dark) / 0.55);
 }
 
 .logoLink:hover .logoIconRight {
   color: hsl(var(--muted-foreground));
   transform: translateX(1px);
-}
-
-/* ── Right side ───────────────────────────────────────────────────────────── */
-
-.rightSide {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
 }
 
 /* ── Nav links ────────────────────────────────────────────────────────────── */
@@ -120,20 +142,35 @@
 .navLink {
   display: inline-flex;
   align-items: center;
-  padding: 0.4rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.875rem;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-body);
   font-weight: 500;
   color: hsl(var(--muted-foreground));
   text-decoration: none;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition: color var(--dur-quick) var(--ease-standard),
+              background var(--dur-quick) var(--ease-standard);
   position: relative;
   white-space: nowrap;
+  min-height: 44px;
+  min-width: 44px;
+  justify-content: center;
 }
 
-.navLink:hover {
+.transparent .navLink {
+  color: hsl(var(--glass-border-dark) / 0.78);
+}
+
+.navLink:hover,
+.navLink:focus-visible {
   color: hsl(var(--foreground));
   background: hsl(var(--muted));
+}
+
+.transparent .navLink:hover,
+.transparent .navLink:focus-visible {
+  color: #fff;
+  background: hsl(var(--glass-border-dark) / 0.10);
 }
 
 .navLink.active {
@@ -141,41 +178,150 @@
   font-weight: 600;
 }
 
-/* Active indicator — thin accent dot under the link */
+.transparent .navLink.active {
+  color: #fff;
+}
+
 .navLink.active::after {
   content: '';
   position: absolute;
-  bottom: 3px;
+  bottom: 6px;
   left: 50%;
   transform: translateX(-50%);
   width: 18px;
   height: 2px;
   background: hsl(var(--accent));
-  border-radius: 1px;
+  border-radius: var(--radius-xs);
 }
 
-/* ── Add Spot CTA ─────────────────────────────────────────────────────────── */
+.transparent .navLink.active::after {
+  background: #fff;
+}
+
+/* ── Right side ───────────────────────────────────────────────────────────── */
+
+.rightSide {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.authControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.avatarCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: hsl(var(--accent) / 0.18);
+  border: 1px solid hsl(var(--accent) / 0.35);
+  color: hsl(var(--accent));
+  font-size: var(--text-caption);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.transparent .avatarCircle {
+  background: hsl(var(--glass-border-dark) / 0.18);
+  border-color: hsl(var(--glass-border-dark) / 0.35);
+  color: #fff;
+}
+
+.signOutBtn {
+  font-size: var(--text-body);
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.45rem 0.75rem;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-quick) var(--ease-standard),
+              background var(--dur-quick) var(--ease-standard);
+}
+
+.transparent .signOutBtn {
+  color: hsl(var(--glass-border-dark) / 0.78);
+}
+
+.signOutBtn:hover,
+.signOutBtn:focus-visible {
+  color: hsl(var(--foreground));
+  background: hsl(var(--muted));
+}
+
+.transparent .signOutBtn:hover,
+.transparent .signOutBtn:focus-visible {
+  color: #fff;
+  background: hsl(var(--glass-border-dark) / 0.10);
+}
+
+.signInLink {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  border: 1px solid hsl(var(--border));
+  transition: color var(--dur-quick) var(--ease-standard),
+              border-color var(--dur-quick) var(--ease-standard),
+              background var(--dur-quick) var(--ease-standard);
+}
+
+.transparent .signInLink {
+  color: #fff;
+  border-color: hsl(var(--glass-border-dark) / 0.35);
+}
+
+.signInLink:hover,
+.signInLink:focus-visible {
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border-subtle));
+  background: hsl(var(--muted));
+}
+
+.transparent .signInLink:hover,
+.transparent .signInLink:focus-visible {
+  border-color: hsl(var(--glass-border-dark) / 0.6);
+  background: hsl(var(--glass-border-dark) / 0.10);
+}
 
 .addBtn {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.45rem 1rem;
-  border-radius: 999px;
-  font-size: 0.82rem;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-body);
   font-weight: 600;
   background: hsl(var(--accent));
   color: hsl(var(--accent-foreground));
   text-decoration: none;
-  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  transition: background var(--dur-quick) var(--ease-standard),
+              transform var(--dur-quick) var(--ease-standard),
+              box-shadow var(--dur-quick) var(--ease-standard);
   white-space: nowrap;
-  box-shadow: 0 1px 4px hsl(var(--accent) / 0.3);
+  box-shadow: var(--elev-accent);
 }
 
-.addBtn:hover {
-  background: hsl(var(--accent) / 0.88);
+.addBtn:hover,
+.addBtn:focus-visible {
+  background: hsl(var(--accent) / 0.92);
   transform: translateY(-1px);
-  box-shadow: 0 3px 10px hsl(var(--accent) / 0.35);
+  box-shadow: var(--elev-3), var(--elev-accent);
 }
 
 .addBtn:active {
@@ -188,9 +334,14 @@
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .bar {
-    padding: 0 1.25rem;
+    padding: 0 1rem;
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .navList {
+    justify-self: center;
   }
 
   .addLabel {
@@ -198,7 +349,7 @@
   }
 
   .addBtn {
-    padding: 0.45rem 0.6rem;
+    padding: 0.5rem 0.75rem;
   }
 
   .logoWord1 {
@@ -210,69 +361,11 @@
   }
 }
 
-/* ── Auth controls ────────────────────────────────────────────────────────── */
-
-.authControls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.avatarCircle {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: hsl(var(--accent) / 0.18);
-  border: 1px solid hsl(var(--accent) / 0.35);
-  color: hsl(var(--accent));
-  font-size: 0.75rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  text-transform: uppercase;
-}
-
-.signOutBtn {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: hsl(var(--muted-foreground));
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.3rem 0.6rem;
-  border-radius: 6px;
-  transition: color 0.15s ease, background 0.15s ease;
-}
-
-.signOutBtn:hover {
-  color: hsl(var(--foreground));
-  background: hsl(var(--muted));
-}
-
-.signInLink {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: hsl(var(--muted-foreground));
-  text-decoration: none;
-  padding: 0.45rem 0.85rem;
-  border-radius: 999px;
-  border: 1px solid hsl(var(--border));
-  transition: color 0.15s ease, border-color 0.15s ease;
-  white-space: nowrap;
-}
-
-.signInLink:hover {
-  color: hsl(var(--foreground));
-  border-color: hsl(var(--border-subtle));
-}
-
 /* ── Logo animation ───────────────────────────────────────────────────────── */
 
 @keyframes gentlePulse {
   0%   { transform: rotate(0deg); }
-  40%  { transform: rotate(18deg); }
-  60%  { transform: rotate(18deg); }
+  40%  { transform: rotate(16deg); }
+  60%  { transform: rotate(16deg); }
   100% { transform: rotate(0deg); }
 }
