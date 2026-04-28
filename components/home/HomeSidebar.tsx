@@ -122,13 +122,13 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
                 <span className={styles.pinName}>
                   {highlightMatch(pin.canonical_name || pin.area, searchQuery.trim())}
                 </span>
-                {loading ? (
+                {loading && !reason ? (
                   <span className={styles.reasonSkeleton} />
                 ) : reason ? (
                   <span className={styles.reason}>{reason}</span>
                 ) : null}
               </div>
-              {loading ? (
+              {loading && !verdict ? (
                 <span className={styles.badgeSkeleton} />
               ) : verdict ? (
                 <span className={`${styles.badge} ${verdictBadgeClass(verdict)}`}>

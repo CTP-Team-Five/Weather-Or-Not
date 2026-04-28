@@ -20,17 +20,15 @@
 }
 
 /* ── Hero Zone ────────────────────────────────────────────────────────────── */
-/* Explicit dark cinematic gradient that fades into the page background.      */
+/* Full-bleed dark cinematic strip that fades into the page background.       */
+/* Width is 100% of viewport — only the inner content is constrained.         */
 
 .hero {
   position: relative;
+  width: 100%;
   min-height: 60vh;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 2rem;
-  max-width: 960px;
-  margin: 0 auto;
-  width: 100%;
   overflow: hidden;
   /* Theme gradient sits on top of the background image — acts as scrim */
   background:
@@ -48,22 +46,53 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   background-image: var(--hero-bg-image);
   background-size: cover;
   background-position: center;
-  opacity: 0.35;
+  opacity: 0.28;
   transition: opacity 600ms ease;
+  pointer-events: none;
+}
+
+/* Inner wrapper holds content at a readable max width while the strip
+   itself spans full viewport width. */
+.heroInner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: inherit;
+}
+
+@media (min-width: 1024px) {
+  .hero {
+    min-height: 64vh;
+  }
+  .heroInner {
+    padding: 2rem 3rem 2.5rem;
+    max-width: 1440px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .heroInner {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
 }
 
 .loadingHero {
+  position: relative;
+  width: 100%;
   min-height: 56vh;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem 2rem;
-  max-width: 960px;
-  margin: 0 auto;
-  width: 100%;
   background:
     linear-gradient(
       to bottom,
@@ -100,6 +129,13 @@
   color: #ffffff;
 }
 
+.backBtn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
 .locationChip {
   font-size: 0.82rem;
   font-weight: 500;
@@ -115,10 +151,28 @@
   max-width: 260px;
 }
 
+@media (min-width: 1024px) {
+  .locationChip {
+    max-width: 420px;
+    font-size: 0.88rem;
+    padding: 0.45rem 1rem;
+  }
+}
+
 /* Pushes heroBody to the lower portion of the hero zone */
 .heroBody {
   margin-top: auto;
   padding-bottom: 0.5rem;
+  /* On wide viewports keep verdict text in a comfortable reading column even
+     though the strip itself is full-bleed. */
+  max-width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .heroBody {
+    max-width: 70ch;
+    padding-bottom: 1rem;
+  }
 }
 
 .activityBadge {
@@ -203,6 +257,13 @@
   animation: heroIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.22s both;
 }
 
+@media (min-width: 1024px) {
+  .headline {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
 /* ── Score bar-line ───────────────────────────────────────────────────────── */
 
 .scoreLine {
@@ -220,6 +281,20 @@
   background: rgba(255, 255, 255, 0.12);
   border-radius: 1px;
   overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .scoreTrack {
+    max-width: 320px;
+    height: 5px;
+    border-radius: 2.5px;
+  }
+  .scoreBarFill {
+    border-radius: 2.5px;
+  }
+  .scoreNum {
+    font-size: 1.15rem;
+  }
 }
 
 .scoreBarFill {
@@ -245,9 +320,15 @@
   margin: 0 0 0 0;
   font-size: 0.95rem;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.7);
   line-height: 1.55;
   animation: heroIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.38s both;
+}
+
+@media (min-width: 1024px) {
+  .subline {
+    font-size: 1.05rem;
+  }
 }
 
 /* ── Risk Chips ───────────────────────────────────────────────────────────── */
@@ -300,9 +381,9 @@
 }
 
 .tag {
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  color: #a5b4fc;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.72);
   padding: 0.25rem 0.65rem;
   border-radius: 6px;
   font-size: 0.78rem;
@@ -312,12 +393,43 @@
 /* ── Content Zone ─────────────────────────────────────────────────────────── */
 
 .contentZone {
-  max-width: 1400px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 2rem 2rem 4rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .contentZone {
+    padding: 2.5rem 3rem 5rem;
+    gap: 2rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  .contentZone {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+/* ── Top row: large map + side conditions stack ─────────────────────────── */
+/* Mobile: stacks vertically. Desktop: 12-col with map 8/12, side 4/12.    */
+
+.topRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .topRow {
+    grid-template-columns: minmax(0, 8fr) minmax(0, 4fr);
+    gap: 2rem;
+    align-items: stretch;
+  }
 }
 
 /* ── Map ──────────────────────────────────────────────────────────────────── */
@@ -335,6 +447,34 @@
   .mapSection { height: 460px; }
 }
 
+@media (min-width: 1024px) {
+  .mapSection {
+    height: auto;
+    min-height: 540px;
+  }
+}
+
+/* Side column: stack of two cards that match the map's height */
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .sideColumn {
+    gap: 2rem;
+  }
+}
+
+/* Side cards size to their content — no flex:1 stretching that creates
+   empty whitespace inside Current Conditions when reasons are short. */
+.sideCard {
+  display: flex;
+  flex-direction: column;
+}
+
 /* ── Cards ────────────────────────────────────────────────────────────────── */
 
 .card {
@@ -343,6 +483,12 @@
   border-radius: 16px;
   padding: 1.75rem;
   box-shadow: 0 2px 8px hsl(var(--shadow) / 0.08);
+}
+
+@media (min-width: 1024px) {
+  .card {
+    padding: 2rem 2.25rem;
+  }
 }
 
 .cardTitle {
@@ -354,18 +500,6 @@
   letter-spacing: 0.1em;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid hsl(var(--border-subtle));
-}
-
-/* ── Main 2-col grid ──────────────────────────────────────────────────────── */
-
-.mainGrid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-}
-
-@media (min-width: 1024px) {
-  .mainGrid { grid-template-columns: 1fr 1fr; }
 }
 
 /* ── Current Weather ──────────────────────────────────────────────────────── */
@@ -462,6 +596,12 @@
   gap: 1.25rem;
 }
 
+@media (min-width: 768px) {
+  .waveGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 /* ── Hourly Forecast ──────────────────────────────────────────────────────── */
 
 .hourlySection {}
@@ -494,6 +634,13 @@
   gap: 0.45rem;
   flex-shrink: 0;
   transition: background 0.15s ease;
+}
+
+@media (min-width: 1024px) {
+  .hourlyItem {
+    min-width: 110px;
+    padding: 1.15rem 0.85rem;
+  }
 }
 
 .hourlyItem:hover {
@@ -541,6 +688,13 @@
   transition: background 0.15s ease;
 }
 
+@media (min-width: 1024px) {
+  .dailyRow {
+    grid-template-columns: 160px 1fr auto;
+    padding: 0.95rem 1.15rem;
+  }
+}
+
 .dailyRow:hover { background: hsl(var(--muted)); }
 
 .dailyDate {
@@ -549,17 +703,29 @@
   color: hsl(var(--foreground));
 }
 
+/* Track spans the week's overall temp range; fill is positioned to show
+   where this day's min-max falls. Cool→warm gradient maps to position. */
 .dailyBar {
-  height: 4px;
+  position: relative;
+  height: 6px;
   background: hsl(var(--border-subtle));
-  border-radius: 2px;
+  border-radius: 3px;
   overflow: hidden;
 }
 
+/* Solid color interpolated from the day's position in the week (--day-pos: 0..1).
+   Cool blue at 0 (week's coldest), warm red at 1 (week's hottest). */
 .dailyBarFill {
+  position: absolute;
+  top: 0;
   height: 100%;
-  background: linear-gradient(90deg, hsl(var(--accent) / 0.4), hsl(var(--danger) / 0.4));
-  border-radius: 2px;
+  border-radius: 3px;
+  background: color-mix(
+    in oklch,
+    hsl(var(--accent)) calc((1 - var(--day-pos, 0.5)) * 100%),
+    hsl(var(--danger))
+  );
+  opacity: 0.85;
 }
 
 .dailyTemps {
@@ -613,8 +779,10 @@
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 
 @media (max-width: 640px) {
-  .hero {
+  .heroInner {
     padding: 1rem 1.25rem;
+  }
+  .hero {
     min-height: 52vh;
   }
   .contentZone {

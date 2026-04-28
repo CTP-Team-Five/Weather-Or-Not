@@ -142,14 +142,16 @@ export default function PinDetailPage() {
     return (
       <main className={styles.container}>
         <div className={styles.loadingHero}>
-          <div className={styles.topBar}>
-            <button className={styles.backBtn} onClick={() => router.push("/")}>← Back</button>
-          </div>
-          <div className={styles.heroBody}>
-            <div className={`${styles.skeleton} ${styles.skeletonBadge}`} />
-            <div className={`${styles.skeleton} ${styles.skeletonHeadline}`} />
-            <div className={`${styles.skeleton} ${styles.skeletonScore}`} />
-            <div className={`${styles.skeleton} ${styles.skeletonSubline}`} />
+          <div className={styles.heroInner}>
+            <div className={styles.topBar}>
+              <button className={styles.backBtn} onClick={() => router.push("/")}>← Back</button>
+            </div>
+            <div className={styles.heroBody}>
+              <div className={`${styles.skeleton} ${styles.skeletonBadge}`} />
+              <div className={`${styles.skeleton} ${styles.skeletonHeadline}`} />
+              <div className={`${styles.skeleton} ${styles.skeletonScore}`} />
+              <div className={`${styles.skeleton} ${styles.skeletonSubline}`} />
+            </div>
           </div>
         </div>
       </main>
@@ -160,8 +162,10 @@ export default function PinDetailPage() {
     return (
       <main className={styles.container}>
         <div className={styles.hero}>
-          <div className={styles.topBar}>
-            <button className={styles.backBtn} onClick={() => router.push("/")}>← Back</button>
+          <div className={styles.heroInner}>
+            <div className={styles.topBar}>
+              <button className={styles.backBtn} onClick={() => router.push("/")}>← Back</button>
+            </div>
           </div>
         </div>
         <div className={styles.contentZone}>
@@ -200,140 +204,143 @@ export default function PinDetailPage() {
         className={styles.hero}
         style={{ '--hero-bg-image': `url(${getBackgroundImage(toActivitySlot(pin.activity)).src})` } as React.CSSProperties}
       >
-        <div className={styles.topBar}>
-          <button className={styles.backBtn} onClick={() => router.push("/")}>
-            ← Back
-          </button>
-          <span className={styles.locationChip}>
-            📍 {pin.canonical_name || pin.area}
-          </span>
-        </div>
-
-        <div className={styles.heroBody}>
-          <div className={`${styles.activityBadge} ${activityClass}`}>
-            {(() => { const Icon = ActivityIcon[pin.activity]; return Icon ? <Icon size={15} strokeWidth={2.2} /> : null; })()}
-            <span>{activityLabels[pin.activity] || pin.activity}</span>
+        <div className={styles.heroInner}>
+          <div className={styles.topBar}>
+            <button className={styles.backBtn} onClick={() => router.push("/")}>
+              ← Back
+            </button>
+            <span className={styles.locationChip}>
+              📍 {pin.canonical_name || pin.area}
+            </span>
           </div>
 
-          {/* Verdict — the answer, first */}
-          {suitability && (
-            <div className={styles.verdictLine}>
-              <span className={`${styles.verdictWord} ${styles[suitability.label]}`}>
-                {suitability.label}
-              </span>
+          <div className={styles.heroBody}>
+            <div className={`${styles.activityBadge} ${activityClass}`}>
+              {(() => { const Icon = ActivityIcon[pin.activity]; return Icon ? <Icon size={15} strokeWidth={2.2} /> : null; })()}
+              <span>{activityLabels[pin.activity] || pin.activity}</span>
             </div>
-          )}
 
-          {/* Headline — cinematic mood context, muted */}
-          <h1 className={styles.headline}>
-            {hero ? hero.headline : (pin.canonical_name || pin.area).toLowerCase()}
-          </h1>
-
-          {/* Score as thin bar-line */}
-          {suitability && (
-            <div
-              className={styles.scoreLine}
-              role="progressbar"
-              aria-valuenow={suitability.score}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={`Suitability score: ${suitability.score} out of 100`}
-            >
-              <div className={styles.scoreTrack}>
-                <div
-                  className={styles.scoreBarFill}
-                  style={{ width: `${suitability.score}%` }}
-                />
-              </div>
-              <span className={styles.scoreNum}>{suitability.score}/100</span>
-            </div>
-          )}
-
-          {hero?.subline && (
-            <p className={styles.subline}>{hero.subline}</p>
-          )}
-
-          {chips.length > 0 && (
-            <div className={styles.chipsRow} role="list">
-              {chips.map((chip, i) => (
-                <span key={i} className={`${styles.chip} ${styles[chip.type]}`} role="listitem">
-                  <span aria-hidden="true">{chip.emoji}</span>
-                  {chip.label}
+            {/* Verdict — the answer, first */}
+            {suitability && (
+              <div className={styles.verdictLine}>
+                <span className={`${styles.verdictWord} ${styles[suitability.label]}`}>
+                  {suitability.label}
                 </span>
-              ))}
-            </div>
-          )}
+              </div>
+            )}
 
-          {pin.tags && pin.tags.length > 0 && (
-            <div className={styles.tagsRow}>
-              {pin.tags.map((tag, idx) => (
-                <span key={idx} className={styles.tag}>{tag}</span>
-              ))}
-            </div>
-          )}
+            {/* Headline — cinematic mood context, muted */}
+            <h1 className={styles.headline}>
+              {hero ? hero.headline : (pin.canonical_name || pin.area).toLowerCase()}
+            </h1>
+
+            {/* Score as thin bar-line */}
+            {suitability && (
+              <div
+                className={styles.scoreLine}
+                role="progressbar"
+                aria-valuenow={suitability.score}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`Suitability score: ${suitability.score} out of 100`}
+              >
+                <div className={styles.scoreTrack}>
+                  <div
+                    className={styles.scoreBarFill}
+                    style={{ width: `${suitability.score}%` }}
+                  />
+                </div>
+                <span className={styles.scoreNum}>{suitability.score}/100</span>
+              </div>
+            )}
+
+            {hero?.subline && (
+              <p className={styles.subline}>{hero.subline}</p>
+            )}
+
+            {chips.length > 0 && (
+              <div className={styles.chipsRow} role="list">
+                {chips.map((chip, i) => (
+                  <span key={i} className={`${styles.chip} ${styles[chip.type]}`} role="listitem">
+                    <span aria-hidden="true">{chip.emoji}</span>
+                    {chip.label}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {pin.tags && pin.tags.length > 0 && (
+              <div className={styles.tagsRow}>
+                {pin.tags.map((tag, idx) => (
+                  <span key={idx} className={styles.tag}>{tag}</span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
       {/* ── CONTENT ZONE ───────────────────────────────────────────────────── */}
       <div className={styles.contentZone}>
 
-        {/* Map */}
-        <div className={styles.mapSection}>
-          <LeafletMap
-            initialCenter={[pin.lat, pin.lon]}
-            allPins={[pin]}
-            onCenterMove={() => {}}
-            singlePinMode={true}
-          />
-        </div>
+        {/* Top row: large map + right-column conditions stack */}
+        <section className={styles.topRow} aria-label="Location and current conditions">
+          <div className={styles.mapSection}>
+            <LeafletMap
+              initialCenter={[pin.lat, pin.lon]}
+              allPins={[pin]}
+              onCenterMove={() => {}}
+              singlePinMode={true}
+            />
+          </div>
 
-        {/* 2-col: Current Weather + Score Breakdown */}
-        <div className={styles.mainGrid}>
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Current Conditions</h2>
-            <div className={styles.currentWeather}>
-              <div className={styles.tempSection}>
-                <div className={styles.tempValue}>
-                  {weather.current.temperature.toFixed(0)}°C
-                </div>
-                <div className={styles.tempLabel}>
-                  Feels like {weather.current.apparentTemperature.toFixed(0)}°C · {weatherDesc}
-                </div>
-              </div>
-              <div className={styles.weatherGrid}>
-                <div className={styles.weatherStat}>
-                  <div className={styles.statLabel}>Wind</div>
-                  <div className={styles.statValue}>
-                    {weather.current.windKph.toFixed(1)}
-                    <span className={styles.unit}> km/h</span>
+          <aside className={styles.sideColumn} aria-label="Conditions and score breakdown">
+            <div className={`${styles.card} ${styles.sideCard}`}>
+              <h2 className={styles.cardTitle}>Current Conditions</h2>
+              <div className={styles.currentWeather}>
+                <div className={styles.tempSection}>
+                  <div className={styles.tempValue}>
+                    {weather.current.temperature.toFixed(0)}°C
+                  </div>
+                  <div className={styles.tempLabel}>
+                    Feels like {weather.current.apparentTemperature.toFixed(0)}°C · {weatherDesc}
                   </div>
                 </div>
-                <div className={styles.weatherStat}>
-                  <div className={styles.statLabel}>Precipitation</div>
-                  <div className={styles.statValue}>
-                    {weather.current.precipitation.toFixed(1)}
-                    <span className={styles.unit}> mm</span>
+                <div className={styles.weatherGrid}>
+                  <div className={styles.weatherStat}>
+                    <div className={styles.statLabel}>Wind</div>
+                    <div className={styles.statValue}>
+                      {weather.current.windKph.toFixed(1)}
+                      <span className={styles.unit}> km/h</span>
+                    </div>
+                  </div>
+                  <div className={styles.weatherStat}>
+                    <div className={styles.statLabel}>Precipitation</div>
+                    <div className={styles.statValue}>
+                      {weather.current.precipitation.toFixed(1)}
+                      <span className={styles.unit}> mm</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Why this score</h2>
-            {suitability?.reasons.length ? (
-              <ul className={styles.reasonsList}>
-                {suitability.reasons.map((reason, idx) => (
-                  <li key={idx}>{reason}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className={styles.mutedText}>No breakdown available.</p>
-            )}
-          </div>
-        </div>
+            <div className={`${styles.card} ${styles.sideCard}`}>
+              <h2 className={styles.cardTitle}>Why this score</h2>
+              {suitability?.reasons.length ? (
+                <ul className={styles.reasonsList}>
+                  {suitability.reasons.map((reason, idx) => (
+                    <li key={idx}>{reason}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className={styles.mutedText}>No breakdown available.</p>
+              )}
+            </div>
+          </aside>
+        </section>
 
-        {/* Wave Conditions (surf only) */}
+        {/* Wave Conditions (surf only) — full width */}
         {pin.activity === "surf" && (
           <div className={styles.card}>
             <h2 className={styles.cardTitle}>Wave Conditions</h2>
@@ -373,7 +380,7 @@ export default function PinDetailPage() {
           </div>
         )}
 
-        {/* Hourly Forecast */}
+        {/* Hourly Forecast — full width, horizontal scroll */}
         <div className={`${styles.card} ${styles.hourlySection}`}>
           <h2 className={styles.cardTitle}>Next 24 Hours</h2>
           <div className={styles.hourlyScroll}>
@@ -388,23 +395,43 @@ export default function PinDetailPage() {
           </div>
         </div>
 
-        {/* 7-Day Forecast */}
+        {/* 7-Day Forecast — full width */}
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>7-Day Forecast</h2>
           <div className={styles.dailyList}>
-            {weather.daily.map((day, idx) => (
-              <div key={idx} className={styles.dailyRow}>
-                <div className={styles.dailyDate}>{formatDate(day.date)}</div>
-                <div className={styles.dailyBar}>
-                  <div className={styles.dailyBarFill} style={{ width: "100%" }} />
-                </div>
-                <div className={styles.dailyTemps}>
-                  <span className={styles.dailyHigh}>{day.tempMax.toFixed(0)}°</span>
-                  <span className={styles.dailySep}>/</span>
-                  <span className={styles.dailyLow}>{day.tempMin.toFixed(0)}°</span>
-                </div>
-              </div>
-            ))}
+            {(() => {
+              const weekMin = Math.min(...weather.daily.map((d) => d.tempMin));
+              const weekMax = Math.max(...weather.daily.map((d) => d.tempMax));
+              const range = weekMax - weekMin;
+              return weather.daily.map((day, idx) => {
+                // Position the fill bar within the week's overall range so each
+                // row visually shows where this day's min-max sits. Color interpolates
+                // by the day's mean position: cool → warm across the week.
+                const left = range > 0 ? ((day.tempMin - weekMin) / range) * 100 : 0;
+                const width = range > 0 ? ((day.tempMax - day.tempMin) / range) * 100 : 100;
+                const meanPos = range > 0 ? ((day.tempMin + day.tempMax) / 2 - weekMin) / range : 0.5;
+                return (
+                  <div key={idx} className={styles.dailyRow}>
+                    <div className={styles.dailyDate}>{formatDate(day.date)}</div>
+                    <div className={styles.dailyBar}>
+                      <div
+                        className={styles.dailyBarFill}
+                        style={{
+                          left: `${left}%`,
+                          width: `${Math.max(width, 4)}%`,
+                          '--day-pos': meanPos.toFixed(3),
+                        } as React.CSSProperties}
+                      />
+                    </div>
+                    <div className={styles.dailyTemps}>
+                      <span className={styles.dailyHigh}>{day.tempMax.toFixed(0)}°</span>
+                      <span className={styles.dailySep}>/</span>
+                      <span className={styles.dailyLow}>{day.tempMin.toFixed(0)}°</span>
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </div>
         </div>
 

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import MapSearch, { SearchResult } from '@/components/MapSearch';
 import BackgroundImage from '@/components/BackgroundImage';
+import { deriveFriendlyNameFromSearch } from '@/lib/naming';
 import styles from './HomepageHero.module.css';
 
 export default function HomepageHero() {

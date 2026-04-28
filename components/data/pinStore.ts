@@ -42,4 +42,35 @@ export const PinStore = {
     const pins = this.all().filter((p) => p.id !== id);
     localStorage.setItem(this.KEY, JSON.stringify(pins));
   },
+
+  activeId: {
+    KEY: "weatherornot_active_pin",
+
+    get(): string | null {
+      if (typeof window === "undefined") return null;
+      try {
+        return localStorage.getItem(this.KEY);
+      } catch {
+        return null;
+      }
+    },
+
+    set(id: string) {
+      if (typeof window === "undefined") return;
+      try {
+        localStorage.setItem(this.KEY, id);
+      } catch {
+        /* ignore storage failures */
+      }
+    },
+
+    clear() {
+      if (typeof window === "undefined") return;
+      try {
+        localStorage.removeItem(this.KEY);
+      } catch {
+        /* ignore storage failures */
+      }
+    },
+  },
 };

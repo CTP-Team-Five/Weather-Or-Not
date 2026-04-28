@@ -3,6 +3,7 @@
 "use client";
 
 import { PinStore, SavedPin } from "@/components/data/pinStore";
+import { DashboardCache } from "@/components/data/viewCache";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -17,6 +18,14 @@ import HomeOnboarding from "@/components/home/HomeOnboarding";
 import BackgroundImage from "@/components/BackgroundImage";
 import styles from "./page.module.css";
 
+// Merge local + remote pins: remote wins on id collision, local-only pins kept, sorted newest first.
+function mergePins(local: SavedPin[], remote: SavedPin[]): SavedPin[] {
+  const byId = new Map<string, SavedPin>();
+  for (const p of local) byId.set(p.id, p);
+  for (const p of remote) byId.set(p.id, p);
+  return Array.from(byId.values()).sort((a, b) => b.createdAt - a.createdAt);
+}
+
 export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
@@ -26,6 +35,7 @@ export default function Home() {
   const [computedMap, setComputedMap] = useState<Map<string, ComputedSuitability | null>>(new Map());
   const computeKeyRef = useRef("");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [initialPinsSettled, setInitialPinsSettled] = useState(false);
 
   // Shared compute pass — key-based dedup avoids Supabase race condition.
   useEffect(() => {
@@ -48,16 +58,33 @@ export default function Home() {
       });
       setComputedMap(newMap);
       setComputingAll(false);
+      // Stale-while-revalidate: persist the latest pin list + computed verdicts
+      // so the next reload can render instantly.
+      DashboardCache.set(savedPins, newMap);
     });
   }, [savedPins]);
 
   // Load pins on mount (or when user changes)
   useEffect(() => {
-    const localPins = PinStore.all();
-    setSavedPins(localPins);
+    let cancelled = false;
+
+    // Stale-while-revalidate: hydrate from last-known cache for instant paint.
+    // The remote fetch below supersedes this once it returns.
+    const cached = DashboardCache.get();
+    if (cached && cached.pins.length > 0) {
+      setSavedPins(cached.pins);
+      setComputedMap(cached.computed);
+    } else {
+      setSavedPins(PinStore.all());
+    }
     setPinsLoaded(true);
 
-    if (!supabase) return;
+    if (!supabase) {
+      setInitialPinsSettled(true);
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const loadRemotePins = async () => {
       try {
@@ -117,16 +144,40 @@ export default function Home() {
           }));
         }
 
+        if (cancelled) return;
         if (remotePins.length > 0) {
-          setSavedPins(remotePins);
+          setSavedPins((prev) => mergePins(prev, remotePins));
         }
       } catch (err) {
         console.error("Unexpected error loading pins:", err);
+      } finally {
+        if (!cancelled) setInitialPinsSettled(true);
       }
     };
 
     loadRemotePins();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
+
+  // Hydrate activeId from localStorage once on mount.
+  useEffect(() => {
+    const storedId = PinStore.activeId.get();
+    if (storedId) setActiveId(storedId);
+  }, []);
+
+  // After initial pin set settles, drop stale activeId if the pin is gone.
+  useEffect(() => {
+    if (!initialPinsSettled) return;
+    if (!activeId) return;
+    const stillExists = savedPins.some((p) => p.id === activeId);
+    if (!stillExists) {
+      PinStore.activeId.clear();
+      setActiveId(null);
+    }
+  }, [initialPinsSettled, activeId, savedPins]);
 
   // Build decision for the active pin
   const decision: Decision | null = useMemo(() => {
@@ -141,10 +192,16 @@ export default function Home() {
   const hasPins = pinsLoaded && savedPins.length > 0;
 
   // Select a pin — sticky, no toggle. Only logo resets.
-  const handleSelect = (id: string) => setActiveId(id);
+  const handleSelect = (id: string) => {
+    PinStore.activeId.set(id);
+    setActiveId(id);
+  };
 
   // Logo click: reset to default homepage (clear selection + theme)
-  const handleReset = () => setActiveId(null);
+  const handleReset = () => {
+    PinStore.activeId.clear();
+    setActiveId(null);
+  };
 
   return (
     <div className={styles.page}>
