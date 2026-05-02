@@ -375,6 +375,27 @@
   max-height: 100%;
 }
 
+/* ── Saved-pin preview popup styling ──────────────────────────────────────
+   The default Leaflet popup chrome is a hard white pill — fine for one-line
+   tooltips, ugly for our 280px PinPreviewCard. Strip the chrome on .spot-
+   preview-popup so the card itself is the visible surface. */
+.leaflet-popup.spot-preview-popup .leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 14px !important;
+  background: white !important;
+  box-shadow: 0 20px 50px -16px rgba(15, 23, 42, 0.35) !important;
+  overflow: hidden !important;
+}
+.leaflet-popup.spot-preview-popup .leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+  line-height: 1.4;
+}
+.leaflet-popup.spot-preview-popup .leaflet-popup-tip {
+  background: white !important;
+  box-shadow: 0 4px 8px -2px rgba(15, 23, 42, 0.15) !important;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    ANIMATIONS
 ───────────────────────────────────────────────────────────────────────────── */

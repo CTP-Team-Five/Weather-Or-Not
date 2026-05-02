@@ -68,6 +68,8 @@ function createPinIcon(activity?: string): L.DivIcon {
   });
 }
 
+import PinPreviewCard from "./map/PinPreviewCard";
+
 const ACTIVITY_LABELS: Record<string, string> = {
   hike: 'Hiking',
   surf: 'Surfing',
@@ -249,22 +251,16 @@ export default function LeafletMap({
           </Marker>
         )}
 
-        {/* All saved pins */}
+        {/* All saved pins — rich preview popup with verdict/score, current
+            conditions, and CTAs into the report and detail views. */}
         {allPins.map((pin) => (
           <Marker
             key={pin.id}
             position={[pin.lat, pin.lon]}
             icon={pinIcons[pin.activity as keyof typeof pinIcons] || pinIcons.default}
           >
-            <Popup>
-              <div style={{ minWidth: "140px" }}>
-                <div style={{ fontWeight: 600, fontSize: "14px", marginBottom: "2px", color: "#1e293b" }}>
-                  {pin.area}
-                </div>
-                <div style={{ fontSize: "12px", color: "#64748b" }}>
-                  {ACTIVITY_LABELS[pin.activity] || pin.activity}
-                </div>
-              </div>
+            <Popup className="spot-preview-popup" minWidth={280} maxWidth={300} closeButton={false}>
+              <PinPreviewCard pin={pin} />
             </Popup>
           </Marker>
         ))}
