@@ -5,9 +5,11 @@
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, useEffect, useCallback, useRef } from "react";
-import { HiPlus, HiArrowsPointingOut } from "react-icons/hi2";
+import { HiArrowsPointingOut } from "react-icons/hi2";
 import MapSearch, { SearchResult } from "@/components/MapSearch";
 import MapPinManager from "@/components/MapPinManager";
+import PlaceMenu, { PlacementActivity } from "@/components/map/PlaceMenu";
+import PinCursor from "@/components/map/PinCursor";
 import { generateCanonicalName, inferTags } from "@/lib/generateCanonicalName";
 import { generateSlug } from "@/lib/generateSlug";
 import { supabase } from "@/lib/supabaseClient";
@@ -42,6 +44,16 @@ function MapPageContent() {
   const hasAutoCentered = useRef(false);
   const [draftPin, setDraftPin] = useState<LatLngTuple | null>(null);
   const [pendingSearchResult, setPendingSearchResult] = useState<SearchResult | null>(null);
+
+  /* ── Placement state — activity-first flow ───────────────────────────── */
+
+  const [placementActivity, setPlacementActivity] = useState<PlacementActivity | null>(() => {
+    const a = searchParams.get('activity');
+    if (a === 'hike' || a === 'surf' || a === 'snowboard') return a;
+    return null;
+  });
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [cursorOnMap, setCursorOnMap] = useState(false);
 
   /* ── Search-result navigation intent (from homepage hero) ──────────────── */
 
@@ -174,7 +186,12 @@ function MapPageContent() {
 
   /* ── Pin placement ────────────────────────────────────────────────────────── */
 
-  const handlePin = async (pos: LatLngTuple, searchResult?: SearchResult | null, searchLabel?: string | null) => {
+  const handlePin = async (
+    pos: LatLngTuple,
+    searchResult?: SearchResult | null,
+    searchLabel?: string | null,
+    activity?: PlacementActivity | null,
+  ) => {
     const [lat, lon] = pos;
     try {
       const res = await fetch(
@@ -196,6 +213,59 @@ function MapPageContent() {
       const slug = generateSlug(canonicalName);
       const tags = inferTags(reverseData);
 
+      // Activity-first flow: save directly, skip /rating, jump straight to
+      // the SpotDetailBoard v2 view at /pins/[id].
+      if (activity) {
+        const newPin: SavedPin = {
+          id: crypto.randomUUID(),
+          name: pinName,
+          area: pinName,
+          lat,
+          lon,
+          activity,
+          createdAt: Date.now(),
+          canonical_name: canonicalName,
+          slug,
+          popularity_score: 1,
+          tags,
+        };
+        PinStore.add(newPin);
+
+        if (supabase) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { error } = await supabase.from("pins").insert({
+              id: newPin.id,
+              area: newPin.area,
+              lat: newPin.lat,
+              lon: newPin.lon,
+              activity: newPin.activity,
+              canonical_name: newPin.canonical_name,
+              slug: newPin.slug,
+              popularity_score: newPin.popularity_score,
+              tags: newPin.tags,
+            });
+            if (error) {
+              console.warn("Pin saved locally; Supabase sync failed:", {
+                code: error.code,
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+              });
+            } else {
+              const { error: linkError } = await supabase
+                .from("user_pins")
+                .insert({ user_id: user.id, pin_id: newPin.id });
+              if (linkError) console.warn("Pin saved; user link failed:", linkError);
+            }
+          }
+        }
+
+        router.push(`/pins/${newPin.id}`);
+        return;
+      }
+
+      // Legacy fallback (no activity selected): keep /rating reachable.
       router.push(
         `/rating?name=${encodeURIComponent(pinName)}&area=${encodeURIComponent(pinName)}&lat=${lat}&lon=${lon}&canonical=${encodeURIComponent(canonicalName)}&slug=${encodeURIComponent(slug)}&tags=${encodeURIComponent(tags.join(","))}`
       );
@@ -211,10 +281,12 @@ function MapPageContent() {
     const pos: LatLngTuple = [center.lat, center.lng];
     const searchResult = pendingSearchResult;
     const searchLabel = pendingSearchLabel;
+    const activity = placementActivity;
     setDraftPin(null);
     setPendingSearchResult(null);
     setPendingSearchLabel(null);
-    await handlePin(pos, searchResult, searchLabel);
+    setPlacementActivity(null);
+    await handlePin(pos, searchResult, searchLabel, activity);
   };
 
   const handleFocusPin = (pinId: string) => {
@@ -241,11 +313,25 @@ function MapPageContent() {
 
   return (
     <main className={styles.mapRoot}>
-      <div className={styles.mapWrap}>
+      <div
+        className={`${styles.mapWrap} ${placementActivity ? 'placement-mode' : ''}`}
+        onMouseLeave={() => setCursorOnMap(false)}
+        onMouseMove={(e) => {
+          if (!placementActivity) return;
+          setCursorPos({ x: e.clientX, y: e.clientY });
+          // Only show the teardrop cursor when the mouse is over the actual
+          // Leaflet map surface — UI overlays (search bar, place menu, pin
+          // manager, recenter button) should keep their native cursor.
+          const target = e.target as HTMLElement | null;
+          const onMapSurface = !!target?.closest('.leaflet-container');
+          setCursorOnMap(onMapSurface);
+        }}
+      >
 
         {/* ── Search bar — top center ───────────────────────────────────────── */}
         <div className={styles.searchBar}>
           <MapSearch
+            autoFocus={searchParams.get('focus') === 'search'}
             onSelect={(coords, searchResult) => {
               setPendingSearchResult(searchResult || null);
               setDraftPin(null);
@@ -296,15 +382,23 @@ function MapPageContent() {
           onDelete={handleDeletePin}
         />
 
-        {/* ── Drop Pin CTA — bottom center ─────────────────────────────────── */}
+        {/* ── Place / Drop CTA — bottom center ─────────────────────────────── */}
         <div className={styles.bottomCenter}>
-          <button className={styles.pinBtn} onClick={handleDropPin}>
-            <span className={styles.pinBtnPlus}>
-              <HiPlus style={{ width: 14, height: 14 }} />
-            </span>
-            Pin This Spot
-          </button>
+          <PlaceMenu
+            placementActivity={placementActivity}
+            onPick={(a) => setPlacementActivity(a)}
+            onCancel={() => setPlacementActivity(null)}
+            onDrop={handleDropPin}
+          />
         </div>
+
+        {/* ── Custom pin cursor — only during placement ────────────────────── */}
+        <PinCursor
+          activity={placementActivity}
+          x={cursorPos.x}
+          y={cursorPos.y}
+          visible={!!placementActivity && cursorOnMap}
+        />
 
         {/* ── Recenter — bottom right ──────────────────────────────────────── */}
         <div className={styles.bottomRight}>

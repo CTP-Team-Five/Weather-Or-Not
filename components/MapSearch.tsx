@@ -19,6 +19,8 @@ export interface SearchResult {
 
 interface MapSearchProps {
     onSelect: (coords: [number, number], searchResult?: SearchResult) => void;
+    /** When true, focus the input on mount (homepage hero CTA → /map flow). */
+    autoFocus?: boolean;
 }
 
 function splitDisplayName(displayName: string) {
@@ -28,13 +30,22 @@ function splitDisplayName(displayName: string) {
     return { name, detail };
 }
 
-export default function MapSearch({ onSelect }: MapSearchProps) {
+export default function MapSearch({ onSelect, autoFocus = false }: MapSearchProps) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<SearchResult[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
     const [loading, setLoading] = useState(false);
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
     const cache = useRef<Record<string, SearchResult[]>>({});
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Focus on mount when requested. Wrapped in a tick to make sure the
+    // element is in the DOM and any layout shifts are settled.
+    useEffect(() => {
+        if (!autoFocus) return;
+        const id = window.setTimeout(() => inputRef.current?.focus(), 50);
+        return () => window.clearTimeout(id);
+    }, [autoFocus]);
 
     async function fetchResults(q: string) {
         if (!q.trim()) {
@@ -98,6 +109,7 @@ export default function MapSearch({ onSelect }: MapSearchProps) {
             <div className={styles.inputWrap}>
                 <HiMagnifyingGlass className={styles.icon} />
                 <input
+                    ref={inputRef}
                     type="text"
                     placeholder="Search for a spot..."
                     value={query}
