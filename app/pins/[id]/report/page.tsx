@@ -547,19 +547,41 @@ export default function PinReportPage() {
             onClick={() => router.push(`/pins/${pin.id}`)}
             style={{
               position: 'absolute',
-              top: 30,
+              top: 28,
               left: 60,
-              all: 'unset',
               cursor: 'pointer',
-              color: 'rgba(255,255,255,0.7)',
-              fontSize: 13,
-              fontWeight: 500,
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              gap: 6,
+              gap: 10,
+              padding: '12px 22px',
+              fontSize: 16,
+              fontWeight: 600,
+              letterSpacing: '0.01em',
+              color: '#0f172a',
+              background: 'rgba(255,255,255,0.95)',
+              border: '1px solid rgba(15,23,42,0.10)',
+              borderRadius: 999,
+              boxShadow: '0 8px 24px -8px rgba(15,23,42,0.45), 0 1px 2px rgba(15,23,42,0.20)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              transition: 'transform 150ms ease, box-shadow 150ms ease, background 150ms ease',
             }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#ffffff';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow =
+                '0 12px 32px -10px rgba(15,23,42,0.55), 0 2px 4px rgba(15,23,42,0.25)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.95)';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow =
+                '0 8px 24px -8px rgba(15,23,42,0.45), 0 1px 2px rgba(15,23,42,0.20)';
+            }}
+            aria-label="Back to spot detail"
           >
-            ← Back to spot
+            <span style={{ fontSize: 18, lineHeight: 1, fontWeight: 700 }}>←</span>
+            Back to spot
           </button>
 
           <div style={{ animation: 'heroIn 900ms cubic-bezier(0.22,1,0.36,1) 0.05s both' }}>
