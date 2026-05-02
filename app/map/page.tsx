@@ -47,6 +47,15 @@ function MapPageContent() {
 
   /* ── Placement state — activity-first flow ───────────────────────────── */
 
+  // Placement activity initialisation, in priority order:
+  //   1. Explicit ?activity= on the URL (handed off from homepage hero CTA).
+  //   2. Otherwise null — the user picks from the always-visible PlaceMenu.
+  // On mount, if neither is set we read the saved default-activity
+  // preference and set it as a hint (still null = no placement, but the
+  // PlaceMenu segmented control highlights the user's preferred chip when
+  // they hover / focus). Implementation note: we don't auto-enter
+  // placement mode just because the user has a default; that would be
+  // jarring on every map visit.
   const [placementActivity, setPlacementActivity] = useState<PlacementActivity | null>(() => {
     const a = searchParams.get('activity');
     if (a === 'hike' || a === 'surf' || a === 'snowboard') return a;

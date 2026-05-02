@@ -6,11 +6,12 @@
 // styled CTA that routes straight to /map (no inline search), and a 3-step
 // onboarding strip pinned at the bottom.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { HiMagnifyingGlass } from 'react-icons/hi2';
 import { ActivityIcon } from '@/components/icons/ActivityIcons';
 import { getBackgroundImage } from '@/lib/activityMedia';
+import { getPreferences } from '@/lib/preferences';
 
 type ActivityKey = 'hike' | 'surf' | 'snowboard';
 
@@ -28,7 +29,13 @@ const ONBOARDING_STEPS = [
 
 export default function HomepageHero() {
   const router = useRouter();
+  // Initial chip: SSR + first render default to 'hike' so server output
+  // is stable, then snap to the user's saved default activity once
+  // localStorage is reachable.
   const [activity, setActivity] = useState<ActivityKey>('hike');
+  useEffect(() => {
+    setActivity(getPreferences().activity);
+  }, []);
 
   // Click on the search input or pressing Enter routes the user to the map
   // page with focus already on the map's search field — they pick the actual
