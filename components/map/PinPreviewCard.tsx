@@ -179,20 +179,17 @@ export default function PinPreviewCard({ pin }: Props) {
         </div>
       )}
 
-      {/* CTAs */}
-      <div className="flex gap-2 border-t border-slate-900/[0.06] p-3">
+      {/* CTA — single button, full width. The 'Open' shortcut to /pins/[id]
+          (SpotDetailBoard v2) is intentionally absent — it duplicated the
+          report's job from a glanceable card. The detail board is still
+          reachable from the homepage sidebar pin click. */}
+      <div className="border-t border-slate-900/[0.06] p-3">
         <Link
           href={`/pins/${pin.id}/report`}
-          className="flex-1 rounded-md px-3 py-2 text-center text-[12.5px] font-semibold text-white"
+          className="block w-full rounded-md px-3 py-2.5 text-center text-[13px] font-semibold text-white"
           style={{ background: '#0f172a' }}
         >
           View full report →
-        </Link>
-        <Link
-          href={`/pins/${pin.id}`}
-          className="rounded-md border border-slate-900/10 px-3 py-2 text-[12.5px] font-semibold text-slate-700"
-        >
-          Open
         </Link>
       </div>
     </div>
