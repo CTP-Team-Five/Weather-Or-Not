@@ -9,13 +9,11 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { WiDaySunny, WiDayStormShowers } from 'react-icons/wi';
 import styles from './Navbar.module.css';
-import { useAuth } from '@/lib/useAuth';
-import { supabase } from '@/lib/supabaseClient';
 import { DashboardCache } from '@/components/data/viewCache';
-import { useProfileAvatar } from '@/lib/profileAvatar';
+import UserAvatarMenu from '@/components/UserAvatarMenu';
 
 const NAV_ITEMS: { label: string; href: string }[] = [
   { label: 'PINS', href: '/' },
@@ -32,9 +30,6 @@ function isPathActive(pathname: string | null, href: string): boolean {
 
 export default function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, loading } = useAuth();
-  const [avatarUrl] = useProfileAvatar();
 
   // GO count comes from the cached dashboard compute — the homepage refreshes
   // the cache after each pass, so by the time the user reaches /map / etc.
@@ -49,11 +44,6 @@ export default function Navbar() {
     });
     setGoCount(n);
   }, [pathname]);
-
-  const handleSignOut = async () => {
-    if (supabase) await supabase.auth.signOut();
-    router.push('/auth');
-  };
 
   return (
     <header className={styles.header}>
@@ -178,41 +168,7 @@ export default function Navbar() {
           )}
 
           <div className={styles.authControls}>
-            {!loading &&
-              (user ? (
-                <>
-                  <Link
-                    href="/account"
-                    className={styles.avatarCircle}
-                    title={`${user.email} — open account`}
-                    aria-label="Open account settings"
-                    style={avatarUrl ? { padding: 0, overflow: 'hidden' } : undefined}
-                  >
-                    {avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={avatarUrl}
-                        alt=""
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          borderRadius: 'inherit',
-                        }}
-                      />
-                    ) : (
-                      user.email?.[0]?.toUpperCase() ?? '?'
-                    )}
-                  </Link>
-                  <button className={styles.signOutBtn} onClick={handleSignOut}>
-                    Sign out
-                  </button>
-                </>
-              ) : (
-                <Link href="/auth" className={styles.signInLink}>
-                  Sign in
-                </Link>
-              ))}
+            <UserAvatarMenu signInClassName={styles.signInLink} />
           </div>
 
           <Link href="/map" className={styles.addBtn} aria-label="Add new spot">

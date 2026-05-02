@@ -10,12 +10,10 @@
 // through. When undefined or 0 the GO indicator hides itself.
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { WiDaySunny, WiDayStormShowers } from 'react-icons/wi';
 import styles from './HomeTopBar.module.css';
-import { useAuth } from '@/lib/useAuth';
-import { supabase } from '@/lib/supabaseClient';
-import { useProfileAvatar } from '@/lib/profileAvatar';
+import UserAvatarMenu from '@/components/UserAvatarMenu';
 
 interface Props {
   onReset?: () => void;
@@ -36,15 +34,7 @@ function isPathActive(pathname: string | null, href: string): boolean {
 }
 
 export default function HomeTopBar({ onReset, goCount }: Props) {
-  const router = useRouter();
   const pathname = usePathname();
-  const { user, loading } = useAuth();
-  const [avatarUrl] = useProfileAvatar();
-
-  const handleSignOut = async () => {
-    if (supabase) await supabase.auth.signOut();
-    router.push('/auth');
-  };
 
   const Brand = (
     <>
@@ -141,41 +131,7 @@ export default function HomeTopBar({ onReset, goCount }: Props) {
           </span>
         )}
 
-        {!loading &&
-          (user ? (
-            <div className={styles.authGroup}>
-              <Link
-                href="/account"
-                className={styles.avatarCircle}
-                title={`${user.email} — open account`}
-                aria-label="Open account settings"
-                style={avatarUrl ? { padding: 0, overflow: 'hidden' } : undefined}
-              >
-                {avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatarUrl}
-                    alt=""
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      borderRadius: 'inherit',
-                    }}
-                  />
-                ) : (
-                  user.email?.[0]?.toUpperCase() ?? '?'
-                )}
-              </Link>
-              <button type="button" className={styles.signOutBtn} onClick={handleSignOut}>
-                Sign out
-              </button>
-            </div>
-          ) : (
-            <Link href="/auth" className={styles.signInLink}>
-              Sign in
-            </Link>
-          ))}
+        <UserAvatarMenu signInClassName={styles.signInLink} />
 
         <Link
           href="/map"

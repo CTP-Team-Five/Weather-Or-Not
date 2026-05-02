@@ -10,13 +10,12 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { HiEllipsisVertical } from 'react-icons/hi2';
 import type { WeatherState } from '@/lib/weatherState';
-import { useAuth } from '@/lib/useAuth';
-import { supabase } from '@/lib/supabaseClient';
 import { DashboardCache } from '@/components/data/viewCache';
-import { useProfileAvatar } from '@/lib/profileAvatar';
+import UserAvatarMenu from '@/components/UserAvatarMenu';
 import BrandMark from './BrandMark';
 import WeatherVideoChip from './WeatherVideoChip';
 
@@ -52,8 +51,6 @@ export default function WeatherTopBar({
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading } = useAuth();
-  const [avatarUrl] = useProfileAvatar();
   const hasFx = state !== 'clear';
   const accent = ACCENT[state];
 
@@ -71,18 +68,41 @@ export default function WeatherTopBar({
   }, [pathname]);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
 
+  // Outside-click dismiss. The menu is portalled, so check both trigger
+  // and menu node since they no longer share a parent.
   useEffect(() => {
     if (!menuOpen) return;
     const onClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const t = e.target as Node;
+      if (
+        menuTriggerRef.current && !menuTriggerRef.current.contains(t) &&
+        menuRef.current && !menuRef.current.contains(t)
+      ) {
         setMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', onClickOutside);
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, [menuOpen]);
+
+  const toggleMenu = () => {
+    if (menuOpen) {
+      setMenuOpen(false);
+      return;
+    }
+    const rect = menuTriggerRef.current?.getBoundingClientRect();
+    if (rect) {
+      setMenuPos({
+        top: rect.bottom + 8,
+        right: Math.max(8, window.innerWidth - rect.right),
+      });
+    }
+    setMenuOpen(true);
+  };
 
   const handleDelete = () => {
     setMenuOpen(false);
@@ -91,11 +111,6 @@ export default function WeatherTopBar({
       'Delete this spot? This removes it from your saved pins. This cannot be undone.',
     );
     if (confirmed) onDelete();
-  };
-
-  const handleSignOut = async () => {
-    if (supabase) await supabase.auth.signOut();
-    router.push('/auth');
   };
 
   // Per-mode colour tokens — the bar swaps text colour wholesale between
@@ -235,62 +250,7 @@ export default function WeatherTopBar({
               </span>
             )}
 
-            {!loading &&
-              (user ? (
-                <div className="flex items-center gap-2">
-                  <Link
-                    href="/account"
-                    title={`${user.email} — open account`}
-                    aria-label="Open account settings"
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      background: avatarUrl ? 'transparent' : tone.avatarBg,
-                      color: tone.avatarFg,
-                      textDecoration: 'none',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={avatarUrl}
-                        alt=""
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          borderRadius: '50%',
-                        }}
-                      />
-                    ) : (
-                      user.email?.[0]?.toUpperCase() ?? '?'
-                    )}
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="text-[13px] font-semibold transition-opacity hover:opacity-80"
-                    style={{ color: tone.authText, background: 'transparent', border: 'none', cursor: 'pointer' }}
-                  >
-                    Sign out
-                  </button>
-                </div>
-              ) : (
-                <Link
-                  href="/auth"
-                  className="text-[13px] font-semibold transition-opacity hover:opacity-80"
-                  style={{ color: tone.authText }}
-                >
-                  Sign in
-                </Link>
-              ))}
+            <UserAvatarMenu buttonBg={tone.avatarBg} buttonFg={tone.avatarFg} />
 
             <Link
               href="/map"
@@ -300,56 +260,71 @@ export default function WeatherTopBar({
             </Link>
 
             {pinId && (
-              <div ref={menuRef} className="relative">
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen((o) => !o)}
-                  aria-label="Spot options"
-                  aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                  className="flex h-8 w-8 items-center justify-center rounded-full transition"
-                  style={{
-                    background: hasFx ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.06)',
-                    color: hasFx ? 'white' : '#0f172a',
-                  }}
-                >
-                  <HiEllipsisVertical size={18} />
-                </button>
-                {menuOpen && (
-                  <div
-                    role="menu"
-                    className="absolute right-0 top-[calc(100%+8px)] min-w-[180px] rounded-xl border border-slate-900/10 bg-white p-1.5 shadow-[0_20px_50px_-16px_rgba(15,23,42,0.25)]"
-                    style={{ animation: 'fadeUp 180ms ease-out both' }}
-                  >
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        router.push(`/pins/${pinId}/edit`);
-                      }}
-                      className="block w-full rounded-md px-3 py-2 text-left text-[13px] font-semibold text-slate-900 transition hover:bg-slate-100"
-                    >
-                      Edit spot
-                    </button>
-                    {onDelete && (
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={handleDelete}
-                        className="block w-full rounded-md px-3 py-2 text-left text-[13px] font-semibold text-red-600 transition hover:bg-red-50"
-                      >
-                        Delete spot
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
+              <button
+                ref={menuTriggerRef}
+                type="button"
+                onClick={toggleMenu}
+                aria-label="Spot options"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                className="flex h-8 w-8 items-center justify-center rounded-full transition"
+                style={{
+                  background: hasFx ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.06)',
+                  color: hasFx ? 'white' : '#0f172a',
+                }}
+              >
+                <HiEllipsisVertical size={18} />
+              </button>
             )}
           </div>
         </div>
       </div>
 
+      {/* Per-pin menu — portalled to document.body so it's not clipped by
+          the bar's overflow-hidden video container. */}
+      {pinId && menuOpen && typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="menu"
+            style={{
+              position: 'fixed',
+              top: menuPos.top,
+              right: menuPos.right,
+              minWidth: 180,
+              background: '#ffffff',
+              border: '1px solid rgba(15,23,42,0.10)',
+              borderRadius: 12,
+              padding: 6,
+              boxShadow: '0 20px 50px -16px rgba(15,23,42,0.25)',
+              zIndex: 1000,
+              animation: 'fadeUp 180ms ease-out both',
+            }}
+          >
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false);
+                router.push(`/pins/${pinId}/edit`);
+              }}
+              className="block w-full rounded-md px-3 py-2 text-left text-[13px] font-semibold text-slate-900 transition hover:bg-slate-100"
+            >
+              Edit spot
+            </button>
+            {onDelete && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleDelete}
+                className="block w-full rounded-md px-3 py-2 text-left text-[13px] font-semibold text-red-600 transition hover:bg-red-50"
+              >
+                Delete spot
+              </button>
+            )}
+          </div>,
+          document.body,
+        )}
     </header>
   );
 }
