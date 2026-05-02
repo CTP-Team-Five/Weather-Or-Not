@@ -767,10 +767,6 @@ export default function AccountPage() {
           />
           <DangerSection />
         </section>
-
-        <div className="mt-16 text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-white/25">
-          WeatherOrNot · v1.0
-        </div>
       </main>
     </div>
   );
