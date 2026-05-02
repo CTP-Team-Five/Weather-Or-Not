@@ -11,12 +11,13 @@
 // "Alex Mitchell" / SAMPLE_TRIPS for real auth + PinStore-derived stats,
 // localStorage-backed prefs/alerts, and the empty-trips state.
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
 import { supabase } from '@/lib/supabaseClient';
 import { PinStore } from '@/components/data/pinStore';
 import { DashboardCache } from '@/components/data/viewCache';
+import { useProfileAvatar, fileToAvatarDataUrl } from '@/lib/profileAvatar';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Persistence keys for localStorage-backed sections
@@ -232,10 +233,27 @@ function ThresholdSlider({
 function ProfileSection() {
   const { user, loading } = useAuth();
   const [savedCount, setSavedCount] = useState(0);
+  const [avatarUrl, setAvatarUrl] = useProfileAvatar();
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setSavedCount(PinStore.all().length);
   }, []);
+
+  const onFileChosen = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file
+    if (!file) return;
+    setUploadError(null);
+    try {
+      const dataUrl = await fileToAvatarDataUrl(file);
+      setAvatarUrl(dataUrl);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not load image';
+      setUploadError(msg);
+    }
+  };
 
   if (loading) {
     return (
@@ -268,11 +286,37 @@ function ProfileSection() {
       <div className="flex items-center gap-6 p-6">
         <div className="relative shrink-0">
           <div
-            className="grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-rose-400 text-[28px] font-bold text-white ring-2 ring-white/15"
-            aria-hidden
+            className="grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-amber-300 to-rose-400 text-[28px] font-bold text-white ring-2 ring-white/15"
+            aria-hidden={!avatarUrl}
           >
-            {initial}
+            {avatarUrl ? (
+              // Decoded data URL — no remote fetch, no flash.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarUrl}
+                alt="Your profile picture"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              initial
+            )}
           </div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full border border-white/15 bg-[#060912] text-[11px] text-white/80 hover:text-white"
+            aria-label={avatarUrl ? 'Change profile picture' : 'Upload profile picture'}
+            title={avatarUrl ? 'Change picture' : 'Upload picture'}
+          >
+            ✎
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={onFileChosen}
+          />
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-3">
@@ -291,7 +335,25 @@ function ProfileSection() {
             {memberSince && `Member since ${memberSince} · `}
             {savedCount} saved {savedCount === 1 ? 'spot' : 'spots'}
           </div>
+          {avatarUrl && (
+            <button
+              type="button"
+              onClick={() => {
+                setAvatarUrl(null);
+                setUploadError(null);
+              }}
+              className="mt-2 text-[11.5px] font-semibold text-white/40 hover:text-red-300"
+            >
+              Remove picture
+            </button>
+          )}
+          {uploadError && (
+            <div className="mt-2 text-[11.5px] font-semibold text-red-300">{uploadError}</div>
+          )}
         </div>
+      </div>
+      <div className="border-t border-white/[0.06] px-6 py-3 text-[11px] font-medium text-white/35">
+        Picture saved to this device only — replace it any time.
       </div>
     </Card>
   );
