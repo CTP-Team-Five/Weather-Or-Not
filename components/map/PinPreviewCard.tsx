@@ -212,17 +212,22 @@ export default function PinPreviewCard({ pin }: Props) {
         </div>
       )}
 
-      {/* CTA — single button, full width. The 'Open' shortcut to /pins/[id]
-          (SpotDetailBoard v2) is intentionally absent — it duplicated the
-          report's job from a glanceable card. The detail board is still
-          reachable from the homepage sidebar pin click.
-          Inline color/background so leaflet's default popup-content `a {…}`
-          rule can't override us. */}
+      {/* CTA — single button, full width. White background, slate text,
+          with a 1px slate border for definition against the card body
+          (also looks right when the rain video is bleeding through behind
+          the card). Inline color/background so leaflet's default popup
+          `a {...}` styling can't override us. */}
       <div className="border-t border-slate-900/[0.06] p-3">
         <Link
           href={`/pins/${pin.id}/report`}
           className="block w-full rounded-md px-3 py-2.5 text-center text-[13px] font-semibold"
-          style={{ background: '#0f172a', color: '#ffffff', textDecoration: 'none' }}
+          style={{
+            background: '#ffffff',
+            color: '#0f172a',
+            border: '1px solid rgba(15,23,42,0.10)',
+            textDecoration: 'none',
+            boxShadow: '0 1px 2px rgba(15,23,42,0.06)',
+          }}
         >
           View →
         </Link>
