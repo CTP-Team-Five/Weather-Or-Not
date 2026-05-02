@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useMemo, useRef, MouseEvent } from 'react';
-import { HiPencilSquare, HiTrash } from 'react-icons/hi2';
+import { HiPencilSquare, HiTrash, HiChevronLeft, HiBars3 } from 'react-icons/hi2';
 import { SavedPin } from '@/components/data/pinStore';
 import { ComputedSuitability } from '@/lib/computeSuitability';
 import { LABEL_TO_VERDICT, Verdict } from '@/lib/decision';
+import { useSidebarCollapsed } from '@/lib/sidebarCollapsed';
 import TeardropPin from '@/components/map/TeardropPin';
 import styles from './HomeSidebar.module.css';
 
@@ -92,6 +93,45 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
     e.preventDefault();
     cb();
   };
+
+  const [collapsed, toggleCollapsed] = useSidebarCollapsed();
+
+  // When the sidebar is collapsed, render a small floating "Show pins" pill
+  // in place of the rail. The hero/main column then takes the full width.
+  if (collapsed) {
+    return (
+      <button
+        type="button"
+        onClick={toggleCollapsed}
+        aria-label="Show your spots"
+        title="Show your spots"
+        style={{
+          position: 'fixed',
+          top: 80,
+          left: 16,
+          zIndex: 40,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '10px 14px',
+          fontSize: 13,
+          fontWeight: 600,
+          color: '#0f172a',
+          background: 'rgba(255,255,255,0.95)',
+          border: '1px solid rgba(15,23,42,0.08)',
+          borderRadius: 12,
+          cursor: 'pointer',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          boxShadow: '0 8px 24px -8px rgba(15,23,42,0.18)',
+        }}
+      >
+        <HiBars3 size={16} />
+        <span>Your Spots</span>
+        <span style={{ color: '#94a3b8', fontWeight: 500 }}>· {pins.length}</span>
+      </button>
+    );
+  }
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -112,7 +152,40 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
 
   return (
     <aside className={styles.sidebar}>
-      <h2 className={styles.heading}>Your Spots</h2>
+      <div className="flex items-center justify-between" style={{ marginBottom: '1rem', padding: '0 0.5rem' }}>
+        <h2 className={styles.heading} style={{ marginBottom: 0, padding: 0 }}>
+          Your Spots
+        </h2>
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label="Hide your spots"
+          title="Hide sidebar"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 24,
+            height: 24,
+            border: 'none',
+            background: 'transparent',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            borderRadius: 6,
+            transition: 'color 150ms, background 150ms',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#0f172a';
+            e.currentTarget.style.background = 'rgba(15,23,42,0.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#94a3b8';
+            e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          <HiChevronLeft size={16} />
+        </button>
+      </div>
 
       {pins.length > 0 && (
         <div className={styles.searchWrap}>

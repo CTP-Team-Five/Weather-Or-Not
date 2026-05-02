@@ -10,14 +10,12 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { HiBars3, HiXMark } from 'react-icons/hi2';
 import { WiDaySunny, WiDayStormShowers } from 'react-icons/wi';
 import styles from './Navbar.module.css';
 import { useAuth } from '@/lib/useAuth';
 import { supabase } from '@/lib/supabaseClient';
 import { DashboardCache } from '@/components/data/viewCache';
 import { useProfileAvatar } from '@/lib/profileAvatar';
-import { useNavCollapsed } from '@/lib/navCollapsed';
 
 const NAV_ITEMS: { label: string; href: string }[] = [
   { label: 'PINS', href: '/' },
@@ -37,7 +35,6 @@ export default function Navbar() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [avatarUrl] = useProfileAvatar();
-  const [navCollapsed, toggleNav] = useNavCollapsed();
 
   // GO count comes from the cached dashboard compute — the homepage refreshes
   // the cache after each pass, so by the time the user reaches /map / etc.
@@ -82,10 +79,9 @@ export default function Navbar() {
           <WiDayStormShowers className={styles.logoIconRight} aria-hidden="true" />
         </Link>
 
-        {/* Center — nav (hidden when collapsed) */}
+        {/* Center — nav */}
         <ul
           role="list"
-          aria-hidden={navCollapsed}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -94,7 +90,6 @@ export default function Navbar() {
             margin: 0,
             padding: 0,
             listStyle: 'none',
-            visibility: navCollapsed ? 'hidden' : 'visible',
           }}
         >
           {NAV_ITEMS.map((item) => {
@@ -138,7 +133,7 @@ export default function Navbar() {
           })}
         </ul>
 
-        {/* Right — GO count + auth + new spot + hamburger */}
+        {/* Right — GO count + auth + new spot */}
         <div
           style={{
             display: 'flex',
@@ -147,7 +142,7 @@ export default function Navbar() {
             justifySelf: 'end',
           }}
         >
-          {!navCollapsed && goCount > 0 && (
+          {goCount > 0 && (
             <span
               className={styles.goPill}
               title="Pins with GO conditions right now"
@@ -182,10 +177,7 @@ export default function Navbar() {
             </span>
           )}
 
-          <div
-            className={styles.authControls}
-            style={{ display: navCollapsed ? 'none' : undefined }}
-          >
+          <div className={styles.authControls}>
             {!loading &&
               (user ? (
                 <>
@@ -223,36 +215,10 @@ export default function Navbar() {
               ))}
           </div>
 
-          {!navCollapsed && (
-            <Link href="/map" className={styles.addBtn} aria-label="Add new spot">
-              <span aria-hidden="true">＋</span>
-              <span className={styles.addLabel}>New Spot</span>
-            </Link>
-          )}
-
-          <button
-            type="button"
-            onClick={toggleNav}
-            aria-label={navCollapsed ? 'Show navigation' : 'Hide navigation'}
-            aria-expanded={!navCollapsed}
-            style={{
-              display: 'flex',
-              width: 36,
-              height: 36,
-              alignItems: 'center',
-              justifyContent: 'center',
-              borderRadius: 8,
-              border: 'none',
-              background: 'transparent',
-              color: '#0f172a',
-              cursor: 'pointer',
-              transition: 'background 150ms',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(15,23,42,0.06)')}
-            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-          >
-            {navCollapsed ? <HiBars3 size={20} /> : <HiXMark size={20} />}
-          </button>
+          <Link href="/map" className={styles.addBtn} aria-label="Add new spot">
+            <span aria-hidden="true">＋</span>
+            <span className={styles.addLabel}>New Spot</span>
+          </Link>
         </div>
       </nav>
     </header>

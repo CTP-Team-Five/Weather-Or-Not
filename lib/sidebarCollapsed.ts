@@ -1,16 +1,19 @@
 'use client';
 
-// lib/navCollapsed.ts
-// Tiny localStorage-backed boolean for whether the top-bar nav is collapsed.
-// Each of HomeTopBar / Navbar / WeatherTopBar reads this so the user's
-// "hide the menu" choice persists across pages and reloads.
+// lib/sidebarCollapsed.ts
+// localStorage-backed boolean for whether the homepage's left rail
+// (HomeSidebar — the YOUR SPOTS list) is collapsed. Persists the user's
+// choice across pages and reloads. Used by HomeSidebar itself; could
+// be reused by any future surface that wants to honour the same state.
 //
-// Default: false (nav visible). Toggle via the hamburger button.
+// Default: false (sidebar expanded). Toggle via the chevron in the
+// sidebar header, or via the floating "Show pins" affordance that
+// replaces the sidebar when it's collapsed.
 
 import { useCallback, useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'weatherornot.ui.navCollapsed';
-const CHANGE_EVENT = 'weatherornot:nav-collapsed-changed';
+const STORAGE_KEY = 'weatherornot.ui.sidebarCollapsed';
+const CHANGE_EVENT = 'weatherornot:sidebar-collapsed-changed';
 
 function read(): boolean {
   if (typeof window === 'undefined') return false;
@@ -32,9 +35,9 @@ function write(value: boolean): void {
   }
 }
 
-export function useNavCollapsed(): [boolean, () => void] {
-  // SSR + first hydration default to false (nav visible) so the bar renders
-  // its full layout on the server. We flip to the stored value after mount.
+export function useSidebarCollapsed(): [boolean, () => void] {
+  // SSR + first hydration default to false (sidebar visible) so server
+  // output is stable. Snap to stored value after mount.
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
