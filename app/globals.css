@@ -395,6 +395,13 @@
   background: white !important;
   box-shadow: 0 4px 8px -2px rgba(15, 23, 42, 0.15) !important;
 }
+/* Leaflet's default `a { color: #0078A8 }` for popup links steamrolls our
+   Tailwind text-white on the View button. Reset link styling inside the
+   preview card so children control their own colours. */
+.leaflet-popup.spot-preview-popup a {
+  color: inherit !important;
+  text-decoration: none !important;
+}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    ANIMATIONS

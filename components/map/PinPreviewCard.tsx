@@ -106,13 +106,13 @@ export default function PinPreviewCard({ pin }: Props) {
           the text contrast back up. */}
       {hasWeatherFx && (
         <>
-          <WeatherVideoChip state={state} blur={12} />
+          <WeatherVideoChip state={state} blur={5} />
           <div
             aria-hidden
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'rgba(255,255,255,0.82)',
+              background: 'rgba(255,255,255,0.55)',
               zIndex: 1,
               pointerEvents: 'none',
             }}
@@ -215,12 +215,14 @@ export default function PinPreviewCard({ pin }: Props) {
       {/* CTA — single button, full width. The 'Open' shortcut to /pins/[id]
           (SpotDetailBoard v2) is intentionally absent — it duplicated the
           report's job from a glanceable card. The detail board is still
-          reachable from the homepage sidebar pin click. */}
+          reachable from the homepage sidebar pin click.
+          Inline color/background so leaflet's default popup-content `a {…}`
+          rule can't override us. */}
       <div className="border-t border-slate-900/[0.06] p-3">
         <Link
           href={`/pins/${pin.id}/report`}
-          className="block w-full rounded-md px-3 py-2.5 text-center text-[13px] font-semibold text-white"
-          style={{ background: '#0f172a' }}
+          className="block w-full rounded-md px-3 py-2.5 text-center text-[13px] font-semibold"
+          style={{ background: '#0f172a', color: '#ffffff', textDecoration: 'none' }}
         >
           View →
         </Link>
