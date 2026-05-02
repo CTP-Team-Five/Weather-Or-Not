@@ -20,6 +20,7 @@ import { LABEL_TO_VERDICT, type Verdict } from '@/lib/decision';
 import { weatherStateFromCode, type WeatherState } from '@/lib/weatherState';
 import { getWeatherDescription } from '@/components/utils/fetchForecast';
 import { ActivityIcon } from '@/components/icons/ActivityIcons';
+import WeatherVideoChip from '@/components/spotdetail/WeatherVideoChip';
 
 const ACTIVITY_LABELS: Record<string, string> = {
   hike: 'HIKING',
@@ -87,8 +88,40 @@ export default function PinPreviewCard({ pin }: Props) {
   const tempF = cur ? cToF(cur.temperature) : null;
   const conditionDesc = cur ? getWeatherDescription(cur.weatherCode) : null;
 
+  const hasWeatherFx = state !== 'clear';
+
   return (
-    <div className="font-geist spot-preview-card" style={{ width: 280, color: '#0f172a' }}>
+    <div
+      className="font-geist spot-preview-card"
+      style={{
+        width: 280,
+        color: '#0f172a',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Atmospheric weather video — only when raining/snowing. Heavy blur
+          (12px) keeps rain streaks legible as background texture without
+          pulling focus from the card content. The white scrim above brings
+          the text contrast back up. */}
+      {hasWeatherFx && (
+        <>
+          <WeatherVideoChip state={state} blur={12} />
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(255,255,255,0.82)',
+              zIndex: 1,
+              pointerEvents: 'none',
+            }}
+          />
+        </>
+      )}
+
+      <div style={{ position: 'relative', zIndex: 2 }}>
+
       {/* Top row: live status + activity icon */}
       <div className="flex items-center justify-between gap-2 px-4 pt-4">
         <span
@@ -191,6 +224,8 @@ export default function PinPreviewCard({ pin }: Props) {
         >
           View →
         </Link>
+      </div>
+
       </div>
     </div>
   );
