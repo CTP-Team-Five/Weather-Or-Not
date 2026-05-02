@@ -5,39 +5,46 @@ export interface BackgroundImage {
   src: string;
   /** Alt text for accessibility */
   alt: string;
-  /** Photographer credit (not required by Unsplash but good practice) */
-  credit?: string;
   /** Where the focal point is, for object-position. Default: 'center' */
   position?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Curated defaults — one per activity + one for the landing page
+// Curated defaults — one per activity + one for the landing page.
+//
+// Image source: Unsplash. The Unsplash License allows free commercial and
+// noncommercial use without permission or attribution
+// (https://unsplash.com/license). Per-photographer credits were previously
+// listed here but were unverified after the design-bundle photo swap and have
+// been removed. If you re-introduce per-photo attribution, look up each photo
+// on unsplash.com first to ensure the photographer name is correct.
+//
+// Specific Unsplash photo URLs (last refreshed from the design handoff):
+//   hike      → photo-1464822759023-fed622ff2c3b
+//   surf      → photo-1502680390469-be75c86b636f
+//   snowboard → photo-1551524559-8af4e6624178
+//   default   → unchanged from prior release (default-landing.jpg)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const DEFAULTS: Record<ActivitySlot, BackgroundImage> = {
   hike: {
     src: '/backgrounds/hike-default.jpg',
-    alt: 'Mountain valley with snow-capped peaks and evergreen forest',
-    credit: 'Kalen Emsley / Unsplash',
+    alt: 'Mountain valley landscape',
     position: 'center 40%',
   },
   surf: {
     src: '/backgrounds/surf-default.jpg',
-    alt: 'Turquoise ocean waves at sunset on a sandy beach',
-    credit: 'Sean O. / Unsplash',
+    alt: 'Turquoise ocean waves at sunset',
     position: 'center 60%',
   },
   snowboard: {
     src: '/backgrounds/snow-default.jpg',
-    alt: 'Snow-covered forest and frozen lake in winter fog',
-    credit: 'Samuel Ferrara / Unsplash',
+    alt: 'Snow-covered alpine mountain',
     position: 'center 30%',
   },
   default: {
     src: '/backgrounds/default-landing.jpg',
     alt: 'Dramatic green mountain ridge with clouds and sunset',
-    credit: 'Lukasz Szmigiel / Unsplash',
     position: 'center 40%',
   },
 };
