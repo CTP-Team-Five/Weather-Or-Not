@@ -5,7 +5,7 @@
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, useEffect, useCallback, useRef } from "react";
-import { HiArrowsPointingOut } from "react-icons/hi2";
+import { HiArrowsPointingIn } from "react-icons/hi2";
 import MapSearch, { SearchResult } from "@/components/MapSearch";
 import MapPinManager from "@/components/MapPinManager";
 import PlaceMenu, { PlacementActivity } from "@/components/map/PlaceMenu";
@@ -409,14 +409,44 @@ function MapPageContent() {
           visible={!!placementActivity && cursorOnMap}
         />
 
-        {/* ── Recenter — bottom right ──────────────────────────────────────── */}
+        {/* ── Recenter — bottom right. Pill with icon + label so it can't
+            be mistaken for a fullscreen toggle. The icon points inward
+            ('fit / contract') to match the action: bring all pins into
+            view. */}
         <div className={styles.bottomRight}>
           <button
-            className={styles.controlBtn}
+            type="button"
             onClick={handleRecenter}
-            title="Fit all spots"
+            aria-label="Show all pins on the map"
+            title="Show all pins"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 14px',
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#0f172a',
+              background: 'rgba(255,255,255,0.95)',
+              border: '1px solid rgba(15,23,42,0.08)',
+              borderRadius: 12,
+              cursor: 'pointer',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 24px -8px rgba(15,23,42,0.18)',
+              transition: 'background 150ms, transform 150ms',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#ffffff';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.95)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
-            <HiArrowsPointingOut style={{ width: 18, height: 18 }} />
+            <HiArrowsPointingIn style={{ width: 16, height: 16 }} />
+            Show all
           </button>
         </div>
       </div>
