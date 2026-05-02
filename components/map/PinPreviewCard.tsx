@@ -189,7 +189,7 @@ export default function PinPreviewCard({ pin }: Props) {
           className="block w-full rounded-md px-3 py-2.5 text-center text-[13px] font-semibold text-white"
           style={{ background: '#0f172a' }}
         >
-          View full report →
+          View →
         </Link>
       </div>
     </div>
