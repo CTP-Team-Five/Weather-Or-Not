@@ -49,13 +49,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   // global Navbar on that route. The /pins/[id]/edit form is unaffected.
   const isPinDetailPage =
     !!pathname && pathname.startsWith('/pins/') && !pathname.endsWith('/edit');
-  const hideNavbar = isHomePage || isPinDetailPage;
+  // Account page is dark + self-contained with its own back link.
+  const isAccountPage = pathname === '/account';
+  const hideNavbar = isHomePage || isPinDetailPage || isAccountPage;
 
   return (
     <html lang="en">
       <body
         className={`${barlowCondensed.variable} ${barlow.variable} ${geist.variable} ${instrumentSerif.variable} ${
-          isMapPage || isHomePage || isRatingPage || isPinDetailPage ? 'no-navbar-padding' : ''
+          isMapPage || isHomePage || isRatingPage || isPinDetailPage || isAccountPage ? 'no-navbar-padding' : ''
         }`}
       >
         {!hideNavbar && <Navbar />}

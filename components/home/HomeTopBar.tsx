@@ -142,9 +142,14 @@ export default function HomeTopBar({ onReset, goCount }: Props) {
         {!loading &&
           (user ? (
             <div className={styles.authGroup}>
-              <div className={styles.avatarCircle} title={user.email}>
+              <Link
+                href="/account"
+                className={styles.avatarCircle}
+                title={`${user.email} — open account`}
+                aria-label="Open account settings"
+              >
                 {user.email?.[0]?.toUpperCase() ?? '?'}
-              </div>
+              </Link>
               <button type="button" className={styles.signOutBtn} onClick={handleSignOut}>
                 Sign out
               </button>

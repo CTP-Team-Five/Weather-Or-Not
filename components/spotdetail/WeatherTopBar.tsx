@@ -236,8 +236,10 @@ export default function WeatherTopBar({
             {!loading &&
               (user ? (
                 <div className="flex items-center gap-2">
-                  <div
-                    title={user.email}
+                  <Link
+                    href="/account"
+                    title={`${user.email} — open account`}
+                    aria-label="Open account settings"
                     style={{
                       width: 28,
                       height: 28,
@@ -249,10 +251,11 @@ export default function WeatherTopBar({
                       fontWeight: 700,
                       background: tone.avatarBg,
                       color: tone.avatarFg,
+                      textDecoration: 'none',
                     }}
                   >
                     {user.email?.[0]?.toUpperCase() ?? '?'}
-                  </div>
+                  </Link>
                   <button
                     type="button"
                     onClick={handleSignOut}
