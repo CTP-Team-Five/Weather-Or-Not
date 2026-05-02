@@ -17,7 +17,11 @@ import { useAuth } from '@/lib/useAuth';
 import { supabase } from '@/lib/supabaseClient';
 import { PinStore } from '@/components/data/pinStore';
 import { DashboardCache } from '@/components/data/viewCache';
-import { useProfileAvatar, fileToAvatarDataUrl } from '@/lib/profileAvatar';
+import {
+  useProfileAvatar,
+  uploadProfileAvatar,
+  removeProfileAvatar,
+} from '@/lib/profileAvatar';
 
 // ─────────────────────────────────────────────────────────────────────────
 // Persistence keys for localStorage-backed sections
@@ -233,8 +237,9 @@ function ThresholdSlider({
 function ProfileSection() {
   const { user, loading } = useAuth();
   const [savedCount, setSavedCount] = useState(0);
-  const [avatarUrl, setAvatarUrl] = useProfileAvatar();
+  const avatarUrl = useProfileAvatar();
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -246,11 +251,23 @@ function ProfileSection() {
     e.target.value = ''; // allow re-selecting the same file
     if (!file) return;
     setUploadError(null);
+    setUploading(true);
     try {
-      const dataUrl = await fileToAvatarDataUrl(file);
-      setAvatarUrl(dataUrl);
+      await uploadProfileAvatar(file);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Could not load image';
+      setUploadError(msg);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onRemove = async () => {
+    setUploadError(null);
+    try {
+      await removeProfileAvatar();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not remove picture';
       setUploadError(msg);
     }
   };
@@ -335,16 +352,14 @@ function ProfileSection() {
             {memberSince && `Member since ${memberSince} · `}
             {savedCount} saved {savedCount === 1 ? 'spot' : 'spots'}
           </div>
-          {avatarUrl && (
+          {(avatarUrl || uploading) && (
             <button
               type="button"
-              onClick={() => {
-                setAvatarUrl(null);
-                setUploadError(null);
-              }}
-              className="mt-2 text-[11.5px] font-semibold text-white/40 hover:text-red-300"
+              onClick={onRemove}
+              disabled={uploading}
+              className="mt-2 text-[11.5px] font-semibold text-white/40 hover:text-red-300 disabled:opacity-40"
             >
-              Remove picture
+              {uploading ? 'Uploading…' : 'Remove picture'}
             </button>
           )}
           {uploadError && (
@@ -353,7 +368,9 @@ function ProfileSection() {
         </div>
       </div>
       <div className="border-t border-white/[0.06] px-6 py-3 text-[11px] font-medium text-white/35">
-        Picture saved to this device only — replace it any time.
+        {user
+          ? 'Synced to your account — visible on every device you sign in to.'
+          : 'Picture saved to this device only — sign in to sync across devices.'}
       </div>
     </Card>
   );

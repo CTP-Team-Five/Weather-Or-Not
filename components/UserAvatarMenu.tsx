@@ -40,7 +40,7 @@ export default function UserAvatarMenu({
 }: Props) {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [avatarUrl] = useProfileAvatar();
+  const avatarUrl = useProfileAvatar();
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
