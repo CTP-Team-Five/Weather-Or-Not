@@ -11,11 +11,13 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { HiBars3, HiXMark } from 'react-icons/hi2';
 import { WiDaySunny, WiDayStormShowers } from 'react-icons/wi';
 import styles from './HomeTopBar.module.css';
 import { useAuth } from '@/lib/useAuth';
 import { supabase } from '@/lib/supabaseClient';
 import { useProfileAvatar } from '@/lib/profileAvatar';
+import { useNavCollapsed } from '@/lib/navCollapsed';
 
 interface Props {
   onReset?: () => void;
@@ -40,6 +42,7 @@ export default function HomeTopBar({ onReset, goCount }: Props) {
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const [avatarUrl] = useProfileAvatar();
+  const [navCollapsed, toggleNav] = useNavCollapsed();
 
   const handleSignOut = async () => {
     if (supabase) await supabase.auth.signOut();
@@ -81,8 +84,12 @@ export default function HomeTopBar({ onReset, goCount }: Props) {
         )}
       </div>
 
-      {/* Center — nav */}
-      <nav className="flex items-center justify-center gap-1">
+      {/* Center — nav (hidden when collapsed) */}
+      <nav
+        className="flex items-center justify-center gap-1"
+        style={{ visibility: navCollapsed ? 'hidden' : 'visible' }}
+        aria-hidden={navCollapsed}
+      >
         {NAV_ITEMS.map((item) => {
           const active = isPathActive(pathname, item.href);
           return (
@@ -114,9 +121,11 @@ export default function HomeTopBar({ onReset, goCount }: Props) {
         })}
       </nav>
 
-      {/* Right — GO count + auth + new spot */}
+      {/* Right — GO count + auth + new spot + hamburger.
+          When collapsed, only the hamburger and a minimal "+ New Spot"
+          remain visible; everything else hides behind the toggle. */}
       <div className="flex items-center gap-3 justify-self-end">
-        {typeof goCount === 'number' && goCount > 0 && (
+        {!navCollapsed && typeof goCount === 'number' && goCount > 0 && (
           <span
             className="hidden items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] md:inline-flex"
             style={{
@@ -141,7 +150,7 @@ export default function HomeTopBar({ onReset, goCount }: Props) {
           </span>
         )}
 
-        {!loading &&
+        {!navCollapsed && !loading &&
           (user ? (
             <div className={styles.authGroup}>
               <Link
@@ -177,13 +186,26 @@ export default function HomeTopBar({ onReset, goCount }: Props) {
             </Link>
           ))}
 
-        <Link
-          href="/map"
-          className="rounded-md px-3.5 py-1.5 text-[13px] font-semibold text-white shadow-sm whitespace-nowrap"
-          style={{ background: '#0f172a' }}
+        {!navCollapsed && (
+          <Link
+            href="/map"
+            className="rounded-md px-3.5 py-1.5 text-[13px] font-semibold text-white shadow-sm whitespace-nowrap"
+            style={{ background: '#0f172a' }}
+          >
+            + New Spot
+          </Link>
+        )}
+
+        <button
+          type="button"
+          onClick={toggleNav}
+          aria-label={navCollapsed ? 'Show navigation' : 'Hide navigation'}
+          aria-expanded={!navCollapsed}
+          className="flex h-9 w-9 items-center justify-center rounded-md transition hover:bg-slate-900/[0.06]"
+          style={{ color: '#0f172a' }}
         >
-          + New Spot
-        </Link>
+          {navCollapsed ? <HiBars3 size={20} /> : <HiXMark size={20} />}
+        </button>
       </div>
     </header>
   );

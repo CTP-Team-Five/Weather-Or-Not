@@ -11,12 +11,13 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { HiEllipsisVertical } from 'react-icons/hi2';
+import { HiBars3, HiXMark, HiEllipsisVertical } from 'react-icons/hi2';
 import type { WeatherState } from '@/lib/weatherState';
 import { useAuth } from '@/lib/useAuth';
 import { supabase } from '@/lib/supabaseClient';
 import { DashboardCache } from '@/components/data/viewCache';
 import { useProfileAvatar } from '@/lib/profileAvatar';
+import { useNavCollapsed } from '@/lib/navCollapsed';
 import BrandMark from './BrandMark';
 import WeatherVideoChip from './WeatherVideoChip';
 
@@ -54,6 +55,7 @@ export default function WeatherTopBar({
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const [avatarUrl] = useProfileAvatar();
+  const [navCollapsed, toggleNav] = useNavCollapsed();
   const hasFx = state !== 'clear';
   const accent = ACCENT[state];
 
@@ -172,8 +174,12 @@ export default function WeatherTopBar({
             </span>
           </Link>
 
-          {/* Center — nav */}
-          <nav className="flex items-center justify-center gap-1">
+          {/* Center — nav (hidden when collapsed) */}
+          <nav
+            className="flex items-center justify-center gap-1"
+            style={{ visibility: navCollapsed ? 'hidden' : 'visible' }}
+            aria-hidden={navCollapsed}
+          >
             {NAV_ITEMS.map((item) => {
               const active = isPathActive(pathname, item.href);
               return (
@@ -205,12 +211,12 @@ export default function WeatherTopBar({
             })}
           </nav>
 
-          {/* Right — GO count + auth + new spot + menu */}
+          {/* Right — GO count + auth + new spot + per-pin menu + hamburger */}
           <div
             className="flex items-center gap-3"
             style={{ justifySelf: 'end' }}
           >
-            {goCount > 0 && (
+            {!navCollapsed && goCount > 0 && (
               <span
                 className="hidden items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] md:inline-flex"
                 style={{
@@ -235,7 +241,7 @@ export default function WeatherTopBar({
               </span>
             )}
 
-            {!loading &&
+            {!navCollapsed && !loading &&
               (user ? (
                 <div className="flex items-center gap-2">
                   <Link
@@ -292,14 +298,16 @@ export default function WeatherTopBar({
                 </Link>
               ))}
 
-            <Link
-              href="/map"
-              className="rounded-md bg-slate-900 px-3.5 py-1.5 text-[13px] font-semibold text-white shadow-sm whitespace-nowrap"
-            >
-              + New Spot
-            </Link>
+            {!navCollapsed && (
+              <Link
+                href="/map"
+                className="rounded-md bg-slate-900 px-3.5 py-1.5 text-[13px] font-semibold text-white shadow-sm whitespace-nowrap"
+              >
+                + New Spot
+              </Link>
+            )}
 
-            {pinId && (
+            {!navCollapsed && pinId && (
               <div ref={menuRef} className="relative">
                 <button
                   type="button"
