@@ -41,7 +41,8 @@ function MapPageContent() {
   const [mapRef, setMapRef] = useState<any>(null);
   const [allSavedPins, setAllSavedPins] = useState<SavedPin[]>([]);
   const [pinsLoaded, setPinsLoaded] = useState(false);
-  const hasAutoCentered = useRef(false);
+  // hasAutoCentered ref was guarding the now-removed double-recenter
+  // effect; LeafletMap's InitialAutoFit owns mount centering now.
   const [draftPin, setDraftPin] = useState<LatLngTuple | null>(null);
   const [pendingSearchResult, setPendingSearchResult] = useState<SearchResult | null>(null);
 
@@ -177,21 +178,12 @@ function MapPageContent() {
     setMapNavigationIntent({ type: 'none' });
   }, [mapRef, mapNavigationIntent]);
 
-  /* ── Auto-center once on mount (skipped when arriving from search) ──────── */
-
-  useEffect(() => {
-    if (!mapRef || !pinsLoaded || hasAutoCentered.current) return;
-    if (arrivedFromSearch.current) {
-      hasAutoCentered.current = true;
-      return;
-    }
-    hasAutoCentered.current = true;
-    const timer = setTimeout(() => {
-      mapRef.invalidateSize();
-      handleRecenter();
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [mapRef, pinsLoaded, handleRecenter]);
+  /* The page used to call handleRecenter() 150ms after pin load on top of
+     LeafletMap's own InitialAutoFit — that meant the map jumped twice on
+     entry: once during the initial fit, once 150ms later. Removed; the
+     LeafletMap's InitialAutoFit (with animate: false) is the single source
+     of truth for the on-mount centering. The user can press the bottom-
+     right "Show all" button to refit any time after that. */
 
   /* ── Pin placement ────────────────────────────────────────────────────────── */
 

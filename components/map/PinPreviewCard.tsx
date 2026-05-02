@@ -106,7 +106,7 @@ export default function PinPreviewCard({ pin }: Props) {
           the text contrast back up. */}
       {hasWeatherFx && (
         <>
-          <WeatherVideoChip state={state} blur={5} />
+          <WeatherVideoChip state={state} blur={2} />
           <div
             aria-hidden
             style={{

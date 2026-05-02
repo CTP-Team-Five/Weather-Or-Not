@@ -146,11 +146,16 @@ function InitialAutoFit({ pins, shouldFit }: { pins: SavedPin[]; shouldFit: bool
     const timer = setTimeout(() => {
       map.invalidateSize();
       setTimeout(() => {
+        // animate: false so the user lands on the fitted view immediately —
+        // no jarring pan from the default centre. fitBounds() always
+        // centres on the bounding-box centroid of all pins, so the
+        // "guarantee to spawn in the middle of all the pins" promise
+        // holds.
         if (pins.length === 1) {
-          map.setView([pins[0].lat, pins[0].lon], 12);
+          map.setView([pins[0].lat, pins[0].lon], 12, { animate: false });
         } else {
           const bounds = L.latLngBounds(pins.map((p) => [p.lat, p.lon]));
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12, animate: false });
         }
       }, 50);
     }, 100);
