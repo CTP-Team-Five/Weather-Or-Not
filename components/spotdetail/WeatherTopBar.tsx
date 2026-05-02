@@ -16,6 +16,7 @@ import type { WeatherState } from '@/lib/weatherState';
 import { useAuth } from '@/lib/useAuth';
 import { supabase } from '@/lib/supabaseClient';
 import { DashboardCache } from '@/components/data/viewCache';
+import { useProfileAvatar } from '@/lib/profileAvatar';
 import BrandMark from './BrandMark';
 import WeatherVideoChip from './WeatherVideoChip';
 
@@ -52,6 +53,7 @@ export default function WeatherTopBar({
   const router = useRouter();
   const pathname = usePathname();
   const { user, loading } = useAuth();
+  const [avatarUrl] = useProfileAvatar();
   const hasFx = state !== 'clear';
   const accent = ACCENT[state];
 
@@ -249,12 +251,27 @@ export default function WeatherTopBar({
                       justifyContent: 'center',
                       fontSize: 12,
                       fontWeight: 700,
-                      background: tone.avatarBg,
+                      background: avatarUrl ? 'transparent' : tone.avatarBg,
                       color: tone.avatarFg,
                       textDecoration: 'none',
+                      overflow: 'hidden',
                     }}
                   >
-                    {user.email?.[0]?.toUpperCase() ?? '?'}
+                    {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={avatarUrl}
+                        alt=""
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: '50%',
+                        }}
+                      />
+                    ) : (
+                      user.email?.[0]?.toUpperCase() ?? '?'
+                    )}
                   </Link>
                   <button
                     type="button"
