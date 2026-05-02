@@ -69,6 +69,8 @@ const config: Config = {
       fontFamily: {
         display: ["var(--font-display)", "system-ui", "sans-serif"],
         body: ["var(--font-body)", "system-ui", "sans-serif"],
+        geist: ["var(--font-geist)", "system-ui", "sans-serif"],
+        editorial: ["var(--font-editorial)", "Georgia", "serif"],
       },
     },
   },
