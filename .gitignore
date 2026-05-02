@@ -42,3 +42,8 @@ yarn-error.log*
 next-env.d.ts
 
 .claude.backup.*/
+
+# AI tooling — keep these local, don't push
+CLAUDE.md
+CLAUDE_*.md
+.codex
