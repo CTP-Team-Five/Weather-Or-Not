@@ -94,10 +94,31 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
     cb();
   };
 
+  // All hooks must run on every render (rules of hooks) — hoist them above
+  // any conditional return. Earlier I had `if (collapsed) return …` between
+  // useSidebarCollapsed and useState/useRef/useMemo, which threw
+  // "Rendered fewer hooks than expected" the moment the user collapsed.
   const [collapsed, toggleCollapsed] = useSidebarCollapsed();
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // When the sidebar is collapsed, render a small floating "Show pins" pill
-  // in place of the rail. The hero/main column then takes the full width.
+  const filteredPins = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return pins;
+    return pins.filter((pin) => {
+      const fields = [
+        pin.name,
+        pin.area,
+        pin.canonical_name,
+        ACTIVITY_LABELS[pin.activity] || pin.activity,
+        ...(pin.tags || []),
+      ].filter(Boolean) as string[];
+      return fields.some((f) => f.toLowerCase().includes(q));
+    });
+  }, [pins, searchQuery]);
+
+  // Collapsed state — small floating "Show pins" pill in place of the rail.
+  // The hero/main column then takes the full width.
   if (collapsed) {
     return (
       <button
@@ -132,23 +153,6 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
       </button>
     );
   }
-  const [searchQuery, setSearchQuery] = useState('');
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const filteredPins = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return pins;
-    return pins.filter((pin) => {
-      const fields = [
-        pin.name,
-        pin.area,
-        pin.canonical_name,
-        ACTIVITY_LABELS[pin.activity] || pin.activity,
-        ...(pin.tags || []),
-      ].filter(Boolean) as string[];
-      return fields.some((f) => f.toLowerCase().includes(q));
-    });
-  }, [pins, searchQuery]);
 
   return (
     <aside className={styles.sidebar}>
