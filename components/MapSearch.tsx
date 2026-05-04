@@ -21,7 +21,19 @@ interface MapSearchProps {
     onSelect: (coords: [number, number], searchResult?: SearchResult) => void;
     /** When true, focus the input on mount (homepage hero CTA → /map flow). */
     autoFocus?: boolean;
+    /** Bias the vague-query fallback toward suffixes relevant to this
+     *  activity. Hike → trail/national park; surf → beach/point;
+     *  snowboard → ski resort/mountain. Falls back to a generic mix
+     *  when omitted. */
+    activity?: 'hike' | 'surf' | 'snowboard';
 }
+
+const FALLBACK_SUFFIXES: Record<'hike' | 'surf' | 'snowboard' | 'generic', string[]> = {
+    hike: ['national park', 'state park', 'trail'],
+    surf: ['beach', 'point', 'surf spot'],
+    snowboard: ['ski resort', 'ski area', 'mountain'],
+    generic: ['national park', 'state park', 'beach'],
+};
 
 function splitDisplayName(displayName: string) {
     const parts = displayName.split(",");
@@ -30,7 +42,7 @@ function splitDisplayName(displayName: string) {
     return { name, detail };
 }
 
-export default function MapSearch({ onSelect, autoFocus = false }: MapSearchProps) {
+export default function MapSearch({ onSelect, autoFocus = false, activity }: MapSearchProps) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<SearchResult[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -79,7 +91,7 @@ export default function MapSearch({ onSelect, autoFocus = false }: MapSearchProp
                 primary.length < 3 && /^[A-Za-z]+$/.test(q.trim());
             let merged = primary;
             if (looksGeneric) {
-                const suffixes = ['national park', 'state park', 'mountain'];
+                const suffixes = FALLBACK_SUFFIXES[activity ?? 'generic'];
                 const extras = await Promise.all(
                     suffixes.map((s) => fetchOne(`${q} ${s}`).catch(() => [])),
                 );

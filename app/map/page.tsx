@@ -346,6 +346,11 @@ function MapPageContent() {
         <div className={styles.searchBar}>
           <MapSearch
             autoFocus={searchParams.get('focus') === 'search'}
+            activity={(() => {
+              const a = searchParams.get('activity');
+              if (a === 'hike' || a === 'surf' || a === 'snowboard') return a;
+              return undefined;
+            })()}
             onSelect={(coords, searchResult) => {
               setPendingSearchResult(searchResult || null);
               setDraftPin(null);
