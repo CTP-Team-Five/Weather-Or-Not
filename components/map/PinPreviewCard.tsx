@@ -101,10 +101,11 @@ export default function PinPreviewCard({ pin }: Props) {
         overflow: 'hidden',
       }}
     >
-      {/* Atmospheric weather video — only when raining/snowing. Heavy blur
-          (12px) keeps rain streaks legible as background texture without
-          pulling focus from the card content. The white scrim above brings
-          the text contrast back up. */}
+      {/* Atmospheric weather video — only when raining/snowing/cloudy.
+          The white scrim above lets the texture read as a haze without
+          eating chrome contrast. Readability of small labels is handled
+          by slightly darker text-slate-500 (vs the slate-400 used on
+          plain frosted cards) rather than by killing the video here. */}
       {hasWeatherFx && (
         <>
           <WeatherVideoChip state={state} blur={2} />
@@ -158,7 +159,7 @@ export default function PinPreviewCard({ pin }: Props) {
 
       {/* Spot name + activity */}
       <div className="px-4 pt-3">
-        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
           {pin.area} · {activityLabel}
         </div>
         <div className="mt-1 text-[16px] font-extrabold leading-tight tracking-tight text-slate-900">
@@ -194,18 +195,18 @@ export default function PinPreviewCard({ pin }: Props) {
       {cur && (
         <div className="mt-3 grid grid-cols-3 gap-2 border-t border-slate-900/[0.06] px-4 py-3">
           <div>
-            <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">Temp</div>
+            <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">Temp</div>
             <div className="text-[15px] font-bold text-slate-900">{tempLabel}</div>
           </div>
           <div>
-            <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">Wind</div>
+            <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">Wind</div>
             <div className="text-[15px] font-bold text-slate-900">
               {Math.round(cur.windKph)}
-              <span className="text-[10px] font-semibold text-slate-400"> km/h</span>
+              <span className="text-[10px] font-semibold text-slate-500"> km/h</span>
             </div>
           </div>
           <div>
-            <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">Sky</div>
+            <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">Sky</div>
             <div className="truncate text-[12px] font-semibold text-slate-700">
               {conditionDesc}
             </div>
