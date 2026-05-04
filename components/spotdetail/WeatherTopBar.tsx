@@ -1,6 +1,6 @@
 // components/spotdetail/WeatherTopBar.tsx
 // Sticky 64px chrome that owns the top of the SpotDetailBoard v2 view.
-// Same three-column layout as HomeTopBar / Navbar — left brand, center
+// Same three-column layout as Navbar — left brand, center
 // PINS/MAP/FORECAST nav, right cluster of GO-count + auth + New Spot +
 // per-pin overflow menu — but with the weather-reactive twist: rain/snow
 // video clipped inside the bar, brand mark that swaps sun/cloud/snowflake,

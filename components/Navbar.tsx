@@ -1,11 +1,11 @@
 'use client';
 
 // Navbar — global top chrome shown on routes other than the homepage and
-// pin detail (those have their own bespoke chrome). Mirrors HomeTopBar's
+// pin detail (those use WeatherTopBar). Mirrors WeatherTopBar's
 // three-column layout: brand | PINS / MAP / FORECAST | GO-count + auth +
-// New Spot. The GO count is read from DashboardCache so it reflects the
-// most recent dashboard compute pass, even though this component lives
-// outside the homepage's data flow.
+// New Spot, but in the calmer non-reactive variant. The GO count is read
+// from DashboardCache so it reflects the most recent dashboard compute
+// pass, even though this component lives outside the homepage's data flow.
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';

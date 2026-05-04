@@ -9,9 +9,9 @@
 .layout {
   display: flex;
   flex: 1;
-  /* The sticky HomeTopBar sits in-flow above this in the .page flex column,
-     so no top padding is needed — adding any creates a visible grey gap
-     below the bar before the hero starts. */
+  /* The sticky WeatherTopBar sits in-flow above this in the .page flex
+     column, so no top padding is needed — adding any creates a visible
+     grey gap below the bar before the hero starts. */
 }
 
 .main {
