@@ -9,7 +9,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { PinStore, SavedPin } from '@/components/data/pinStore';
 import { ExtendedWeatherData } from '@/components/utils/fetchForecast';
@@ -28,7 +28,6 @@ import SpotDetailBoard from '@/components/spotdetail/SpotDetailBoard';
 
 export default function PinDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const pinId = params.id as string;
 
   const [pin, setPin] = useState<SavedPin | null>(null);
@@ -147,29 +146,6 @@ export default function PinDetailPage() {
 
   const state = weatherStateFromCode(weather.current.weatherCode);
 
-  const handleDelete = async () => {
-    // Local first — guarantees the pin is gone from the sidebar even if the
-    // remote write fails or the user is unauthenticated.
-    PinStore.remove(pin.id);
-
-    if (supabase) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error } = await supabase.from('pins').delete().eq('id', pin.id);
-        if (error) {
-          console.warn('Pin removed locally; Supabase delete failed:', {
-            code: error.code,
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-          });
-        }
-      }
-    }
-
-    router.push('/');
-  };
-
   return (
     <SpotDetailBoard
       pin={pin}
@@ -178,7 +154,6 @@ export default function PinDetailPage() {
       ambientTheme={ambientTheme}
       state={state}
       fetchedAt={fetchedAt}
-      onDelete={handleDelete}
     />
   );
 }

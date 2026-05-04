@@ -691,16 +691,6 @@ function DangerSection() {
 export default function AccountPage() {
   const router = useRouter();
 
-  // Prevent the default body padding-top from carving a gap above the
-  // atmospheric backdrop — the global Navbar is hidden on this route.
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    document.body.classList.add('no-navbar-padding');
-    return () => {
-      document.body.classList.remove('no-navbar-padding');
-    };
-  }, []);
-
   return (
     <div className="font-geist relative min-h-screen text-white">
       {/* Atmospheric backdrop */}

@@ -45,8 +45,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const isHomePage = pathname === '/';
   const isMapPage = pathname === '/map';
   const isRatingPage = pathname === '/rating';
-  // Pin detail (/pins/[id]) owns its own chrome via WeatherTopBar — hide the
-  // global Navbar on that route. The /pins/[id]/edit form is unaffected.
+  // Pin detail (/pins/[id]) renders HomeTopBar inside SpotDetailBoard — hide
+  // the global Navbar on that route. The /pins/[id]/edit form is unaffected.
   const isPinDetailPage =
     !!pathname && pathname.startsWith('/pins/') && !pathname.endsWith('/edit');
   // Account page is dark + self-contained with its own back link.

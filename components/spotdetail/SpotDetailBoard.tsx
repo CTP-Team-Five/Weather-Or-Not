@@ -1,6 +1,6 @@
 // components/spotdetail/SpotDetailBoard.tsx
 // The full-page v2 board. Composes:
-//   - WeatherTopBar across the top
+//   - HomeTopBar across the top (same chrome as the dashboard, for parity)
 //   - hero photo (activity-default backdrop, ken-burns)
 //   - WhyContents glass plate on the left (340px)
 //   - ConditionsSummary glass plate bottom-right (420px)
@@ -24,7 +24,8 @@ import { deriveHeroContent } from '@/lib/heroContent';
 import { deriveSpotReasons } from '@/lib/spotReasons';
 import { getBackgroundImage, toActivitySlot } from '@/lib/activityMedia';
 import { usePreferences } from '@/lib/preferences';
-import WeatherTopBar from './WeatherTopBar';
+import { DashboardCache } from '@/components/data/viewCache';
+import HomeTopBar from '@/components/home/HomeTopBar';
 import WeatherGlassPlate from './WeatherGlassPlate';
 import WhyContents from './WhyContents';
 import ConditionsSummary from './ConditionsSummary';
@@ -46,7 +47,6 @@ interface Props {
   ambientTheme: AmbientTheme;
   state: WeatherState;
   fetchedAt: number | null;
-  onDelete?: () => void;
 }
 
 const ACTIVITY_UPPERCASE: Record<string, string> = {
@@ -87,7 +87,6 @@ export default function SpotDetailBoard({
   ambientTheme,
   state,
   fetchedAt,
-  onDelete,
 }: Props) {
   const verdict = LABEL_TO_VERDICT[suitability.label];
   const prefs = usePreferences();
@@ -100,6 +99,20 @@ export default function SpotDetailBoard({
     setFlashing(true);
     const t = setTimeout(() => setFlashing(false), FLASH_DURATION_MS);
     return () => clearTimeout(t);
+  }, [pin.id]);
+
+  // GO-count for the HomeTopBar's "# good days" pill — sourced from the
+  // homepage's DashboardCache so we don't re-trigger the whole compute pass
+  // here (the detail page is outside the dashboard data flow).
+  const [goCount, setGoCount] = useState(0);
+  useEffect(() => {
+    const cached = DashboardCache.get();
+    if (!cached) return;
+    let n = 0;
+    cached.computed.forEach((c) => {
+      if (c?.suitability.label === 'GREAT') n += 1;
+    });
+    setGoCount(n);
   }, [pin.id]);
   const reasons = deriveSpotReasons(
     activitySlotForReasons(pin.activity),
@@ -143,7 +156,7 @@ export default function SpotDetailBoard({
         />
       )}
 
-      <WeatherTopBar state={state} pinId={pin.id} onDelete={onDelete} />
+      <HomeTopBar goCount={goCount} />
 
       <section className="relative h-[calc(100vh-64px)] overflow-hidden">
         {/* Hero photo — untouched. Weather lives in chrome only. */}
