@@ -23,6 +23,7 @@ import { LABEL_TO_VERDICT, type Verdict } from '@/lib/decision';
 import { deriveHeroContent } from '@/lib/heroContent';
 import { deriveSpotReasons } from '@/lib/spotReasons';
 import { getBackgroundImage, toActivitySlot } from '@/lib/activityMedia';
+import { usePreferences } from '@/lib/preferences';
 import WeatherTopBar from './WeatherTopBar';
 import WeatherGlassPlate from './WeatherGlassPlate';
 import WhyContents from './WhyContents';
@@ -89,6 +90,7 @@ export default function SpotDetailBoard({
   onDelete,
 }: Props) {
   const verdict = LABEL_TO_VERDICT[suitability.label];
+  const prefs = usePreferences();
 
   // Mount flash — fires whenever the user lands on (or navigates between)
   // pin detail pages. Re-keyed on pin.id so the same animation replays for
@@ -103,6 +105,7 @@ export default function SpotDetailBoard({
     activitySlotForReasons(pin.activity),
     weather,
     suitability,
+    prefs.tempUnit,
   );
   const hero = deriveHeroContent(
     pin.activity,

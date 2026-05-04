@@ -18,6 +18,8 @@
 
 import type { ExtendedWeatherData } from '@/components/utils/fetchForecast';
 import type { SuitabilityResult } from '@/lib/activityScore';
+import type { TempUnit } from '@/lib/preferences';
+import { formatTemp } from '@/lib/formatTemp';
 
 export type ReasonTone = 'good' | 'warn' | 'bad';
 
@@ -35,9 +37,10 @@ interface Candidate extends SpotReason {
 const TONE_ORDER: Record<ReasonTone, number> = { bad: 0, warn: 1, good: 2 };
 
 // ─── unit helpers ───────────────────────────────────────────────────────────
-function cToF(c: number): number {
-  return c * 1.8 + 32;
-}
+// Temperature formatting now lives in lib/formatTemp.ts so reasons honour
+// the user's °F / °C preference. Distance conversion stays inline (only
+// used in one place — visibility km/mi could be threaded the same way as
+// a future commit).
 function mToKm(m: number): number {
   return m / 1000;
 }
@@ -50,45 +53,46 @@ function round(n: number, places = 0): number {
 function hikeCandidates(
   weather: ExtendedWeatherData,
   suitability: SuitabilityResult,
+  tempUnit: TempUnit,
 ): Candidate[] {
   const c = weather.current;
   const out: Candidate[] = [];
-  const apparentF = round(cToF(c.apparentTemperature));
-  const tempF = round(cToF(c.temperature));
+  const apparent = formatTemp(c.apparentTemperature, tempUnit);
+  const temp = formatTemp(c.temperature, tempUnit);
 
   // ── Heat / cold cliffs (highest weight when hit) ─────────────────────────
   if (c.apparentTemperature > 35) {
     out.push({
       tone: 'bad',
-      headline: `Apparent ${apparentF}°F — dangerous heat`,
+      headline: `Apparent ${apparent} — dangerous heat`,
       detail: 'Heat-exhaustion risk on exposed trail. Move plans to dawn or dusk.',
       weight: 100,
     });
   } else if (c.apparentTemperature > 30) {
     out.push({
       tone: 'warn',
-      headline: `Real-feel ${apparentF}°F — pack extra water`,
+      headline: `Real-feel ${apparent} — pack extra water`,
       detail: 'Hot enough that pace and hydration matter. Aim for shaded sections at noon.',
       weight: 70,
     });
   } else if (c.apparentTemperature < -10) {
     out.push({
       tone: 'bad',
-      headline: `Wind chill ${apparentF}°F — frostbite risk`,
+      headline: `Wind chill ${apparent} — frostbite risk`,
       detail: 'Real-feel below the safe threshold for unprotected skin on long approaches.',
       weight: 100,
     });
   } else if (c.apparentTemperature < 0) {
     out.push({
       tone: 'warn',
-      headline: `Real-feel ${apparentF}°F — winter layering`,
+      headline: `Real-feel ${apparent} — winter layering`,
       detail: 'Cold enough that wet layers turn dangerous fast. Pack a dry mid.',
       weight: 60,
     });
   } else if (c.apparentTemperature >= 10 && c.apparentTemperature <= 22) {
     out.push({
       tone: 'good',
-      headline: `Comfortable ${tempF}°F`,
+      headline: `Comfortable ${temp}`,
       detail: 'In the sweet spot for sustained effort. Easy pace all day.',
       weight: 35,
     });
@@ -213,6 +217,7 @@ function hikeCandidates(
 function surfCandidates(
   weather: ExtendedWeatherData,
   suitability: SuitabilityResult,
+  tempUnit: TempUnit,
 ): Candidate[] {
   const c = weather.current;
   const out: Candidate[] = [];
@@ -322,18 +327,18 @@ function surfCandidates(
   }
 
   // ── Water temperature ────────────────────────────────────────────────────
-  const waterF = round(cToF(c.temperature));
+  const water = formatTemp(c.temperature, tempUnit);
   if (c.temperature < 8) {
     out.push({
       tone: 'warn',
-      headline: `Water ${waterF}°F — full suit + hood`,
+      headline: `Water ${water} — full suit + hood`,
       detail: 'Cold-water gear non-negotiable. Sessions cap around 60 minutes.',
       weight: 35,
     });
   } else if (c.temperature >= 18 && c.temperature <= 28) {
     out.push({
       tone: 'good',
-      headline: `Water ${waterF}°F — comfortable`,
+      headline: `Water ${water} — comfortable`,
       detail: 'Trunkable or 2/2 spring suit. No thermal limit on session length.',
       weight: 22,
     });
@@ -365,11 +370,12 @@ function surfCandidates(
 function snowboardCandidates(
   weather: ExtendedWeatherData,
   suitability: SuitabilityResult,
+  tempUnit: TempUnit,
 ): Candidate[] {
   const c = weather.current;
   const out: Candidate[] = [];
-  const tempF = round(cToF(c.temperature));
-  const apparentF = round(cToF(c.apparentTemperature));
+  const temp = formatTemp(c.temperature, tempUnit);
+  const apparent = formatTemp(c.apparentTemperature, tempUnit);
 
   // ── Rain on snow ─────────────────────────────────────────────────────────
   const isRain = c.weatherCode != null && c.weatherCode >= 51 && c.weatherCode <= 67;
@@ -439,28 +445,28 @@ function snowboardCandidates(
   if (c.apparentTemperature < -25) {
     out.push({
       tone: 'bad',
-      headline: `Wind chill ${apparentF}°F — frostbite minutes`,
+      headline: `Wind chill ${apparent} — frostbite minutes`,
       detail: 'Exposed skin freezes in under 10 minutes. Cover up or stay inside.',
       weight: 90,
     });
   } else if (c.apparentTemperature < -15) {
     out.push({
       tone: 'warn',
-      headline: `Real-feel ${apparentF}°F at summit`,
+      headline: `Real-feel ${apparent} at summit`,
       detail: 'Cold enough that goggle fog is the bigger problem than the riding.',
       weight: 55,
     });
   } else if (c.temperature >= -10 && c.temperature <= -3) {
     out.push({
       tone: 'good',
-      headline: `Air ${tempF}°F — ideal`,
+      headline: `Air ${temp} — ideal`,
       detail: 'Cold enough that snow stays dry but not so cold that lifts hurt.',
       weight: 35,
     });
   } else if (c.temperature > 2) {
     out.push({
       tone: 'warn',
-      headline: `${tempF}°F — slush forming`,
+      headline: `${temp} — slush forming`,
       detail: 'Surface gets sticky on south faces by midday. Ride aspect-aware.',
       weight: 50,
     });
@@ -534,13 +540,17 @@ export function deriveSpotReasons(
   activity: 'hike' | 'surf' | 'snowboard',
   weather: ExtendedWeatherData,
   suitability: SuitabilityResult,
+  /** User's °F / °C preference. Defaults to 'F' so existing call sites
+   *  that haven't been migrated to pass tempUnit keep producing the
+   *  current output. */
+  tempUnit: TempUnit = 'F',
 ): SpotReason[] {
   const candidates =
     activity === 'surf'
-      ? surfCandidates(weather, suitability)
+      ? surfCandidates(weather, suitability, tempUnit)
       : activity === 'snowboard'
-        ? snowboardCandidates(weather, suitability)
-        : hikeCandidates(weather, suitability);
+        ? snowboardCandidates(weather, suitability, tempUnit)
+        : hikeCandidates(weather, suitability, tempUnit);
 
   // Pick the four highest-weight candidates. If we somehow have fewer than 4,
   // pad with a generic "live conditions" line so the layout stays balanced.

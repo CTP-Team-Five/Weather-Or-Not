@@ -26,6 +26,9 @@ import { LABEL_TO_VERDICT, Verdict } from '@/lib/decision';
 import { getBackgroundImage, toActivitySlot } from '@/lib/activityMedia';
 import { deriveHeroContent } from '@/lib/heroContent';
 import { deriveSpotReasons, type ReasonTone } from '@/lib/spotReasons';
+import { usePreferences } from '@/lib/preferences';
+import type { TempUnit } from '@/lib/preferences';
+import { formatTemp, formatTempBare } from '@/lib/formatTemp';
 
 const ACTIVITY_UPPERCASE: Record<string, string> = {
   hike: 'HIKING',
@@ -98,9 +101,8 @@ function activitySlotForReasons(a: string): 'hike' | 'surf' | 'snowboard' {
   return 'hike';
 }
 
-function cToF(c: number): number {
-  return Math.round(c * 1.8 + 32);
-}
+// Temperature formatting moved to lib/formatTemp.ts so this page honours
+// the user's °F / °C preference.
 
 // ── VerdictReveal ──────────────────────────────────────────────────────────
 // 1.8s fullscreen overlay with the verdict word in big Instrument Serif italic.
@@ -165,9 +167,11 @@ function VerdictReveal({ verdict, onComplete }: { verdict: Verdict; onComplete: 
 function HourlyCurve({
   hourly,
   accent,
+  tempUnit,
 }: {
   hourly: ExtendedWeatherData['hourly'];
   accent: string;
+  tempUnit: TempUnit;
 }) {
   const w = 500;
   const h = 120;
@@ -226,7 +230,7 @@ function HourlyCurve({
         fontSize="13"
         fill={accent}
       >
-        {cToF(max)}°F · {peakHour}
+        {formatTemp(max, tempUnit)} · {peakHour}
       </text>
     </svg>
   );
@@ -243,6 +247,7 @@ function DayCard({
   precip,
   highlight,
   highlightVerdict,
+  tempUnit,
 }: {
   date: string;
   tempMax: number;
@@ -250,6 +255,7 @@ function DayCard({
   precip: number;
   highlight: boolean;
   highlightVerdict: Verdict;
+  tempUnit: TempUnit;
 }) {
   const d = new Date(date);
   const day = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
@@ -285,10 +291,10 @@ function DayCard({
           letterSpacing: '-0.02em',
         }}
       >
-        {cToF(tempMax)}°
+        {formatTempBare(tempMax, tempUnit)}
       </div>
       <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
-        low {cToF(tempMin)}°
+        low {formatTempBare(tempMin, tempUnit)}
       </div>
       {precip > 0.5 && (
         <div style={{ fontSize: 10, color: '#0891b2', marginTop: 4 }}>
@@ -305,6 +311,7 @@ export default function PinReportPage() {
   const params = useParams();
   const router = useRouter();
   const pinId = params.id as string;
+  const prefs = usePreferences();
 
   const [pin, setPin] = useState<SavedPin | null>(null);
   const [weather, setWeather] = useState<ExtendedWeatherData | null>(null);
@@ -452,7 +459,7 @@ export default function PinReportPage() {
             ? cur.snowfallCm != null
               ? `${cur.snowfallCm.toFixed(1)}cm`
               : '—'
-            : `${cToF(cur.temperature)}°`,
+            : formatTempBare(cur.temperature, prefs.tempUnit),
       sub:
         pin.activity === 'surf'
           ? cur.swellPeriod != null
@@ -462,7 +469,7 @@ export default function PinReportPage() {
             ? cur.snowDepthM != null
               ? `${(cur.snowDepthM * 100).toFixed(0)}cm base`
               : 'base unavailable'
-            : `feels ${cToF(cur.apparentTemperature)}°`,
+            : `feels ${formatTempBare(cur.apparentTemperature, prefs.tempUnit)}`,
     },
     {
       label: 'WIND',
@@ -699,7 +706,7 @@ export default function PinReportPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 }}>
           <div style={cardStyle}>
             <SectionLabel>HOURLY OUTLOOK · NEXT 24 HOURS</SectionLabel>
-            <HourlyCurve hourly={weather.hourly} accent={c.solid} />
+            <HourlyCurve hourly={weather.hourly} accent={c.solid} tempUnit={prefs.tempUnit} />
             <div
               style={{
                 display: 'flex',
@@ -737,6 +744,7 @@ export default function PinReportPage() {
                   precip={day.precipitationSum}
                   highlight={i === 0}
                   highlightVerdict={verdict}
+                  tempUnit={prefs.tempUnit}
                 />
               ))}
             </div>
@@ -787,6 +795,7 @@ export default function PinReportPage() {
                   activitySlotForReasons(pin.activity),
                   weather,
                   suitability,
+                  prefs.tempUnit,
                 );
                 if (richReasons.length === 0) {
                   return <p style={{ fontSize: 13, color: '#64748b' }}>No breakdown available.</p>;

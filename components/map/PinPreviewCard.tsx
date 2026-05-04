@@ -21,6 +21,8 @@ import { weatherStateFromCode, type WeatherState } from '@/lib/weatherState';
 import { getWeatherDescription } from '@/components/utils/fetchForecast';
 import { ActivityIcon } from '@/components/icons/ActivityIcons';
 import WeatherVideoChip from '@/components/spotdetail/WeatherVideoChip';
+import { usePreferences } from '@/lib/preferences';
+import { formatTempBare } from '@/lib/formatTemp';
 
 const ACTIVITY_LABELS: Record<string, string> = {
   hike: 'HIKING',
@@ -55,15 +57,12 @@ function findCached(pinId: string): ComputedSuitability | null {
   return cache.computed.get(pinId) ?? null;
 }
 
-function cToF(c: number): number {
-  return Math.round(c * 1.8 + 32);
-}
-
 interface Props {
   pin: SavedPin;
 }
 
 export default function PinPreviewCard({ pin }: Props) {
+  const prefs = usePreferences();
   const [computed, setComputed] = useState<ComputedSuitability | null>(null);
 
   useEffect(() => {
@@ -85,7 +84,7 @@ export default function PinPreviewCard({ pin }: Props) {
   const score = computed?.suitability.score ?? null;
   const cur = computed?.weather.current ?? null;
   const state: WeatherState = cur ? weatherStateFromCode(cur.weatherCode) : 'clear';
-  const tempF = cur ? cToF(cur.temperature) : null;
+  const tempLabel = cur ? formatTempBare(cur.temperature, prefs.tempUnit) : null;
   const conditionDesc = cur ? getWeatherDescription(cur.weatherCode) : null;
 
   const hasWeatherFx = state !== 'clear';
@@ -194,7 +193,7 @@ export default function PinPreviewCard({ pin }: Props) {
         <div className="mt-3 grid grid-cols-3 gap-2 border-t border-slate-900/[0.06] px-4 py-3">
           <div>
             <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">Temp</div>
-            <div className="text-[15px] font-bold text-slate-900">{tempF}°</div>
+            <div className="text-[15px] font-bold text-slate-900">{tempLabel}</div>
           </div>
           <div>
             <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">Wind</div>
