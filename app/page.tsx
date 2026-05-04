@@ -9,9 +9,10 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/useAuth";
 import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
-import HomeTopBar from "@/components/home/HomeTopBar";
+import WeatherTopBar from "@/components/spotdetail/WeatherTopBar";
 import HomeSidebar from "@/components/home/HomeSidebar";
 import HomepageHero from "@/components/home/HomepageHero";
+import { weatherStateFromCode, type WeatherState } from "@/lib/weatherState";
 import styles from "./page.module.css";
 
 // Merge local + remote pins: remote wins on id collision, local-only pins kept, sorted newest first.
@@ -161,14 +162,20 @@ export default function Home() {
 
   const hasPins = pinsLoaded && savedPins.length > 0;
 
-  // Number of saved pins currently scoring GREAT — surfaced as the "# good
-  // days" badge in the top bar.
-  const goCount = useMemo(() => {
-    let n = 0;
+  // Pick a representative weather state for the top bar's reactive layer.
+  // Preference: any pin currently raining → rain (most visible reactive
+  // treatment), else any pin snowing → snow, else 'clear' (no video, plain
+  // frosted glass). Means the chrome goes "alive" whenever any saved pin
+  // has weather worth reacting to.
+  const headerState = useMemo<WeatherState>(() => {
+    let saw: 'raining' | 'snowing' | null = null;
     computedMap.forEach((computed) => {
-      if (computed?.suitability.label === 'GREAT') n += 1;
+      if (!computed) return;
+      const s = weatherStateFromCode(computed.weather.current.weatherCode);
+      if (s === 'raining') saw = 'raining';
+      else if (s === 'snowing' && saw !== 'raining') saw = 'snowing';
     });
-    return n;
+    return saw ?? 'clear';
   }, [computedMap]);
 
   // Click a pin from the sidebar → go straight to the SpotDetailBoard v2 view
@@ -209,13 +216,9 @@ export default function Home() {
     }
   };
 
-  // Logo click: kept for the HomeTopBar reset affordance. With the overlay
-  // gone there's nothing to actually reset, but the prop is still required.
-  const handleReset = () => {};
-
   return (
     <div className={styles.page}>
-      <HomeTopBar onReset={handleReset} goCount={goCount} />
+      <WeatherTopBar state={headerState} />
 
       <div className={styles.layout}>
         {/* Always-visible sidebar */}
