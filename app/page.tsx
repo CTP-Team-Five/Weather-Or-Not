@@ -4,7 +4,7 @@
 
 import { PinStore, SavedPin } from "@/components/data/pinStore";
 import { DashboardCache } from "@/components/data/viewCache";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/useAuth";
@@ -12,7 +12,6 @@ import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/compute
 import WeatherTopBar from "@/components/spotdetail/WeatherTopBar";
 import HomeSidebar from "@/components/home/HomeSidebar";
 import HomepageHero from "@/components/home/HomepageHero";
-import { weatherStateFromCode, type WeatherState } from "@/lib/weatherState";
 import styles from "./page.module.css";
 
 // Merge local + remote pins: remote wins on id collision, local-only pins kept, sorted newest first.
@@ -162,23 +161,12 @@ export default function Home() {
 
   const hasPins = pinsLoaded && savedPins.length > 0;
 
-  // Pick a representative weather state for the top bar's reactive layer.
-  // Precedence: rain > snow > clear. Cloudy is intentionally NOT in the
-  // mix here — partly cloudy / overcast describe most of the planet most
-  // of the time, so triggering the cloud video on "any pin is cloudy"
-  // makes the dashboard chrome perpetually cloudy and meaningless.
-  // Cloudy still drives the bar on /pins/[id] where it represents one
-  // specific pin's conditions and is actually informative.
-  const headerState = useMemo<WeatherState>(() => {
-    let saw: 'raining' | 'snowing' | null = null;
-    computedMap.forEach((computed) => {
-      if (!computed) return;
-      const s = weatherStateFromCode(computed.weather.current.weatherCode);
-      if (s === 'raining') saw = 'raining';
-      else if (s === 'snowing' && saw !== 'raining') saw = 'snowing';
-    });
-    return saw ?? 'clear';
-  }, [computedMap]);
+  // Homepage bar is always plain frosted glass. The reactive video layer
+  // only fires inside a specific pin (/pins/[id]) where it represents
+  // *that* pin's live conditions — there it's an informative signal.
+  // Aggregating across all saved pins for the dashboard bar produced
+  // noise (any cloudy pin → bar cloudy; any one rainy pin → bar rainy)
+  // without telling the user anything they could act on.
 
   // Click a pin from the sidebar → go straight to the SpotDetailBoard v2 view
   // at /pins/[id]. No more in-page overlay popover.
@@ -220,7 +208,7 @@ export default function Home() {
 
   return (
     <div className={styles.page}>
-      <WeatherTopBar state={headerState} />
+      <WeatherTopBar state="clear" />
 
       <div className={styles.layout}>
         {/* Always-visible sidebar */}
