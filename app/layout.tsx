@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { Barlow_Condensed, Barlow, Geist, Instrument_Serif } from 'next/font/google';
-import Navbar from '@/components/Navbar';
+import WeatherTopBar from '@/components/spotdetail/WeatherTopBar';
 import './globals.css';
 
 // Display font: condensed, athletic — used for verdict words and hero headlines
@@ -42,25 +42,23 @@ const instrumentSerif = Instrument_Serif({
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  // Routes that mount their OWN top bar (or have no chrome at all in the
+  // case of /account) — the layout shouldn't render a duplicate:
+  //   /          → WeatherTopBar inside app/page.tsx
+  //   /pins/[id] → WeatherTopBar inside SpotDetailBoard
+  //   /account   → no top bar; dark self-contained UI with its own back link
   const isHomePage = pathname === '/';
-  const isMapPage = pathname === '/map';
-  const isRatingPage = pathname === '/rating';
-  // Pin detail (/pins/[id]) owns its own chrome via WeatherTopBar — hide the
-  // global Navbar on that route. The /pins/[id]/edit form is unaffected.
   const isPinDetailPage =
     !!pathname && pathname.startsWith('/pins/') && !pathname.endsWith('/edit');
-  // Account page is dark + self-contained with its own back link.
   const isAccountPage = pathname === '/account';
-  const hideNavbar = isHomePage || isPinDetailPage || isAccountPage;
+  const hideLayoutBar = isHomePage || isPinDetailPage || isAccountPage;
 
   return (
     <html lang="en">
       <body
-        className={`${barlowCondensed.variable} ${barlow.variable} ${geist.variable} ${instrumentSerif.variable} ${
-          isMapPage || isHomePage || isRatingPage || isPinDetailPage || isAccountPage ? 'no-navbar-padding' : ''
-        }`}
+        className={`${barlowCondensed.variable} ${barlow.variable} ${geist.variable} ${instrumentSerif.variable} no-navbar-padding`}
       >
-        {!hideNavbar && <Navbar />}
+        {!hideLayoutBar && <WeatherTopBar state="clear" />}
         {children}
       </body>
     </html>

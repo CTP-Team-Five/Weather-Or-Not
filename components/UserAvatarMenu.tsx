@@ -1,7 +1,7 @@
 'use client';
 
 // components/UserAvatarMenu.tsx
-// Shared avatar + dropdown used in both top bars (Navbar / WeatherTopBar).
+// Shared avatar + dropdown used inside the WeatherTopBar.
 // Click the avatar → menu drops with the user's email,
 // "User settings" (→ /account) and a red "Sign out".
 //
@@ -24,8 +24,8 @@ interface Props {
   buttonBg?: string;
   /** Foreground colour for the avatar's initial letter. */
   buttonFg?: string;
-  /** Optional className passed to the avatar button (used by Navbar to
-   *  apply its existing CSS-module avatar styling). */
+  /** Optional className passed to the avatar button — callers can use it
+   *  to thread their own CSS-module styles into the avatar disc. */
   buttonClassName?: string;
   /** Sign-in link styling for the unauthenticated case — caller controls
    *  whether it reads as a slate link or a white-on-dark link. */
