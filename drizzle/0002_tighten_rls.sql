@@ -46,12 +46,18 @@
 -- FROM public.pins;
 
 -- ============================================================
--- 1. Drop the wide-open policies from 0001
+-- 1. Drop existing policies — both the 0001 old names AND the 0002
+--    new names (so this file is safe to re-run after a partial apply
+--    without "policy already exists" errors).
 -- ============================================================
 DROP POLICY IF EXISTS "Pins are publicly readable"          ON public.pins;
 DROP POLICY IF EXISTS "Authenticated users can insert pins" ON public.pins;
 DROP POLICY IF EXISTS "Authenticated users can update pins" ON public.pins;
 DROP POLICY IF EXISTS "Authenticated users can delete pins" ON public.pins;
+DROP POLICY IF EXISTS "auth users insert pins"              ON public.pins;
+DROP POLICY IF EXISTS "users read pins they own"            ON public.pins;
+DROP POLICY IF EXISTS "users update pins they own"          ON public.pins;
+DROP POLICY IF EXISTS "users delete pins they own"          ON public.pins;
 
 -- ============================================================
 -- 2. Owner-aware policies on pins
