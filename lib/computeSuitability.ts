@@ -85,7 +85,11 @@ export async function computeSuitabilityForPinSafe(
   try {
     return await computeSuitabilityForPin(pin);
   } catch (err) {
-    console.error('Failed to compute suitability for pin:', pin.id, err);
+    // The "Safe" variant exists specifically to swallow errors and let
+    // the UI degrade gracefully (cached scores / Computing… fallbacks).
+    // Use console.warn so an upstream Open-Meteo 429 doesn't trigger
+    // Next.js's dev error overlay.
+    console.warn('Failed to compute suitability for pin:', pin.id, err);
     return null;
   }
 }
