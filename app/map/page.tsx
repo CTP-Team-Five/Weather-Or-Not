@@ -122,27 +122,40 @@ function MapPageContent() {
     const loadSavedPins = async () => {
       try {
         if (supabase) {
-          const { data, error } = await supabase
-            .from("pins")
-            .select("*")
-            .order("created_at", { ascending: false });
+          // Only fetch this user's pins — don't dump every pin in the
+          // public table to anyone who lands on /map. If signed out,
+          // localStorage is the only legitimate source of "the pins on
+          // this device" and we skip the remote query entirely.
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data, error } = await supabase
+              .from("user_pins")
+              .select("pin_id, pins(*)")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false });
 
-          if (!error && data) {
-            const pins: SavedPin[] = data.map((p: any) => ({
-              id: p.id,
-              area: p.area,
-              lat: p.lat,
-              lon: p.lon,
-              activity: p.activity,
-              createdAt: new Date(p.created_at).getTime(),
-              canonical_name: p.canonical_name,
-              slug: p.slug,
-              popularity_score: p.popularity_score,
-              tags: p.tags,
-            }));
-            setAllSavedPins(pins);
-            setPinsLoaded(true);
-            return;
+            if (!error && data) {
+              const pins: SavedPin[] = data
+                .filter((row: any) => row.pins)
+                .map((row: any) => {
+                  const p = row.pins;
+                  return {
+                    id: p.id,
+                    area: p.area,
+                    lat: p.lat,
+                    lon: p.lon,
+                    activity: p.activity,
+                    createdAt: new Date(p.created_at).getTime(),
+                    canonical_name: p.canonical_name,
+                    slug: p.slug,
+                    popularity_score: p.popularity_score,
+                    tags: p.tags,
+                  };
+                });
+              setAllSavedPins(pins);
+              setPinsLoaded(true);
+              return;
+            }
           }
         }
         setAllSavedPins(PinStore.all());

@@ -71,7 +71,11 @@ export default function Home() {
     if (cached) setComputedMap(cached.computed);
     setPinsLoaded(true);
 
-    if (!supabase) {
+    // No Supabase OR no signed-in user → "your spots" is whatever this
+    // device has saved locally. Do not fetch the public pins table for
+    // anonymous visitors — those are other users' spots, and showing
+    // them as YOUR SPOTS to a stranger is a privacy + UX bug.
+    if (!supabase || !user) {
       return () => {
         cancelled = true;
       };
@@ -79,61 +83,34 @@ export default function Home() {
 
     const loadRemotePins = async () => {
       try {
-        let remotePins: SavedPin[] = [];
+        const { data, error } = await supabase!
+          .from("user_pins")
+          .select("pin_id, pins(*)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
 
-        if (user) {
-          const { data, error } = await supabase!
-            .from("user_pins")
-            .select("pin_id, pins(*)")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false });
-
-          if (error || !data) {
-            if (error) console.error("Supabase pins fetch error:", error);
-            return;
-          }
-
-          remotePins = data
-            .filter((row: any) => row.pins)
-            .map((row: any) => {
-              const p = row.pins;
-              return {
-                id: p.id,
-                area: p.area,
-                lat: p.lat,
-                lon: p.lon,
-                activity: p.activity,
-                createdAt: new Date(p.created_at).getTime(),
-                canonical_name: p.canonical_name,
-                slug: p.slug,
-                popularity_score: p.popularity_score,
-                tags: p.tags,
-              };
-            });
-        } else {
-          const { data, error } = await supabase!
-            .from("pins")
-            .select("*")
-            .order("created_at", { ascending: false });
-
-          if (error || !data) {
-            if (error) console.error("Supabase pins fetch error:", error);
-            return;
-          }
-
-          remotePins = data.map((p: any) => ({
-            id: p.id,
-            area: p.area,
-            lat: p.lat,
-            lon: p.lon,
-            activity: p.activity,
-            createdAt: new Date(p.created_at).getTime(),
-            canonical_name: p.canonical_name,
-            slug: p.slug,
-            popularity_score: p.popularity_score,
-            tags: p.tags,
-          }));
+        if (error || !data) {
+          if (error) console.error("Supabase pins fetch error:", error);
+          return;
         }
+
+        const remotePins: SavedPin[] = data
+          .filter((row: any) => row.pins)
+          .map((row: any) => {
+            const p = row.pins;
+            return {
+              id: p.id,
+              area: p.area,
+              lat: p.lat,
+              lon: p.lon,
+              activity: p.activity,
+              createdAt: new Date(p.created_at).getTime(),
+              canonical_name: p.canonical_name,
+              slug: p.slug,
+              popularity_score: p.popularity_score,
+              tags: p.tags,
+            };
+          });
 
         if (cancelled) return;
         if (remotePins.length > 0) {
