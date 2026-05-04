@@ -1,36 +1,30 @@
 // app/pins/[id]/page.tsx
+// SpotDetailBoard v2 host. Loads the pin, computes suitability, applies the
+// ambient body theme + theme class, then renders <SpotDetailBoard /> which
+// owns its own chrome (top bar) and layout.
+//
+// What used to be 441 lines of hero + map + hourly + weekly + reasons + chips
+// + tags is now ~110 lines that load the data and hand it off.
 
-"use client";
+'use client';
 
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
-import { supabase } from "@/lib/supabaseClient";
-import { PinStore, SavedPin } from "@/components/data/pinStore";
-import { ExtendedWeatherData, getWeatherDescription } from "@/components/utils/fetchForecast";
-import { incrementPopularity } from "@/lib/supabase/incrementPopularity";
-import { SuitabilityResult } from "@/lib/activityScore";
-import { computeSuitabilityForPin } from "@/lib/computeSuitability";
-import { AmbientTheme, deriveTheme } from "@/lib/weatherTheme";
-import { applyTheme, clearTheme } from "@/lib/applyTheme";
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
+import { PinStore, SavedPin } from '@/components/data/pinStore';
+import { ExtendedWeatherData } from '@/components/utils/fetchForecast';
+import { incrementPopularity } from '@/lib/supabase/incrementPopularity';
+import { SuitabilityResult } from '@/lib/activityScore';
+import { computeSuitabilityForPin } from '@/lib/computeSuitability';
+import { AmbientTheme, deriveTheme } from '@/lib/weatherTheme';
+import { applyTheme, clearTheme } from '@/lib/applyTheme';
 import {
   getWeatherThemeClass,
   applyWeatherThemeClass,
   clearWeatherThemeClass,
-} from "@/lib/weatherThemeClass";
-import { deriveHeroContent } from "@/lib/heroContent";
-import { deriveRiskChips } from "@/lib/riskChips";
-import { ActivityIcon } from "@/components/icons/ActivityIcons";
-import { getBackgroundImage, toActivitySlot } from "@/lib/activityMedia";
-import styles from "./page.module.css";
-
-const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
-
-const activityLabels: Record<string, string> = {
-  hike: "Hiking",
-  surf: "Surfing",
-  snowboard: "Snowboarding",
-};
+} from '@/lib/weatherThemeClass';
+import { weatherStateFromCode } from '@/lib/weatherState';
+import SpotDetailBoard from '@/components/spotdetail/SpotDetailBoard';
 
 export default function PinDetailPage() {
   const params = useParams();
@@ -41,6 +35,7 @@ export default function PinDetailPage() {
   const [weather, setWeather] = useState<ExtendedWeatherData | null>(null);
   const [suitability, setSuitability] = useState<SuitabilityResult | null>(null);
   const [ambientTheme, setAmbientTheme] = useState<AmbientTheme | null>(null);
+  const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,12 +46,12 @@ export default function PinDetailPage() {
       try {
         let pinData: SavedPin | null = null;
         if (supabase) {
-          let query = supabase.from("pins").select("*");
-          const isSlug = pinId.includes("-") && pinId.length > 36;
+          let query = supabase.from('pins').select('*');
+          const isSlug = pinId.includes('-') && pinId.length > 36;
           if (isSlug) {
-            query = query.eq("slug", pinId);
+            query = query.eq('slug', pinId);
           } else {
-            query = query.eq("id", pinId);
+            query = query.eq('id', pinId);
           }
           const { data, error: supabaseError } = await query.single();
           if (data && !supabaseError) {
@@ -79,7 +74,7 @@ export default function PinDetailPage() {
           if (localPin) pinData = localPin;
         }
         if (!pinData) {
-          setError("Pin not found");
+          setError('Pin not found');
           setIsLoading(false);
           return;
         }
@@ -89,15 +84,16 @@ export default function PinDetailPage() {
           const computed = await computeSuitabilityForPin(pinData);
           setWeather(computed.weather);
           setSuitability(computed.suitability);
+          setFetchedAt(Date.now());
         } catch (err) {
-          console.error("Failed to compute suitability:", err);
-          setError("Failed to load weather data");
+          console.error('Failed to compute suitability:', err);
+          setError('Failed to load weather data');
           setIsLoading(false);
           return;
         }
       } catch (err) {
-        console.error("Error loading pin detail:", err);
-        setError("An error occurred while loading data");
+        console.error('Error loading pin detail:', err);
+        setError('An error occurred while loading data');
       } finally {
         setIsLoading(false);
       }
@@ -105,7 +101,8 @@ export default function PinDetailPage() {
     if (pinId) loadPinAndWeather();
   }, [pinId]);
 
-  // Apply ambient theme to body and store in state for hero/chips derivation
+  // Apply ambient theme to body and store the result so SpotDetailBoard can
+  // use mood/time when deriving the hero subline.
   useEffect(() => {
     if (!pin || !weather) return;
     const hourlyTimes = weather.hourly?.map((h) => h.time) ?? [];
@@ -119,7 +116,7 @@ export default function PinDetailPage() {
         visibilityM: weather.current.visibilityM,
         precipProb: weather.current.precipProb,
         snowfallCm: weather.current.snowfallCm,
-      })
+      }),
     );
     return () => {
       clearTheme();
@@ -128,314 +125,60 @@ export default function PinDetailPage() {
     };
   }, [pin, weather]);
 
-  const formatTime = (isoString: string) =>
-    new Date(isoString).toLocaleTimeString("en-US", { hour: "numeric", hour12: true });
-
-  const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-
   if (isLoading) {
     return (
-      <main className={styles.container}>
-        <div className={styles.loadingHero}>
-          <div className={styles.heroInner}>
-            <div className={styles.topBar}>
-              <button className={styles.backBtn} onClick={() => router.push("/")}>← Back</button>
-            </div>
-            <div className={styles.heroBody}>
-              <div className={`${styles.skeleton} ${styles.skeletonBadge}`} />
-              <div className={`${styles.skeleton} ${styles.skeletonHeadline}`} />
-              <div className={`${styles.skeleton} ${styles.skeletonScore}`} />
-              <div className={`${styles.skeleton} ${styles.skeletonSubline}`} />
-            </div>
-          </div>
+      <main className="flex min-h-screen items-center justify-center bg-[#0a1220] text-white/60 font-geist">
+        <div className="text-sm font-semibold uppercase tracking-[0.18em]">
+          Loading conditions…
         </div>
       </main>
     );
   }
 
-  if (error || !pin || !weather) {
+  if (error || !pin || !weather || !suitability || !ambientTheme) {
     return (
-      <main className={styles.container}>
-        <div className={styles.hero}>
-          <div className={styles.heroInner}>
-            <div className={styles.topBar}>
-              <button className={styles.backBtn} onClick={() => router.push("/")}>← Back</button>
-            </div>
-          </div>
-        </div>
-        <div className={styles.contentZone}>
-          <div className={`${styles.card} ${styles.errorCard}`}>
-            <p>{error || "Unable to load pin details"}</p>
-          </div>
+      <main className="flex min-h-screen items-center justify-center bg-[#0a1220] text-white font-geist">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm">
+          {error ?? 'Unable to load pin details'}
         </div>
       </main>
     );
   }
 
-  const weatherDesc = getWeatherDescription(weather.current.weatherCode);
-  const activityClass = styles[pin.activity as keyof typeof styles] ?? "";
+  const state = weatherStateFromCode(weather.current.weatherCode);
 
-  const hero = ambientTheme && suitability
-    ? deriveHeroContent(pin.activity, ambientTheme.mood, ambientTheme.time, suitability.label, suitability.reasons)
-    : null;
+  const handleDelete = async () => {
+    // Local first — guarantees the pin is gone from the sidebar even if the
+    // remote write fails or the user is unauthenticated.
+    PinStore.remove(pin.id);
 
-  const chips = ambientTheme
-    ? deriveRiskChips(
-        pin.activity,
-        ambientTheme.mood,
-        ambientTheme.time,
-        weather.current.windKph,
-        weather.current.temperature,
-        weather.current.precipitation,
-        weather.current.waveHeight,
-      )
-    : [];
+    if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase.from('pins').delete().eq('id', pin.id);
+        if (error) {
+          console.warn('Pin removed locally; Supabase delete failed:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+          });
+        }
+      }
+    }
+
+    router.push('/');
+  };
 
   return (
-    <main className={styles.container}>
-
-      {/* ── HERO ZONE ──────────────────────────────────────────────────────── */}
-      <section
-        className={styles.hero}
-        style={{ '--hero-bg-image': `url(${getBackgroundImage(toActivitySlot(pin.activity)).src})` } as React.CSSProperties}
-      >
-        <div className={styles.heroInner}>
-          <div className={styles.topBar}>
-            <button className={styles.backBtn} onClick={() => router.push("/")}>
-              ← Back
-            </button>
-            <span className={styles.locationChip}>
-              📍 {pin.canonical_name || pin.area}
-            </span>
-          </div>
-
-          <div className={styles.heroBody}>
-            <div className={`${styles.activityBadge} ${activityClass}`}>
-              {(() => { const Icon = ActivityIcon[pin.activity]; return Icon ? <Icon size={15} strokeWidth={2.2} /> : null; })()}
-              <span>{activityLabels[pin.activity] || pin.activity}</span>
-            </div>
-
-            {/* Verdict — the answer, first */}
-            {suitability && (
-              <div className={styles.verdictLine}>
-                <span className={`${styles.verdictWord} ${styles[suitability.label]}`}>
-                  {suitability.label}
-                </span>
-              </div>
-            )}
-
-            {/* Headline — cinematic mood context, muted */}
-            <h1 className={styles.headline}>
-              {hero ? hero.headline : (pin.canonical_name || pin.area).toLowerCase()}
-            </h1>
-
-            {/* Score as thin bar-line */}
-            {suitability && (
-              <div
-                className={styles.scoreLine}
-                role="progressbar"
-                aria-valuenow={suitability.score}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-label={`Suitability score: ${suitability.score} out of 100`}
-              >
-                <div className={styles.scoreTrack}>
-                  <div
-                    className={styles.scoreBarFill}
-                    style={{ width: `${suitability.score}%` }}
-                  />
-                </div>
-                <span className={styles.scoreNum}>{suitability.score}/100</span>
-              </div>
-            )}
-
-            {hero?.subline && (
-              <p className={styles.subline}>{hero.subline}</p>
-            )}
-
-            {chips.length > 0 && (
-              <div className={styles.chipsRow} role="list">
-                {chips.map((chip, i) => (
-                  <span key={i} className={`${styles.chip} ${styles[chip.type]}`} role="listitem">
-                    <span aria-hidden="true">{chip.emoji}</span>
-                    {chip.label}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {pin.tags && pin.tags.length > 0 && (
-              <div className={styles.tagsRow}>
-                {pin.tags.map((tag, idx) => (
-                  <span key={idx} className={styles.tag}>{tag}</span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CONTENT ZONE ───────────────────────────────────────────────────── */}
-      <div className={styles.contentZone}>
-
-        {/* Top row: large map + right-column conditions stack */}
-        <section className={styles.topRow} aria-label="Location and current conditions">
-          <div className={styles.mapSection}>
-            <LeafletMap
-              initialCenter={[pin.lat, pin.lon]}
-              allPins={[pin]}
-              onCenterMove={() => {}}
-              singlePinMode={true}
-            />
-          </div>
-
-          <aside className={styles.sideColumn} aria-label="Conditions and score breakdown">
-            <div className={`${styles.card} ${styles.sideCard}`}>
-              <h2 className={styles.cardTitle}>Current Conditions</h2>
-              <div className={styles.currentWeather}>
-                <div className={styles.tempSection}>
-                  <div className={styles.tempValue}>
-                    {weather.current.temperature.toFixed(0)}°C
-                  </div>
-                  <div className={styles.tempLabel}>
-                    Feels like {weather.current.apparentTemperature.toFixed(0)}°C · {weatherDesc}
-                  </div>
-                </div>
-                <div className={styles.weatherGrid}>
-                  <div className={styles.weatherStat}>
-                    <div className={styles.statLabel}>Wind</div>
-                    <div className={styles.statValue}>
-                      {weather.current.windKph.toFixed(1)}
-                      <span className={styles.unit}> km/h</span>
-                    </div>
-                  </div>
-                  <div className={styles.weatherStat}>
-                    <div className={styles.statLabel}>Precipitation</div>
-                    <div className={styles.statValue}>
-                      {weather.current.precipitation.toFixed(1)}
-                      <span className={styles.unit}> mm</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className={`${styles.card} ${styles.sideCard}`}>
-              <h2 className={styles.cardTitle}>Why this score</h2>
-              {suitability?.reasons.length ? (
-                <ul className={styles.reasonsList}>
-                  {suitability.reasons.map((reason, idx) => (
-                    <li key={idx}>{reason}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className={styles.mutedText}>No breakdown available.</p>
-              )}
-            </div>
-          </aside>
-        </section>
-
-        {/* Wave Conditions (surf only) — full width */}
-        {pin.activity === "surf" && (
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Wave Conditions</h2>
-            <div className={styles.waveGrid}>
-              <div className={styles.weatherStat}>
-                <div className={styles.statLabel}>Wave Height</div>
-                <div className={styles.statValue}>
-                  {weather.current.waveHeight != null
-                    ? <>{weather.current.waveHeight.toFixed(2)}<span className={styles.unit}> m</span></>
-                    : <span className={styles.unit}>N/A</span>}
-                </div>
-              </div>
-              <div className={styles.weatherStat}>
-                <div className={styles.statLabel}>Swell Period</div>
-                <div className={styles.statValue}>
-                  {weather.current.swellPeriod != null
-                    ? <>{weather.current.swellPeriod.toFixed(1)}<span className={styles.unit}> s</span></>
-                    : <span className={styles.unit}>N/A</span>}
-                </div>
-              </div>
-              <div className={styles.weatherStat}>
-                <div className={styles.statLabel}>Wind Speed</div>
-                <div className={styles.statValue}>
-                  {weather.current.windKph.toFixed(1)}
-                  <span className={styles.unit}> km/h</span>
-                </div>
-              </div>
-              <div className={styles.weatherStat}>
-                <div className={styles.statLabel}>Wind Direction</div>
-                <div className={styles.statValue}>
-                  {weather.current.windDirection != null
-                    ? <>{weather.current.windDirection.toFixed(0)}<span className={styles.unit}>°</span></>
-                    : <span className={styles.unit}>N/A</span>}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Hourly Forecast — full width, horizontal scroll */}
-        <div className={`${styles.card} ${styles.hourlySection}`}>
-          <h2 className={styles.cardTitle}>Next 24 Hours</h2>
-          <div className={styles.hourlyScroll}>
-            {weather.hourly.map((hour, idx) => (
-              <div key={idx} className={styles.hourlyItem}>
-                <div className={styles.hourlyTime}>{formatTime(hour.time)}</div>
-                <div className={styles.hourlyTemp}>{hour.temperature.toFixed(0)}°</div>
-                <div className={styles.hourlyDetail}>💨 {hour.windKph.toFixed(1)} km/h</div>
-                <div className={styles.hourlyDetail}>💧 {hour.precipitation.toFixed(1)} mm</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 7-Day Forecast — full width */}
-        <div className={styles.card}>
-          <h2 className={styles.cardTitle}>7-Day Forecast</h2>
-          <div className={styles.dailyList}>
-            {(() => {
-              const weekMin = Math.min(...weather.daily.map((d) => d.tempMin));
-              const weekMax = Math.max(...weather.daily.map((d) => d.tempMax));
-              const range = weekMax - weekMin;
-              return weather.daily.map((day, idx) => {
-                // Position the fill bar within the week's overall range so each
-                // row visually shows where this day's min-max sits. Color interpolates
-                // by the day's mean position: cool → warm across the week.
-                const left = range > 0 ? ((day.tempMin - weekMin) / range) * 100 : 0;
-                const width = range > 0 ? ((day.tempMax - day.tempMin) / range) * 100 : 100;
-                const meanPos = range > 0 ? ((day.tempMin + day.tempMax) / 2 - weekMin) / range : 0.5;
-                return (
-                  <div key={idx} className={styles.dailyRow}>
-                    <div className={styles.dailyDate}>{formatDate(day.date)}</div>
-                    <div className={styles.dailyBar}>
-                      <div
-                        className={styles.dailyBarFill}
-                        style={{
-                          left: `${left}%`,
-                          width: `${Math.max(width, 4)}%`,
-                          '--day-pos': meanPos.toFixed(3),
-                        } as React.CSSProperties}
-                      />
-                    </div>
-                    <div className={styles.dailyTemps}>
-                      <span className={styles.dailyHigh}>{day.tempMax.toFixed(0)}°</span>
-                      <span className={styles.dailySep}>/</span>
-                      <span className={styles.dailyLow}>{day.tempMin.toFixed(0)}°</span>
-                    </div>
-                  </div>
-                );
-              });
-            })()}
-          </div>
-        </div>
-
-      </div>
-    </main>
+    <SpotDetailBoard
+      pin={pin}
+      weather={weather}
+      suitability={suitability}
+      ambientTheme={ambientTheme}
+      state={state}
+      fetchedAt={fetchedAt}
+      onDelete={handleDelete}
+    />
   );
 }

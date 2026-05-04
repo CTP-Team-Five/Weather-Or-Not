@@ -5,9 +5,11 @@
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, useEffect, useCallback, useRef } from "react";
-import { HiPlus, HiArrowsPointingOut } from "react-icons/hi2";
+import { HiArrowsPointingIn } from "react-icons/hi2";
 import MapSearch, { SearchResult } from "@/components/MapSearch";
 import MapPinManager from "@/components/MapPinManager";
+import PlaceMenu, { PlacementActivity } from "@/components/map/PlaceMenu";
+import PinCursor from "@/components/map/PinCursor";
 import { generateCanonicalName, inferTags } from "@/lib/generateCanonicalName";
 import { generateSlug } from "@/lib/generateSlug";
 import { supabase } from "@/lib/supabaseClient";
@@ -39,9 +41,29 @@ function MapPageContent() {
   const [mapRef, setMapRef] = useState<any>(null);
   const [allSavedPins, setAllSavedPins] = useState<SavedPin[]>([]);
   const [pinsLoaded, setPinsLoaded] = useState(false);
-  const hasAutoCentered = useRef(false);
+  // hasAutoCentered ref was guarding the now-removed double-recenter
+  // effect; LeafletMap's InitialAutoFit owns mount centering now.
   const [draftPin, setDraftPin] = useState<LatLngTuple | null>(null);
   const [pendingSearchResult, setPendingSearchResult] = useState<SearchResult | null>(null);
+
+  /* ── Placement state — activity-first flow ───────────────────────────── */
+
+  // Placement activity initialisation, in priority order:
+  //   1. Explicit ?activity= on the URL (handed off from homepage hero CTA).
+  //   2. Otherwise null — the user picks from the always-visible PlaceMenu.
+  // On mount, if neither is set we read the saved default-activity
+  // preference and set it as a hint (still null = no placement, but the
+  // PlaceMenu segmented control highlights the user's preferred chip when
+  // they hover / focus). Implementation note: we don't auto-enter
+  // placement mode just because the user has a default; that would be
+  // jarring on every map visit.
+  const [placementActivity, setPlacementActivity] = useState<PlacementActivity | null>(() => {
+    const a = searchParams.get('activity');
+    if (a === 'hike' || a === 'surf' || a === 'snowboard') return a;
+    return null;
+  });
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [cursorOnMap, setCursorOnMap] = useState(false);
 
   /* ── Search-result navigation intent (from homepage hero) ──────────────── */
 
@@ -100,27 +122,40 @@ function MapPageContent() {
     const loadSavedPins = async () => {
       try {
         if (supabase) {
-          const { data, error } = await supabase
-            .from("pins")
-            .select("*")
-            .order("created_at", { ascending: false });
+          // Only fetch this user's pins — don't dump every pin in the
+          // public table to anyone who lands on /map. If signed out,
+          // localStorage is the only legitimate source of "the pins on
+          // this device" and we skip the remote query entirely.
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data, error } = await supabase
+              .from("user_pins")
+              .select("pin_id, pins(*)")
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false });
 
-          if (!error && data) {
-            const pins: SavedPin[] = data.map((p: any) => ({
-              id: p.id,
-              area: p.area,
-              lat: p.lat,
-              lon: p.lon,
-              activity: p.activity,
-              createdAt: new Date(p.created_at).getTime(),
-              canonical_name: p.canonical_name,
-              slug: p.slug,
-              popularity_score: p.popularity_score,
-              tags: p.tags,
-            }));
-            setAllSavedPins(pins);
-            setPinsLoaded(true);
-            return;
+            if (!error && data) {
+              const pins: SavedPin[] = data
+                .filter((row: any) => row.pins)
+                .map((row: any) => {
+                  const p = row.pins;
+                  return {
+                    id: p.id,
+                    area: p.area,
+                    lat: p.lat,
+                    lon: p.lon,
+                    activity: p.activity,
+                    createdAt: new Date(p.created_at).getTime(),
+                    canonical_name: p.canonical_name,
+                    slug: p.slug,
+                    popularity_score: p.popularity_score,
+                    tags: p.tags,
+                  };
+                });
+              setAllSavedPins(pins);
+              setPinsLoaded(true);
+              return;
+            }
           }
         }
         setAllSavedPins(PinStore.all());
@@ -156,25 +191,21 @@ function MapPageContent() {
     setMapNavigationIntent({ type: 'none' });
   }, [mapRef, mapNavigationIntent]);
 
-  /* ── Auto-center once on mount (skipped when arriving from search) ──────── */
-
-  useEffect(() => {
-    if (!mapRef || !pinsLoaded || hasAutoCentered.current) return;
-    if (arrivedFromSearch.current) {
-      hasAutoCentered.current = true;
-      return;
-    }
-    hasAutoCentered.current = true;
-    const timer = setTimeout(() => {
-      mapRef.invalidateSize();
-      handleRecenter();
-    }, 150);
-    return () => clearTimeout(timer);
-  }, [mapRef, pinsLoaded, handleRecenter]);
+  /* The page used to call handleRecenter() 150ms after pin load on top of
+     LeafletMap's own InitialAutoFit — that meant the map jumped twice on
+     entry: once during the initial fit, once 150ms later. Removed; the
+     LeafletMap's InitialAutoFit (with animate: false) is the single source
+     of truth for the on-mount centering. The user can press the bottom-
+     right "Show all" button to refit any time after that. */
 
   /* ── Pin placement ────────────────────────────────────────────────────────── */
 
-  const handlePin = async (pos: LatLngTuple, searchResult?: SearchResult | null, searchLabel?: string | null) => {
+  const handlePin = async (
+    pos: LatLngTuple,
+    searchResult?: SearchResult | null,
+    searchLabel?: string | null,
+    activity?: PlacementActivity | null,
+  ) => {
     const [lat, lon] = pos;
     try {
       const res = await fetch(
@@ -196,6 +227,59 @@ function MapPageContent() {
       const slug = generateSlug(canonicalName);
       const tags = inferTags(reverseData);
 
+      // Activity-first flow: save directly, skip /rating, jump straight to
+      // the SpotDetailBoard v2 view at /pins/[id].
+      if (activity) {
+        const newPin: SavedPin = {
+          id: crypto.randomUUID(),
+          name: pinName,
+          area: pinName,
+          lat,
+          lon,
+          activity,
+          createdAt: Date.now(),
+          canonical_name: canonicalName,
+          slug,
+          popularity_score: 1,
+          tags,
+        };
+        PinStore.add(newPin);
+
+        if (supabase) {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { error } = await supabase.from("pins").insert({
+              id: newPin.id,
+              area: newPin.area,
+              lat: newPin.lat,
+              lon: newPin.lon,
+              activity: newPin.activity,
+              canonical_name: newPin.canonical_name,
+              slug: newPin.slug,
+              popularity_score: newPin.popularity_score,
+              tags: newPin.tags,
+            });
+            if (error) {
+              console.warn("Pin saved locally; Supabase sync failed:", {
+                code: error.code,
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+              });
+            } else {
+              const { error: linkError } = await supabase
+                .from("user_pins")
+                .insert({ user_id: user.id, pin_id: newPin.id });
+              if (linkError) console.warn("Pin saved; user link failed:", linkError);
+            }
+          }
+        }
+
+        router.push(`/pins/${newPin.id}`);
+        return;
+      }
+
+      // Legacy fallback (no activity selected): keep /rating reachable.
       router.push(
         `/rating?name=${encodeURIComponent(pinName)}&area=${encodeURIComponent(pinName)}&lat=${lat}&lon=${lon}&canonical=${encodeURIComponent(canonicalName)}&slug=${encodeURIComponent(slug)}&tags=${encodeURIComponent(tags.join(","))}`
       );
@@ -211,10 +295,12 @@ function MapPageContent() {
     const pos: LatLngTuple = [center.lat, center.lng];
     const searchResult = pendingSearchResult;
     const searchLabel = pendingSearchLabel;
+    const activity = placementActivity;
     setDraftPin(null);
     setPendingSearchResult(null);
     setPendingSearchLabel(null);
-    await handlePin(pos, searchResult, searchLabel);
+    setPlacementActivity(null);
+    await handlePin(pos, searchResult, searchLabel, activity);
   };
 
   const handleFocusPin = (pinId: string) => {
@@ -241,11 +327,25 @@ function MapPageContent() {
 
   return (
     <main className={styles.mapRoot}>
-      <div className={styles.mapWrap}>
+      <div
+        className={`${styles.mapWrap} ${placementActivity ? 'placement-mode' : ''}`}
+        onMouseLeave={() => setCursorOnMap(false)}
+        onMouseMove={(e) => {
+          if (!placementActivity) return;
+          setCursorPos({ x: e.clientX, y: e.clientY });
+          // Only show the teardrop cursor when the mouse is over the actual
+          // Leaflet map surface — UI overlays (search bar, place menu, pin
+          // manager, recenter button) should keep their native cursor.
+          const target = e.target as HTMLElement | null;
+          const onMapSurface = !!target?.closest('.leaflet-container');
+          setCursorOnMap(onMapSurface);
+        }}
+      >
 
         {/* ── Search bar — top center ───────────────────────────────────────── */}
         <div className={styles.searchBar}>
           <MapSearch
+            autoFocus={searchParams.get('focus') === 'search'}
             onSelect={(coords, searchResult) => {
               setPendingSearchResult(searchResult || null);
               setDraftPin(null);
@@ -296,24 +396,62 @@ function MapPageContent() {
           onDelete={handleDeletePin}
         />
 
-        {/* ── Drop Pin CTA — bottom center ─────────────────────────────────── */}
+        {/* ── Place / Drop CTA — bottom center ─────────────────────────────── */}
         <div className={styles.bottomCenter}>
-          <button className={styles.pinBtn} onClick={handleDropPin}>
-            <span className={styles.pinBtnPlus}>
-              <HiPlus style={{ width: 14, height: 14 }} />
-            </span>
-            Pin This Spot
-          </button>
+          <PlaceMenu
+            placementActivity={placementActivity}
+            onPick={(a) => setPlacementActivity(a)}
+            onCancel={() => setPlacementActivity(null)}
+            onDrop={handleDropPin}
+          />
         </div>
 
-        {/* ── Recenter — bottom right ──────────────────────────────────────── */}
+        {/* ── Custom pin cursor — only during placement ────────────────────── */}
+        <PinCursor
+          activity={placementActivity}
+          x={cursorPos.x}
+          y={cursorPos.y}
+          visible={!!placementActivity && cursorOnMap}
+        />
+
+        {/* ── Recenter — bottom right. Pill with icon + label so it can't
+            be mistaken for a fullscreen toggle. The icon points inward
+            ('fit / contract') to match the action: bring all pins into
+            view. */}
         <div className={styles.bottomRight}>
           <button
-            className={styles.controlBtn}
+            type="button"
             onClick={handleRecenter}
-            title="Fit all spots"
+            aria-label="Show all pins on the map"
+            title="Show all pins"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 14px',
+              fontSize: 13,
+              fontWeight: 600,
+              color: '#0f172a',
+              background: 'rgba(255,255,255,0.95)',
+              border: '1px solid rgba(15,23,42,0.08)',
+              borderRadius: 12,
+              cursor: 'pointer',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              boxShadow: '0 8px 24px -8px rgba(15,23,42,0.18)',
+              transition: 'background 150ms, transform 150ms',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#ffffff';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.95)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
-            <HiArrowsPointingOut style={{ width: 18, height: 18 }} />
+            <HiArrowsPointingIn style={{ width: 16, height: 16 }} />
+            Show all
           </button>
         </div>
       </div>

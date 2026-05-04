@@ -218,6 +218,21 @@
     padding-top: 0;
   }
 
+  /* When the user is in placement mode on /map, hide the native cursor on
+     the actual map surface so the custom <PinCursor> teardrop is the only
+     visible cursor there. The !important overrides Leaflet's grab/grabbing
+     cursors set on .leaflet-container.
+
+     Crucially, we DO NOT hide the cursor on UI overlays (search bar, place
+     menu, pin manager, etc.) — over those, the native pointer/text cursor
+     should be visible so the user can tell they're hovering an interactive
+     control. The /map page also flips PinCursor off when the mouse leaves
+     the leaflet-container, so the teardrop disappears in those zones too. */
+  .placement-mode .leaflet-container,
+  .placement-mode .leaflet-container * {
+    cursor: none !important;
+  }
+
   * {
     box-sizing: border-box;
     margin: 0;
@@ -360,6 +375,34 @@
   max-height: 100%;
 }
 
+/* ── Saved-pin preview popup styling ──────────────────────────────────────
+   The default Leaflet popup chrome is a hard white pill — fine for one-line
+   tooltips, ugly for our 280px PinPreviewCard. Strip the chrome on .spot-
+   preview-popup so the card itself is the visible surface. */
+.leaflet-popup.spot-preview-popup .leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 14px !important;
+  background: white !important;
+  box-shadow: 0 20px 50px -16px rgba(15, 23, 42, 0.35) !important;
+  overflow: hidden !important;
+}
+.leaflet-popup.spot-preview-popup .leaflet-popup-content {
+  margin: 0 !important;
+  width: auto !important;
+  line-height: 1.4;
+}
+.leaflet-popup.spot-preview-popup .leaflet-popup-tip {
+  background: white !important;
+  box-shadow: 0 4px 8px -2px rgba(15, 23, 42, 0.15) !important;
+}
+/* Leaflet's default `a { color: #0078A8 }` for popup links steamrolls our
+   Tailwind text-white on the View button. Reset link styling inside the
+   preview card so children control their own colours. */
+.leaflet-popup.spot-preview-popup a {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
 /* ─────────────────────────────────────────────────────────────────────────────
    ANIMATIONS
 ───────────────────────────────────────────────────────────────────────────── */
@@ -372,5 +415,102 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ── SpotDetailBoard v2 keyframes ──────────────────────────────────────────
+   Slow ken-burns on the hero photo plus staggered slide-up entrances for
+   the two glass plates. All gated on prefers-reduced-motion: no-preference
+   so users with reduced-motion settings see static positions.
+─────────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes kenBurns {
+    0% {
+      transform: scale(1) translate(0, 0);
+    }
+    100% {
+      transform: scale(1.08) translate(-1%, -1%);
+    }
+  }
+
+  @keyframes heroIn {
+    from {
+      opacity: 0;
+      transform: translateY(28px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes summaryIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Sidebar VerdictPill — pulsing dot on GO rows. The dot's `currentColor` is
+     set by the pill's text colour, and box-shadow expands and fades. */
+  @keyframes dotPing {
+    0%   { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+    70%  { box-shadow: 0 0 0 8px transparent; opacity: 0.6; }
+    100% { box-shadow: 0 0 0 0 transparent;  opacity: 1; }
+  }
+
+  /* SpotDetailBoard v2 mount flash — full-viewport tint that fades in then
+     out when the user opens any /pins/[id]. Background colour is set inline
+     per-verdict (green / yellow / red); this keyframe just controls opacity. */
+  @keyframes pinDetailFlash {
+    0%   { opacity: 0; }
+    20%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* Used by /pins/[id]/report (full-report view) */
+  @keyframes verdictReveal {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+      letter-spacing: -0.05em;
+      filter: blur(20px);
+    }
+    50% {
+      opacity: 1;
+      filter: blur(0);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+      letter-spacing: -0.03em;
+      filter: blur(0);
+    }
+  }
+
+  @keyframes fadeOutOverlay {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }

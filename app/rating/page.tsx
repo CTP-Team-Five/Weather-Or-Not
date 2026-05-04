@@ -91,28 +91,41 @@ function RatingPageContent() {
     PinStore.add(newPin);
 
     if (supabase) {
-      const { error } = await supabase.from("pins").insert({
-        id: newPin.id,
-        area: newPin.area,
-        lat: newPin.lat,
-        lon: newPin.lon,
-        activity: newPin.activity,
-        canonical_name: newPin.canonical_name,
-        slug: newPin.slug,
-        popularity_score: newPin.popularity_score,
-        tags: newPin.tags,
-      });
-      if (error) {
-        console.error("Failed to save pin to Supabase:", error);
-      } else {
-        // Link pin to current user via join table
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
+      // Check auth before attempting the write — anon inserts are blocked by
+      // RLS and surface as an empty error object that's useless to log. If
+      // the user isn't signed in (e.g. running locally without a session),
+      // we skip the remote write entirely and rely on the localStorage save.
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const { error } = await supabase.from("pins").insert({
+          id: newPin.id,
+          area: newPin.area,
+          lat: newPin.lat,
+          lon: newPin.lon,
+          activity: newPin.activity,
+          canonical_name: newPin.canonical_name,
+          slug: newPin.slug,
+          popularity_score: newPin.popularity_score,
+          tags: newPin.tags,
+        });
+        if (error) {
+          // console.warn keeps the dev error overlay from popping; the pin
+          // is already saved locally so the user flow continues.
+          console.warn("Pin saved locally; Supabase sync failed:", {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+          });
+        } else {
           const { error: linkError } = await supabase.from("user_pins").insert({
             user_id: user.id,
             pin_id: newPin.id,
           });
-          if (linkError) console.error("Failed to link pin to user:", linkError);
+          if (linkError) {
+            console.warn("Pin saved; user link failed:", linkError);
+          }
         }
       }
     }

@@ -9,7 +9,9 @@
 .layout {
   display: flex;
   flex: 1;
-  padding-top: 52px; /* TopBar height */
+  /* The sticky WeatherTopBar sits in-flow above this in the .page flex
+     column, so no top padding is needed — adding any creates a visible
+     grey gap below the bar before the hero starts. */
 }
 
 .main {

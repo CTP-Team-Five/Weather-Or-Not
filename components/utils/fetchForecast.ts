@@ -108,7 +108,11 @@ export async function fetchForecast(
 
     const res = await fetch(url.toString());
     if (!res.ok) {
-      console.error('Open-Meteo API error:', res.status, res.statusText);
+      // 429 (rate limit) and 5xx are expected from Open-Meteo's free tier
+      // when we burn through the daily quota. Returning null lets callers
+      // fall back to cached scores; we warn (not error) so Next.js's dev
+      // overlay doesn't treat a recoverable miss as a crash.
+      console.warn('Open-Meteo fetch failed:', res.status, res.statusText);
       return null;
     }
 
@@ -186,7 +190,7 @@ export async function fetchForecast(
       hourlyUnits: data.hourly_units ?? {},
     };
   } catch (err) {
-    console.error('Failed to fetch forecast:', err);
+    console.warn('Failed to fetch forecast:', err);
     return null;
   }
 }

@@ -4,7 +4,7 @@
 
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import "@/components/leafletPins.css";
 
 type LatLngTuple = [number, number];
@@ -45,18 +45,31 @@ import { activityPinSvg } from "@/components/icons/ActivityIcons";
 
 const DEFAULT_INNER_SVG = '<svg x="13" y="11" width="10" height="10" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="6"/></svg>';
 
-function makePinSvg(color: string, innerSvg: string): string {
+// Pulsing verdict dot — sits in the top-right notch of the teardrop.
+// SMIL animations keep us from needing extra CSS injection for divIcon HTML.
+function verdictDotSvg(verdictColor: string): string {
+  return (
+    `<circle cx="29" cy="7" r="4.5" fill="${verdictColor}" stroke="white" stroke-width="2">` +
+    '<animate attributeName="r" values="4.5;6.5;4.5" dur="1.5s" repeatCount="indefinite"/>' +
+    '<animate attributeName="opacity" values="1;0.55;1" dur="1.5s" repeatCount="indefinite"/>' +
+    '</circle>'
+  );
+}
+
+function makePinSvg(color: string, innerSvg: string, verdictColor?: string | null): string {
+  const dot = verdictColor ? verdictDotSvg(verdictColor) : '';
   return (
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 48" width="36" height="48"' +
     ' style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))">' +
     '<path d="M18 46C18 46 34 29 34 17C34 8.2 26.8 1 18 1C9.2 1 2 8.2 2 17C2 29 18 46 18 46Z"' +
     ` fill="${color}" stroke="white" stroke-width="2.5"/>` +
     innerSvg +
+    dot +
     '</svg>'
   );
 }
 
-function createPinIcon(activity?: string): L.DivIcon {
+function createPinIcon(activity?: string, verdictColor?: string | null): L.DivIcon {
   const color = activity ? (PIN_COLORS[activity] || '#6366f1') : '#6366f1';
   const innerSvg = activity ? (activityPinSvg[activity] || DEFAULT_INNER_SVG) : DEFAULT_INNER_SVG;
   return L.divIcon({
@@ -64,9 +77,19 @@ function createPinIcon(activity?: string): L.DivIcon {
     iconSize: [36, 48],
     iconAnchor: [18, 48],
     popupAnchor: [0, -44],
-    html: makePinSvg(color, innerSvg),
+    html: makePinSvg(color, innerSvg, verdictColor),
   });
 }
+
+const VERDICT_DOT_COLOR: Record<'GO' | 'MAYBE' | 'SKIP', string> = {
+  GO:    '#14b88a',
+  MAYBE: '#eab308',
+  SKIP:  '#ef4444',
+};
+
+import PinPreviewCard from "./map/PinPreviewCard";
+import { DashboardCache } from "./data/viewCache";
+import { LABEL_TO_VERDICT, type Verdict } from "@/lib/decision";
 
 const ACTIVITY_LABELS: Record<string, string> = {
   hike: 'Hiking',
@@ -123,11 +146,16 @@ function InitialAutoFit({ pins, shouldFit }: { pins: SavedPin[]; shouldFit: bool
     const timer = setTimeout(() => {
       map.invalidateSize();
       setTimeout(() => {
+        // animate: false so the user lands on the fitted view immediately —
+        // no jarring pan from the default centre. fitBounds() always
+        // centres on the bounding-box centroid of all pins, so the
+        // "guarantee to spawn in the middle of all the pins" promise
+        // holds.
         if (pins.length === 1) {
-          map.setView([pins[0].lat, pins[0].lon], 12);
+          map.setView([pins[0].lat, pins[0].lon], 12, { animate: false });
         } else {
           const bounds = L.latLngBounds(pins.map((p) => [p.lat, p.lon]));
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12, animate: false });
         }
       }, 50);
     }, 100);
@@ -174,13 +202,33 @@ export default function LeafletMap({
 
   const containerHeight = height || (singlePinMode ? "400px" : "100%");
 
-  // Fixed-size pin icons — no zoom dependency
+  // Fixed-size pin icons — no zoom dependency. These are the verdict-less
+  // base icons used for the search-result marker and the draft pin.
   const pinIcons = useMemo(() => ({
     default:   createPinIcon(),
     hike:      createPinIcon('hike'),
     surf:      createPinIcon('surf'),
     snowboard: createPinIcon('snowboard'),
   }), []);
+
+  // Per-pin verdicts read from DashboardCache (populated by the homepage
+  // compute pass). Each saved pin gets its own divIcon with a pulsing
+  // GO/MAYBE/SKIP dot in the top-right notch.
+  const [verdictMap, setVerdictMap] = useState<Map<string, Verdict>>(new Map());
+  useEffect(() => {
+    const refresh = () => {
+      const cache = DashboardCache.get();
+      if (!cache) return;
+      const next = new Map<string, Verdict>();
+      cache.computed.forEach((computed, pinId) => {
+        if (computed) next.set(pinId, LABEL_TO_VERDICT[computed.suitability.label]);
+      });
+      setVerdictMap(next);
+    };
+    refresh();
+    window.addEventListener('storage', refresh);
+    return () => window.removeEventListener('storage', refresh);
+  }, []);
 
   return (
     <div
@@ -249,25 +297,27 @@ export default function LeafletMap({
           </Marker>
         )}
 
-        {/* All saved pins */}
-        {allPins.map((pin) => (
-          <Marker
-            key={pin.id}
-            position={[pin.lat, pin.lon]}
-            icon={pinIcons[pin.activity as keyof typeof pinIcons] || pinIcons.default}
-          >
-            <Popup>
-              <div style={{ minWidth: "140px" }}>
-                <div style={{ fontWeight: 600, fontSize: "14px", marginBottom: "2px", color: "#1e293b" }}>
-                  {pin.area}
-                </div>
-                <div style={{ fontSize: "12px", color: "#64748b" }}>
-                  {ACTIVITY_LABELS[pin.activity] || pin.activity}
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {/* All saved pins — rich preview popup with verdict/score, current
+            conditions, and CTAs into the report and detail views. Each pin's
+            icon is built per-render so the verdict dot's colour reflects the
+            latest computed score. Re-keyed on verdict so React mounts a new
+            Marker when the verdict flips (Leaflet caches divIcon HTML). */}
+        {allPins.map((pin) => {
+          const verdict = verdictMap.get(pin.id);
+          const dotColor = verdict ? VERDICT_DOT_COLOR[verdict] : null;
+          const icon = createPinIcon(pin.activity, dotColor);
+          return (
+            <Marker
+              key={`${pin.id}-${verdict ?? 'pending'}`}
+              position={[pin.lat, pin.lon]}
+              icon={icon}
+            >
+              <Popup className="spot-preview-popup" minWidth={280} maxWidth={300} closeButton={false}>
+                <PinPreviewCard pin={pin} />
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
     </div>
   );

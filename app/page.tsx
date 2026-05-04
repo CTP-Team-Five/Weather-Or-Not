@@ -4,18 +4,14 @@
 
 import { PinStore, SavedPin } from "@/components/data/pinStore";
 import { DashboardCache } from "@/components/data/viewCache";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/lib/useAuth";
 import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
-import { buildDecision, Decision } from "@/lib/decision";
-import HomeTopBar from "@/components/home/HomeTopBar";
+import WeatherTopBar from "@/components/spotdetail/WeatherTopBar";
 import HomeSidebar from "@/components/home/HomeSidebar";
 import HomepageHero from "@/components/home/HomepageHero";
-import SelectedSpotBoard from "@/components/home/SelectedSpotBoard";
-import HomeOnboarding from "@/components/home/HomeOnboarding";
-import BackgroundImage from "@/components/BackgroundImage";
 import styles from "./page.module.css";
 
 // Merge local + remote pins: remote wins on id collision, local-only pins kept, sorted newest first.
@@ -34,8 +30,6 @@ export default function Home() {
   const [computingAll, setComputingAll] = useState(true);
   const [computedMap, setComputedMap] = useState<Map<string, ComputedSuitability | null>>(new Map());
   const computeKeyRef = useRef("");
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [initialPinsSettled, setInitialPinsSettled] = useState(false);
 
   // Shared compute pass — key-based dedup avoids Supabase race condition.
   useEffect(() => {
@@ -68,19 +62,20 @@ export default function Home() {
   useEffect(() => {
     let cancelled = false;
 
-    // Stale-while-revalidate: hydrate from last-known cache for instant paint.
-    // The remote fetch below supersedes this once it returns.
+    // Pin list is always sourced from localStorage so newly-added pins from
+    // /rating show up immediately. Cached scores hydrate computedMap so the
+    // verdict pills paint instantly while the live compute pass runs in the
+    // background; the remote Supabase fetch below merges in any extras.
     const cached = DashboardCache.get();
-    if (cached && cached.pins.length > 0) {
-      setSavedPins(cached.pins);
-      setComputedMap(cached.computed);
-    } else {
-      setSavedPins(PinStore.all());
-    }
+    setSavedPins(PinStore.all());
+    if (cached) setComputedMap(cached.computed);
     setPinsLoaded(true);
 
-    if (!supabase) {
-      setInitialPinsSettled(true);
+    // No Supabase OR no signed-in user → "your spots" is whatever this
+    // device has saved locally. Do not fetch the public pins table for
+    // anonymous visitors — those are other users' spots, and showing
+    // them as YOUR SPOTS to a stranger is a privacy + UX bug.
+    if (!supabase || !user) {
       return () => {
         cancelled = true;
       };
@@ -88,61 +83,34 @@ export default function Home() {
 
     const loadRemotePins = async () => {
       try {
-        let remotePins: SavedPin[] = [];
+        const { data, error } = await supabase!
+          .from("user_pins")
+          .select("pin_id, pins(*)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
 
-        if (user) {
-          const { data, error } = await supabase!
-            .from("user_pins")
-            .select("pin_id, pins(*)")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false });
-
-          if (error || !data) {
-            if (error) console.error("Supabase pins fetch error:", error);
-            return;
-          }
-
-          remotePins = data
-            .filter((row: any) => row.pins)
-            .map((row: any) => {
-              const p = row.pins;
-              return {
-                id: p.id,
-                area: p.area,
-                lat: p.lat,
-                lon: p.lon,
-                activity: p.activity,
-                createdAt: new Date(p.created_at).getTime(),
-                canonical_name: p.canonical_name,
-                slug: p.slug,
-                popularity_score: p.popularity_score,
-                tags: p.tags,
-              };
-            });
-        } else {
-          const { data, error } = await supabase!
-            .from("pins")
-            .select("*")
-            .order("created_at", { ascending: false });
-
-          if (error || !data) {
-            if (error) console.error("Supabase pins fetch error:", error);
-            return;
-          }
-
-          remotePins = data.map((p: any) => ({
-            id: p.id,
-            area: p.area,
-            lat: p.lat,
-            lon: p.lon,
-            activity: p.activity,
-            createdAt: new Date(p.created_at).getTime(),
-            canonical_name: p.canonical_name,
-            slug: p.slug,
-            popularity_score: p.popularity_score,
-            tags: p.tags,
-          }));
+        if (error || !data) {
+          if (error) console.error("Supabase pins fetch error:", error);
+          return;
         }
+
+        const remotePins: SavedPin[] = data
+          .filter((row: any) => row.pins)
+          .map((row: any) => {
+            const p = row.pins;
+            return {
+              id: p.id,
+              area: p.area,
+              lat: p.lat,
+              lon: p.lon,
+              activity: p.activity,
+              createdAt: new Date(p.created_at).getTime(),
+              canonical_name: p.canonical_name,
+              slug: p.slug,
+              popularity_score: p.popularity_score,
+              tags: p.tags,
+            };
+          });
 
         if (cancelled) return;
         if (remotePins.length > 0) {
@@ -150,8 +118,6 @@ export default function Home() {
         }
       } catch (err) {
         console.error("Unexpected error loading pins:", err);
-      } finally {
-        if (!cancelled) setInitialPinsSettled(true);
       }
     };
 
@@ -162,78 +128,86 @@ export default function Home() {
     };
   }, [user]);
 
-  // Hydrate activeId from localStorage once on mount.
+  // Clear any stale activeId from localStorage on mount. The homepage no
+  // longer surfaces a selected-pin overlay — clicking a pin navigates to
+  // /pins/[id] (SpotDetailBoard v2). This wipes the legacy overlay state
+  // for users who had it set before the redesign.
   useEffect(() => {
-    const storedId = PinStore.activeId.get();
-    if (storedId) setActiveId(storedId);
+    PinStore.activeId.clear();
   }, []);
-
-  // After initial pin set settles, drop stale activeId if the pin is gone.
-  useEffect(() => {
-    if (!initialPinsSettled) return;
-    if (!activeId) return;
-    const stillExists = savedPins.some((p) => p.id === activeId);
-    if (!stillExists) {
-      PinStore.activeId.clear();
-      setActiveId(null);
-    }
-  }, [initialPinsSettled, activeId, savedPins]);
-
-  // Build decision for the active pin
-  const decision: Decision | null = useMemo(() => {
-    if (!activeId) return null;
-    const pin = savedPins.find((p) => p.id === activeId);
-    if (!pin) return null;
-    const computed = computedMap.get(activeId);
-    if (!computed) return null;
-    return buildDecision(pin, computed);
-  }, [activeId, savedPins, computedMap]);
 
   const hasPins = pinsLoaded && savedPins.length > 0;
 
-  // Select a pin — sticky, no toggle. Only logo resets.
+  // Homepage bar is always plain frosted glass. The reactive video layer
+  // only fires inside a specific pin (/pins/[id]) where it represents
+  // *that* pin's live conditions — there it's an informative signal.
+  // Aggregating across all saved pins for the dashboard bar produced
+  // noise (any cloudy pin → bar cloudy; any one rainy pin → bar rainy)
+  // without telling the user anything they could act on.
+
+  // Click a pin from the sidebar → go straight to the SpotDetailBoard v2 view
+  // at /pins/[id]. No more in-page overlay popover.
   const handleSelect = (id: string) => {
-    PinStore.activeId.set(id);
-    setActiveId(id);
+    router.push(`/pins/${id}`);
   };
 
-  // Logo click: reset to default homepage (clear selection + theme)
-  const handleReset = () => {
-    PinStore.activeId.clear();
-    setActiveId(null);
+  // Edit a pin from the sidebar gear → /pins/[id]/edit
+  const handleEdit = (id: string) => {
+    router.push(`/pins/${id}/edit`);
+  };
+
+  // Delete a pin from the sidebar gear: confirm, remove from local + remote
+  // (when authed), and drop it from state so the row disappears immediately.
+  const handleDelete = async (id: string) => {
+    const target = savedPins.find((p) => p.id === id);
+    const label = target ? (target.name || target.canonical_name || target.area) : 'this spot';
+    const confirmed = window.confirm(`Delete ${label}? This cannot be undone.`);
+    if (!confirmed) return;
+
+    PinStore.remove(id);
+    setSavedPins((prev) => prev.filter((p) => p.id !== id));
+
+    if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase.from('pins').delete().eq('id', id);
+        if (error) {
+          console.warn('Pin removed locally; Supabase delete failed:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+          });
+        }
+      }
+    }
   };
 
   return (
     <div className={styles.page}>
-      <HomeTopBar onReset={handleReset} />
+      <WeatherTopBar state="clear" />
 
       <div className={styles.layout}>
         {/* Always-visible sidebar */}
         {hasPins && (
           <HomeSidebar
             pins={savedPins}
-            activeId={activeId}
+            activeId={null}
             computedMap={computedMap}
             loading={computingAll}
             onSelect={handleSelect}
             onAdd={() => router.push("/map")}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         )}
 
-        {/* Main content */}
+        {/* Main content — homepage always shows the cinematic hero now;
+            clicking a sidebar pin routes to /pins/[id] instead of mounting
+            a SelectedSpotBoard overlay here. The hero contains the 3-step
+            onboarding strip at its bottom (per the design's home.jsx). */}
         <main className={styles.main}>
-          {activeId && decision ? (
-            /* Pin selected — activity-specific background behind the board */
-            <BackgroundImage slot={decision.pin.activity} scrim="medium" foreground="light" className={styles.mainBg}>
-              <SelectedSpotBoard decision={decision} />
-            </BackgroundImage>
-          ) : (
-            /* Default — cinematic hero with landing image */
-            <HomepageHero />
-          )}
-
-          {/* No-pins onboarding */}
-          {!hasPins && pinsLoaded && !activeId && <HomeOnboarding />}
+          <HomepageHero />
         </main>
       </div>
     </div>

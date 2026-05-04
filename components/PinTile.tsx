@@ -10,6 +10,8 @@ import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/compute
 import { deriveTheme } from "@/lib/weatherTheme";
 import { applyTheme } from "@/lib/applyTheme";
 import { ActivityIcon } from "@/components/icons/ActivityIcons";
+import { usePreferences } from "@/lib/preferences";
+import { formatTempBare, formatTemp } from "@/lib/formatTemp";
 import styles from "./PinTile.module.css";
 
 type PinTileProps = {
@@ -41,6 +43,7 @@ function fmtHour(iso: string): string {
 }
 
 export default function PinTile({ pin, featured = false, className, onOpen, onEdit, onDelete, parentLoading, precomputed }: PinTileProps) {
+  const prefs = usePreferences();
   const [computed, setComputed] = useState<ComputedSuitability | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -196,11 +199,11 @@ export default function PinTile({ pin, featured = false, className, onOpen, onEd
                   {weatherEmoji(cur.weatherCode)}
                 </span>
                 <span className={styles.tempBig}>
-                  {cur.temperature.toFixed(0)}°
+                  {formatTempBare(cur.temperature, prefs.tempUnit)}
                 </span>
               </div>
               <span className={styles.feelsLike}>
-                feels like {cur.apparentTemperature.toFixed(0)}°C
+                feels like {formatTemp(cur.apparentTemperature, prefs.tempUnit)}
               </span>
               <span className={styles.conditionText}>
                 {getWeatherDescription(cur.weatherCode).toLowerCase()}
@@ -220,7 +223,7 @@ export default function PinTile({ pin, featured = false, className, onOpen, onEd
                   <div key={i} className={styles.forecastHour}>
                     <span className={styles.forecastTime}>{fmtHour(hour.time)}</span>
                     <span className={styles.forecastTemp}>
-                      {hour.temperature.toFixed(0)}°
+                      {formatTempBare(hour.temperature, prefs.tempUnit)}
                     </span>
                     <span className={styles.forecastWind}>
                       {hour.windKph.toFixed(0)}<span className={styles.forecastUnit}> km</span>
@@ -266,7 +269,7 @@ export default function PinTile({ pin, featured = false, className, onOpen, onEd
                 {weatherEmoji(cur.weatherCode)}
               </span>
               <span className={styles.weatherValue}>
-                {cur.temperature.toFixed(0)}°C
+                {formatTemp(cur.temperature, prefs.tempUnit)}
               </span>
               <span className={styles.dot}>·</span>
               <span className={styles.weatherValue}>

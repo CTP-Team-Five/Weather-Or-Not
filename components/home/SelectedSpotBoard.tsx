@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { WiThermometer, WiStrongWind, WiRaindrop, WiRaindrops } from 'react-icons/wi';
 import { Decision, Verdict } from '@/lib/decision';
 import { ActivityIcon } from '@/components/icons/ActivityIcons';
+import { usePreferences } from '@/lib/preferences';
+import { cToF } from '@/lib/formatTemp';
 import styles from './SelectedSpotBoard.module.css';
 
 interface Props {
@@ -53,8 +55,12 @@ function Metric({ icon, label, value, unit, sub }: MetricProps) {
 }
 
 export default function SelectedSpotBoard({ decision }: Props) {
+  const prefs = usePreferences();
   const { pin, score, verdict, hero, weather } = decision;
   const isSurf = pin.activity === 'surf';
+  const tempVal = prefs.tempUnit === 'C' ? weather.tempC : cToF(weather.tempC);
+  const feelsVal = prefs.tempUnit === 'C' ? weather.feelsLikeC : cToF(weather.feelsLikeC);
+  const tempUnitLabel = prefs.tempUnit === 'C' ? '°C' : '°F';
 
   // Split "Mount Baker, WA" into name + region. Falls back to pin.area if
   // the canonical name has no comma but pin.area provides extra context.
@@ -106,9 +112,9 @@ export default function SelectedSpotBoard({ decision }: Props) {
           <Metric
             icon={<WiThermometer size={18} />}
             label="Temp"
-            value={weather.tempC.toFixed(0)}
-            unit="°C"
-            sub={`feels ${weather.feelsLikeC.toFixed(0)}°`}
+            value={tempVal.toFixed(0)}
+            unit={tempUnitLabel}
+            sub={`feels ${feelsVal.toFixed(0)}°`}
           />
         )}
 
