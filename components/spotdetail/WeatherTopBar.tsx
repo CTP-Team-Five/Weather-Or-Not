@@ -33,6 +33,7 @@ const NAV_ITEMS: { label: string; href: string }[] = [
 
 const ACCENT: Record<WeatherState, string> = {
   clear: '#fbbf24',
+  cloudy: '#94a3b8',
   raining: '#7dd3fc',
   snowing: '#00a2ff',
 };
@@ -51,7 +52,15 @@ export default function WeatherTopBar({
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const hasFx = state !== 'clear';
+  // Two distinct concepts:
+  //   hasVideo — should we mount WeatherVideoChip behind the bar? (true for
+  //              cloudy/raining/snowing; false for clear which uses pure
+  //              frosted glass)
+  //   isWet    — should the bar swap to the dramatic dark scrim + white
+  //              text? (true only for rain/snow; cloudy keeps the calm
+  //              light scrim + slate text since clouds aren't dark)
+  const hasVideo = state !== 'clear';
+  const isWet = state === 'raining' || state === 'snowing';
   const accent = ACCENT[state];
 
   // Read GO count from cached dashboard scores (this view is outside the
@@ -113,10 +122,11 @@ export default function WeatherTopBar({
     if (confirmed) onDelete();
   };
 
-  // Per-mode colour tokens — the bar swaps text colour wholesale between
-  // "wet/snowing" (dark glass + white text) and "clear" (frosted glass +
-  // slate text), so each element grabs from this object instead of guessing.
-  const tone = hasFx
+  // Per-mode colour tokens. Rain/snow get the dramatic dark scrim + white
+  // text. Clear and cloudy both use the calmer light scrim + slate text;
+  // cloudy still mounts a video, but behind a light frosted layer so it
+  // reads as soft haze rather than a stormy dark wash.
+  const tone = isWet
     ? {
         navInactive: 'rgba(255,255,255,0.7)',
         navActive: '#ffffff',
@@ -149,20 +159,26 @@ export default function WeatherTopBar({
   return (
     <header className="font-geist sticky top-0 z-50 h-16 w-full">
       <div className="relative h-full w-full overflow-hidden border-b border-white/10">
-        <WeatherVideoChip state={state} blur={3} />
+        {hasVideo && <WeatherVideoChip state={state} blur={3} />}
 
-        {/* Tint over the video so chrome stays readable */}
+        {/* Tint over the video so chrome stays readable. Rain/snow get the
+            dramatic dark gradient; cloudy gets a light frosted scrim that
+            lets the clouds.mp4 read as soft haze; clear has no video and
+            uses pure frosted glass via backdrop-filter. */}
         <div
           aria-hidden
           className="absolute inset-0"
           style={{
-            background: hasFx
-              ? state === 'raining'
+            background:
+              state === 'raining'
                 ? 'linear-gradient(180deg, rgba(15,23,42,0.30), rgba(15,23,42,0.45))'
-                : 'linear-gradient(180deg, rgba(30,41,59,0.20), rgba(30,41,59,0.35))'
-              : 'rgba(255,255,255,0.92)',
-            backdropFilter: hasFx ? 'none' : 'blur(16px) saturate(140%)',
-            WebkitBackdropFilter: hasFx ? 'none' : 'blur(16px) saturate(140%)',
+                : state === 'snowing'
+                  ? 'linear-gradient(180deg, rgba(30,41,59,0.20), rgba(30,41,59,0.35))'
+                  : state === 'cloudy'
+                    ? 'linear-gradient(180deg, rgba(255,255,255,0.62), rgba(255,255,255,0.78))'
+                    : 'rgba(255,255,255,0.92)',
+            backdropFilter: hasVideo ? 'none' : 'blur(16px) saturate(140%)',
+            WebkitBackdropFilter: hasVideo ? 'none' : 'blur(16px) saturate(140%)',
           }}
         />
 
@@ -171,7 +187,7 @@ export default function WeatherTopBar({
           className="relative grid h-full items-center px-7"
           style={{
             gridTemplateColumns: '1fr auto 1fr',
-            color: hasFx ? '#ffffff' : '#0f172a',
+            color: isWet ? '#ffffff' : '#0f172a',
           }}
         >
           {/* Left — brand */}
@@ -269,8 +285,8 @@ export default function WeatherTopBar({
                 aria-expanded={menuOpen}
                 className="flex h-8 w-8 items-center justify-center rounded-full transition"
                 style={{
-                  background: hasFx ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.06)',
-                  color: hasFx ? 'white' : '#0f172a',
+                  background: isWet ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.06)',
+                  color: isWet ? 'white' : '#0f172a',
                 }}
               >
                 <HiEllipsisVertical size={18} />

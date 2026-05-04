@@ -1,8 +1,8 @@
 // components/spotdetail/BrandMark.tsx
 // Weather-reactive brand glyph used in the WeatherTopBar.
-// Sun by default, swaps to a snowflake when snowing and a cloud-with-rain when
-// raining. Color tracks the weather accent so the top-bar wordmark stays
-// consistent.
+// Sun by default, swaps to a cloud-only mark when cloudy, a snowflake when
+// snowing, and a cloud-with-rain when raining. Color tracks the weather
+// accent so the top-bar wordmark stays consistent.
 
 import type { WeatherState } from '@/lib/weatherState';
 
@@ -13,12 +13,26 @@ interface Props {
 
 const COLOR: Record<WeatherState, string> = {
   clear: '#fbbf24',
+  cloudy: '#94a3b8',
   raining: '#7dd3fc',
   snowing: '#00a2ff',
 };
 
 export default function BrandMark({ state, size = 26 }: Props) {
   const color = COLOR[state];
+
+  if (state === 'cloudy') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden>
+        {/* Single soft cloud — same path the rain variant uses, minus drops. */}
+        <path
+          d="M11 27 Q6 27 6 21 Q6 15 13 15 Q14 9 21 9 Q29 9 30 16 Q35 16 35 22 Q35 28 30 28 Z"
+          fill={color}
+          opacity="0.95"
+        />
+      </svg>
+    );
+  }
 
   if (state === 'snowing') {
     return (

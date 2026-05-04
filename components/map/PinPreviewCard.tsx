@@ -41,12 +41,14 @@ const VERDICT_TONE: Record<
 
 const STATE_LABEL: Record<WeatherState, string> = {
   clear: 'Clear',
+  cloudy: 'Cloudy',
   raining: 'Raining',
   snowing: 'Snowing',
 };
 
 const STATE_DOT: Record<WeatherState, string> = {
   clear: '#fbbf24',
+  cloudy: '#94a3b8',
   raining: '#7dd3fc',
   snowing: '#00a2ff',
 };

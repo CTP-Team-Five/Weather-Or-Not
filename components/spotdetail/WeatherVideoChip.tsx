@@ -20,13 +20,19 @@ interface Props {
 function videoSrcFor(state: WeatherState): string | null {
   if (state === 'raining') return '/videos/rain.mp4';
   if (state === 'snowing') return '/videos/snow.mp4';
+  if (state === 'cloudy') return '/videos/clouds.mp4';
   return null;
 }
 
 export default function WeatherVideoChip({ state, blur = 18 }: Props) {
   const ref = useRef<HTMLVideoElement>(null);
   const src = videoSrcFor(state);
-  const effectiveBlur = state === 'snowing' ? Math.max(0, blur - 2) : blur;
+  // Snow reads better with slightly less blur (per-flake detail). Clouds
+  // already look hazy, so they get a touch more blur to soften further.
+  const effectiveBlur =
+    state === 'snowing' ? Math.max(0, blur - 2) :
+    state === 'cloudy' ? blur + 2 :
+    blur;
 
   useEffect(() => {
     const v = ref.current;

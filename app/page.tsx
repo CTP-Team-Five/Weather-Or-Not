@@ -163,17 +163,19 @@ export default function Home() {
   const hasPins = pinsLoaded && savedPins.length > 0;
 
   // Pick a representative weather state for the top bar's reactive layer.
-  // Preference: any pin currently raining → rain (most visible reactive
-  // treatment), else any pin snowing → snow, else 'clear' (no video, plain
-  // frosted glass). Means the chrome goes "alive" whenever any saved pin
-  // has weather worth reacting to.
+  // Precedence: rain > snow > cloudy > clear. Rain is the most visually
+  // dramatic so it wins over snow or cloud; cloudy lifts the chrome from
+  // "plain frosted" to "soft cloud video haze" whenever any saved pin is
+  // overcast. Means the bar goes "alive" whenever any pin has weather
+  // worth reacting to.
   const headerState = useMemo<WeatherState>(() => {
-    let saw: 'raining' | 'snowing' | null = null;
+    let saw: 'raining' | 'snowing' | 'cloudy' | null = null;
+    const rank = { raining: 3, snowing: 2, cloudy: 1, clear: 0 } as const;
     computedMap.forEach((computed) => {
       if (!computed) return;
       const s = weatherStateFromCode(computed.weather.current.weatherCode);
-      if (s === 'raining') saw = 'raining';
-      else if (s === 'snowing' && saw !== 'raining') saw = 'snowing';
+      if (s === 'clear') return;
+      if (!saw || rank[s] > rank[saw]) saw = s;
     });
     return saw ?? 'clear';
   }, [computedMap]);
