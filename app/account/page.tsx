@@ -367,11 +367,6 @@ function ProfileSection() {
           )}
         </div>
       </div>
-      <div className="border-t border-white/[0.06] px-6 py-3 text-[11px] font-medium text-white/35">
-        {user
-          ? 'Synced to your account — visible on every device you sign in to.'
-          : 'Picture saved to this device only — sign in to sync across devices.'}
-      </div>
     </Card>
   );
 }
