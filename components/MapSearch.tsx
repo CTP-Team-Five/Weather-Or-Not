@@ -47,6 +47,13 @@ export default function MapSearch({ onSelect, autoFocus = false }: MapSearchProp
         return () => window.clearTimeout(id);
     }, [autoFocus]);
 
+    async function fetchOne(q: string): Promise<SearchResult[]> {
+        const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=10&q=${encodeURIComponent(q)}`,
+        );
+        return (await res.json()) as SearchResult[];
+    }
+
     async function fetchResults(q: string) {
         if (!q.trim()) {
             setResults([]);
@@ -58,13 +65,38 @@ export default function MapSearch({ onSelect, autoFocus = false }: MapSearchProp
         }
         setLoading(true);
         try {
-            const res = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(q)}`,
-                { headers: { "User-Agent": "WeatherOrNot/1.0 (xyz@gmail.com)" } }
-            );
-            const data = await res.json();
-            cache.current[q] = data;
-            setResults(data);
+            const primary = await fetchOne(q);
+
+            // Nominatim ranks by exact name match first, so single-word
+            // queries like "acadia" surface "Acadia Parish, LA" but never
+            // "Acadia National Park" because the park's name is the full
+            // 3-word string. When we get few results AND the query looks
+            // like an outdoor-relevant single word, retry with common
+            // suffixes appended and merge the unique results back in.
+            // Cheap UX fix that closes the biggest user-expectation gap
+            // without swapping geocoders.
+            const looksGeneric =
+                primary.length < 3 && /^[A-Za-z]+$/.test(q.trim());
+            let merged = primary;
+            if (looksGeneric) {
+                const suffixes = ['national park', 'state park', 'mountain'];
+                const extras = await Promise.all(
+                    suffixes.map((s) => fetchOne(`${q} ${s}`).catch(() => [])),
+                );
+                const seen = new Set(primary.map((r) => `${r.lat},${r.lon}`));
+                for (const list of extras) {
+                    for (const r of list) {
+                        const key = `${r.lat},${r.lon}`;
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            merged.push(r);
+                        }
+                    }
+                }
+            }
+
+            cache.current[q] = merged;
+            setResults(merged);
         } catch (err) {
             console.error("Search failed:", err);
         } finally {
