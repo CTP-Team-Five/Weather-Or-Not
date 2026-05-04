@@ -35,6 +35,7 @@ interface PrefsShape {
   tempUnit: 'F' | 'C';
   distUnit: 'mi' | 'km';
   homeLabel: string;
+  verdictFlash: boolean;
 }
 
 interface AlertsShape {
@@ -51,6 +52,7 @@ const DEFAULT_PREFS: PrefsShape = {
   tempUnit: 'F',
   distUnit: 'mi',
   homeLabel: 'Brooklyn, NY',
+  verdictFlash: true,
 };
 
 const DEFAULT_ALERTS: AlertsShape = {
@@ -423,6 +425,12 @@ function PreferencesSection() {
             { value: 'km', label: 'km' },
           ]}
         />
+      </Row>
+      <Row
+        label="Verdict flash"
+        helper="The full-screen GO / MAYBE / SKIP burst when you open a pin. Off if you'd rather skip the dramatic entrance."
+      >
+        <Toggle value={prefs.verdictFlash} onChange={(v) => update('verdictFlash', v)} />
       </Row>
       <Row
         label="Home location"

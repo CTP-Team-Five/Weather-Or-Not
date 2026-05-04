@@ -504,7 +504,9 @@ export default function PinReportPage() {
 
   return (
     <div className="font-geist" style={{ background: '#fafaf7', minHeight: '100vh' }}>
-      {!revealed && <VerdictReveal verdict={verdict} onComplete={() => setRevealed(true)} />}
+      {prefs.verdictFlash && !revealed && (
+        <VerdictReveal verdict={verdict} onComplete={() => setRevealed(true)} />
+      )}
 
       {/* ── Hero strip — 60vh ─────────────────────────────────────────── */}
       <section

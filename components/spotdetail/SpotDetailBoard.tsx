@@ -94,13 +94,18 @@ export default function SpotDetailBoard({
 
   // Mount flash — fires whenever the user lands on (or navigates between)
   // pin detail pages. Re-keyed on pin.id so the same animation replays for
-  // each new pin.
-  const [flashing, setFlashing] = useState(true);
+  // each new pin. Disabled when the user turned off `verdictFlash` in
+  // /account preferences.
+  const [flashing, setFlashing] = useState(prefs.verdictFlash);
   useEffect(() => {
+    if (!prefs.verdictFlash) {
+      setFlashing(false);
+      return;
+    }
     setFlashing(true);
     const t = setTimeout(() => setFlashing(false), FLASH_DURATION_MS);
     return () => clearTimeout(t);
-  }, [pin.id]);
+  }, [pin.id, prefs.verdictFlash]);
   const reasons = deriveSpotReasons(
     activitySlotForReasons(pin.activity),
     weather,

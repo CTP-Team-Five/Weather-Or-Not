@@ -24,6 +24,9 @@ export interface UserPreferences {
   tempUnit: TempUnit;
   distUnit: DistUnit;
   homeLabel: string;
+  /** When true, the SpotDetailBoard mount-flash and the report page's
+   *  VerdictReveal overlay both fire on pin open. Off = skip both. */
+  verdictFlash: boolean;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -31,6 +34,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   tempUnit: 'F',
   distUnit: 'mi',
   homeLabel: 'Brooklyn, NY',
+  verdictFlash: true,
 };
 
 function normalizeActivity(raw: unknown): ActivityCode {
@@ -61,6 +65,10 @@ export function getPreferences(): UserPreferences {
         typeof parsed.homeLabel === 'string' && parsed.homeLabel.trim().length > 0
           ? parsed.homeLabel
           : DEFAULT_PREFERENCES.homeLabel,
+      verdictFlash:
+        typeof parsed.verdictFlash === 'boolean'
+          ? parsed.verdictFlash
+          : DEFAULT_PREFERENCES.verdictFlash,
     };
   } catch {
     return DEFAULT_PREFERENCES;
