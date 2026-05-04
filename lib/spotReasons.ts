@@ -552,11 +552,26 @@ export function deriveSpotReasons(
         ? snowboardCandidates(weather, suitability, tempUnit)
         : hikeCandidates(weather, suitability, tempUnit);
 
-  // Pick the four highest-weight candidates. If we somehow have fewer than 4,
-  // pad with a generic "live conditions" line so the layout stays balanced.
-  const picked = candidates.sort((a, b) => b.weight - a.weight).slice(0, 4);
+  // Dedupe by headline — two candidate generators occasionally surface the
+  // same condition (e.g. wind-chill triggering both temperature and
+  // exposure copy). Keep the highest-weight version so we don't render
+  // identical rows next to each other.
+  const byHeadline = new Map<string, Candidate>();
+  for (const c of candidates) {
+    const prev = byHeadline.get(c.headline);
+    if (!prev || c.weight > prev.weight) byHeadline.set(c.headline, c);
+  }
 
-  while (picked.length < 4) {
+  // Pick the four highest-weight unique candidates.
+  const picked = Array.from(byHeadline.values())
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 4);
+
+  // If we still have fewer than 4 real reasons (data missing entirely),
+  // pad with a SINGLE generic "live conditions" line. Padding more than
+  // once just renders the same row twice, which is what produced the
+  // double-render bug.
+  if (picked.length < 4) {
     picked.push({
       tone: 'warn',
       headline: 'Live conditions — check before you go',
