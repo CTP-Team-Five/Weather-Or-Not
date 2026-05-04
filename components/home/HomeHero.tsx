@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Decision, Verdict } from '@/lib/decision';
+import { displayName } from '@/lib/displayName';
 import styles from './HomeHero.module.css';
 
 interface Props {
@@ -51,7 +52,7 @@ export default function HomeHero({ decision }: Props) {
       {/* 4. Pin + activity context */}
       <div className={styles.context}>
         <span className={styles.pinName}>
-          {pin.canonical_name || pin.area}
+          {displayName(pin)}
         </span>
         <span className={styles.dot}>&middot;</span>
         <span className={styles.weatherDesc}>

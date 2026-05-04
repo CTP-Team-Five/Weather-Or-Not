@@ -23,6 +23,7 @@ import { ActivityIcon } from '@/components/icons/ActivityIcons';
 import WeatherVideoChip from '@/components/spotdetail/WeatherVideoChip';
 import { usePreferences } from '@/lib/preferences';
 import { formatTempBare } from '@/lib/formatTemp';
+import { displayName } from '@/lib/displayName';
 
 const ACTIVITY_LABELS: Record<string, string> = {
   hike: 'HIKING',
@@ -79,7 +80,7 @@ export default function PinPreviewCard({ pin }: Props) {
 
   const Icon = ActivityIcon[pin.activity];
   const activityLabel = ACTIVITY_LABELS[pin.activity] ?? pin.activity.toUpperCase();
-  const spotName = pin.name || pin.canonical_name || pin.area;
+  const spotName = displayName(pin);
 
   const verdict = computed ? LABEL_TO_VERDICT[computed.suitability.label] : null;
   const tone = verdict ? VERDICT_TONE[verdict] : null;

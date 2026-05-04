@@ -23,6 +23,7 @@ import { LABEL_TO_VERDICT, type Verdict } from '@/lib/decision';
 import { deriveHeroContent } from '@/lib/heroContent';
 import { deriveSpotReasons } from '@/lib/spotReasons';
 import { getBackgroundImage, toActivitySlot } from '@/lib/activityMedia';
+import { displayName } from '@/lib/displayName';
 import { usePreferences } from '@/lib/preferences';
 import WeatherTopBar from './WeatherTopBar';
 import WeatherGlassPlate from './WeatherGlassPlate';
@@ -121,7 +122,7 @@ export default function SpotDetailBoard({
   );
 
   const photo = getBackgroundImage(toActivitySlot(pin.activity));
-  const spotName = pin.name || pin.canonical_name || pin.area;
+  const spotName = displayName(pin);
   const activityKey = pin.activity.toLowerCase().trim();
   const activityUpper = ACTIVITY_UPPERCASE[activityKey] ?? pin.activity.toUpperCase();
   const activityTitle = ACTIVITY_TITLECASE[activityKey] ?? pin.activity;

@@ -12,6 +12,7 @@ import { applyTheme } from "@/lib/applyTheme";
 import { ActivityIcon } from "@/components/icons/ActivityIcons";
 import { usePreferences } from "@/lib/preferences";
 import { formatTempBare, formatTemp } from "@/lib/formatTemp";
+import { displayName } from "@/lib/displayName";
 import styles from "./PinTile.module.css";
 
 type PinTileProps = {
@@ -109,7 +110,7 @@ export default function PinTile({ pin, featured = false, className, onOpen, onEd
         <span className={styles.activityIcon} aria-hidden="true">
           {(() => { const Icon = ActivityIcon[pin.activity]; return Icon ? <Icon size={16} strokeWidth={2.2} /> : '📍'; })()}
         </span>
-        <h3 className={styles.areaName}>{pin.canonical_name || pin.area}</h3>
+        <h3 className={styles.areaName}>{displayName(pin)}</h3>
       </div>
       <div className={styles.gearWrapper}>
         <button

@@ -12,6 +12,7 @@ import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/compute
 import WeatherTopBar from "@/components/spotdetail/WeatherTopBar";
 import HomeSidebar from "@/components/home/HomeSidebar";
 import HomepageHero from "@/components/home/HomepageHero";
+import { displayName } from "@/lib/displayName";
 import styles from "./page.module.css";
 
 // Merge local + remote pins: remote wins on id collision, local-only pins kept, sorted newest first.
@@ -160,7 +161,7 @@ export default function Home() {
   // (when authed), and drop it from state so the row disappears immediately.
   const handleDelete = async (id: string) => {
     const target = savedPins.find((p) => p.id === id);
-    const label = target ? (target.name || target.canonical_name || target.area) : 'this spot';
+    const label = target ? displayName(target) : 'this spot';
     const confirmed = window.confirm(`Delete ${label}? This cannot be undone.`);
     if (!confirmed) return;
 

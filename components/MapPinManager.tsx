@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { SavedPin } from "./data/pinStore";
+import { displayName } from "@/lib/displayName";
 import {
   HiTrash,
   HiMapPin,
@@ -26,7 +27,7 @@ const activityLabels: Record<string, string> = {
 };
 
 function getPinDisplayName(pin: SavedPin): string {
-  return (pin as any).canonical_name || pin.area;
+  return displayName(pin);
 }
 
 function highlightMatch(text: string, query: string): React.ReactNode {

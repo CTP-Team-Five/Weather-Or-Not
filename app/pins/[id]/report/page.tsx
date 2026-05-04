@@ -29,6 +29,7 @@ import { deriveSpotReasons, type ReasonTone } from '@/lib/spotReasons';
 import { usePreferences } from '@/lib/preferences';
 import type { TempUnit } from '@/lib/preferences';
 import { formatTemp, formatTempBare } from '@/lib/formatTemp';
+import { displayName } from '@/lib/displayName';
 
 const ACTIVITY_UPPERCASE: Record<string, string> = {
   hike: 'HIKING',
@@ -440,7 +441,7 @@ export default function PinReportPage() {
 
   const c = VERDICT_COLORS[verdict];
   const photo = getBackgroundImage(toActivitySlot(pin.activity));
-  const spotName = pin.name || pin.canonical_name || pin.area;
+  const spotName = displayName(pin);
   const activityKey = pin.activity.toLowerCase().trim();
   const activityUpper = ACTIVITY_UPPERCASE[activityKey] ?? pin.activity.toUpperCase();
   const cur = weather.current;
@@ -896,7 +897,7 @@ export default function PinReportPage() {
                           textOverflow: 'ellipsis',
                         }}
                       >
-                        {p.name || p.canonical_name || p.area}
+                        {displayName(p)}
                       </div>
                       <div style={{ fontSize: 11, color: '#94a3b8' }}>{p.area}</div>
                     </div>

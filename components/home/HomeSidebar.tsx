@@ -6,6 +6,7 @@ import { SavedPin } from '@/components/data/pinStore';
 import { ComputedSuitability } from '@/lib/computeSuitability';
 import { LABEL_TO_VERDICT, Verdict } from '@/lib/decision';
 import { useSidebarCollapsed } from '@/lib/sidebarCollapsed';
+import { displayName } from '@/lib/displayName';
 import TeardropPin from '@/components/map/TeardropPin';
 import styles from './HomeSidebar.module.css';
 
@@ -242,7 +243,7 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
                 </span>
                 <div className={styles.meta}>
                   <span className={styles.pinName}>
-                    {highlightMatch(pin.canonical_name || pin.area, searchQuery.trim())}
+                    {highlightMatch(displayName(pin), searchQuery.trim())}
                   </span>
                   {loading && !reason ? (
                     <span className={styles.reasonSkeleton} />
@@ -286,7 +287,7 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
                     <button
                       type="button"
                       onClick={stopAndDo(() => onEdit(pin.id))}
-                      aria-label={`Edit ${pin.canonical_name || pin.area}`}
+                      aria-label={`Edit ${displayName(pin)}`}
                       title="Edit spot"
                       style={{
                         display: 'flex',
@@ -317,7 +318,7 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
                     <button
                       type="button"
                       onClick={stopAndDo(() => onDelete(pin.id))}
-                      aria-label={`Delete ${pin.canonical_name || pin.area}`}
+                      aria-label={`Delete ${displayName(pin)}`}
                       title="Delete spot"
                       style={{
                         display: 'flex',
