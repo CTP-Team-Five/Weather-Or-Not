@@ -14,11 +14,26 @@ import { usePathname } from 'next/navigation';
 import { WiDaySunny, WiDayStormShowers } from 'react-icons/wi';
 import styles from './HomeTopBar.module.css';
 import UserAvatarMenu from '@/components/UserAvatarMenu';
+import WeatherVideoChip from '@/components/spotdetail/WeatherVideoChip';
+import type { WeatherState } from '@/lib/weatherState';
 
 interface Props {
   onReset?: () => void;
   goCount?: number;
+  /**
+   * Optional weather state. When 'raining' or 'snowing', a blurred looping
+   * weather video is clipped inside the bar (same signature pattern the
+   * SpotDetailBoard v2 view used). Omit (or pass 'clear') for the plain
+   * frosted-glass dashboard chrome.
+   */
+  state?: WeatherState;
 }
+
+const STATE_TINT: Record<WeatherState, string> = {
+  clear: 'transparent',
+  raining: 'rgba(186, 220, 245, 0.35)',
+  snowing: 'rgba(214, 234, 252, 0.40)',
+};
 
 const NAV_ITEMS: { label: string; href: string }[] = [
   { label: 'PINS', href: '/' },
@@ -33,8 +48,9 @@ function isPathActive(pathname: string | null, href: string): boolean {
   return pathname === href || pathname.startsWith(href + '/');
 }
 
-export default function HomeTopBar({ onReset, goCount }: Props) {
+export default function HomeTopBar({ onReset, goCount, state = 'clear' }: Props) {
   const pathname = usePathname();
+  const hasFx = state !== 'clear';
 
   const Brand = (
     <>
@@ -51,13 +67,46 @@ export default function HomeTopBar({ onReset, goCount }: Props) {
     <header
       className="sticky top-0 z-40 grid h-16 w-full items-center border-b px-7"
       style={{
-        background: 'rgba(255,255,255,0.85)',
-        backdropFilter: 'blur(16px) saturate(140%)',
-        WebkitBackdropFilter: 'blur(16px) saturate(140%)',
+        // When wet/snowing the WeatherVideoChip paints the background; the
+        // frosted-glass tint sits on top of it. When clear, fall back to the
+        // plain dashboard glass.
+        background: hasFx ? 'transparent' : 'rgba(255,255,255,0.85)',
+        backdropFilter: hasFx ? 'none' : 'blur(16px) saturate(140%)',
+        WebkitBackdropFilter: hasFx ? 'none' : 'blur(16px) saturate(140%)',
         borderColor: 'rgba(15,23,42,0.06)',
         gridTemplateColumns: '1fr auto 1fr',
+        position: 'sticky',
+        overflow: 'hidden',
       }}
     >
+      {/* Weather-reactive layer — only when raining/snowing. The video is
+          clipped to the 64px bar, blurred just enough to read as motion
+          rather than literal weather, and overlaid with a soft white scrim
+          so the brand + nav + CTA stay legible. */}
+      {hasFx && (
+        <>
+          <WeatherVideoChip state={state} blur={3} />
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: `linear-gradient(180deg, ${STATE_TINT[state]}, rgba(255,255,255,0.78))`,
+              backdropFilter: 'blur(8px) saturate(130%)',
+              WebkitBackdropFilter: 'blur(8px) saturate(130%)',
+              pointerEvents: 'none',
+            }}
+          />
+        </>
+      )}
+
+      {/* All chrome contents sit above the weather layer. The grid layout
+          from the parent <header> is rebuilt here so the absolute layers
+          above don't displace the columns. */}
+      <div
+        className="relative z-10 col-span-3 grid h-full w-full items-center"
+        style={{ gridTemplateColumns: '1fr auto 1fr' }}
+      >
       {/* Left — brand */}
       <div className="justify-self-start">
         {onReset ? (
@@ -140,6 +189,7 @@ export default function HomeTopBar({ onReset, goCount }: Props) {
         >
           + New Spot
         </Link>
+      </div>
       </div>
     </header>
   );

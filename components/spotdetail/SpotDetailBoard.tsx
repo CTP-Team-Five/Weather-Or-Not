@@ -156,7 +156,7 @@ export default function SpotDetailBoard({
         />
       )}
 
-      <HomeTopBar goCount={goCount} />
+      <HomeTopBar goCount={goCount} state={state} />
 
       <section className="relative h-[calc(100vh-64px)] overflow-hidden">
         {/* Hero photo — untouched. Weather lives in chrome only. */}

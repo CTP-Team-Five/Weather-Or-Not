@@ -12,6 +12,7 @@ import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/compute
 import HomeTopBar from "@/components/home/HomeTopBar";
 import HomeSidebar from "@/components/home/HomeSidebar";
 import HomepageHero from "@/components/home/HomepageHero";
+import { weatherStateFromCode, type WeatherState } from "@/lib/weatherState";
 import styles from "./page.module.css";
 
 // Merge local + remote pins: remote wins on id collision, local-only pins kept, sorted newest first.
@@ -171,6 +172,24 @@ export default function Home() {
     return n;
   }, [computedMap]);
 
+  // Pick a representative weather state for the top bar. Preference order:
+  //   1. The first pin currently raining (rain wins — it's the most visible
+  //      reactive treatment).
+  //   2. Then the first snowing pin.
+  //   3. Otherwise 'clear' (no video, plain frosted glass).
+  // This keeps the chrome alive on the dashboard whenever any saved pin has
+  // weather worth reacting to, without having to pick a single "primary" pin.
+  const headerState = useMemo<WeatherState>(() => {
+    let saw: 'raining' | 'snowing' | null = null;
+    computedMap.forEach((computed) => {
+      if (!computed) return;
+      const s = weatherStateFromCode(computed.weather.current.weatherCode);
+      if (s === 'raining') saw = 'raining';
+      else if (s === 'snowing' && saw !== 'raining') saw = 'snowing';
+    });
+    return saw ?? 'clear';
+  }, [computedMap]);
+
   // Click a pin from the sidebar → go straight to the SpotDetailBoard v2 view
   // at /pins/[id]. No more in-page overlay popover.
   const handleSelect = (id: string) => {
@@ -215,7 +234,7 @@ export default function Home() {
 
   return (
     <div className={styles.page}>
-      <HomeTopBar onReset={handleReset} goCount={goCount} />
+      <HomeTopBar onReset={handleReset} goCount={goCount} state={headerState} />
 
       <div className={styles.layout}>
         {/* Always-visible sidebar */}
