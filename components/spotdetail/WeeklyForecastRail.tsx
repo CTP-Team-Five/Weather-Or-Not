@@ -13,8 +13,6 @@ import { usePreferences } from '@/lib/preferences';
 
 interface Props {
   days: DayScore[];
-  /** ISO date 'YYYY-MM-DD' (local) for today. Used to highlight that card. */
-  todayKey: string;
   className?: string;
 }
 
@@ -60,10 +58,15 @@ function formatPeakWindow(peakHour: number): string {
   return `${fmt(start)}–${fmt(end)}`;
 }
 
-export default function WeeklyForecastRail({ days, todayKey, className }: Props) {
+export default function WeeklyForecastRail({ days, className }: Props) {
   const prefs = usePreferences();
 
   if (days.length === 0) return null;
+
+  // Open-Meteo returns the location's local 7 days starting today, so the
+  // first DayScore is always "today" in the pin's timezone — no need for a
+  // user-clock todayKey that could diverge across timezones.
+  const todayKey = days[0].date;
 
   return (
     <div className={className}>
@@ -128,7 +131,7 @@ export default function WeeklyForecastRail({ days, todayKey, className }: Props)
                 opacity: d.peakWindowPassed ? 0.65 : 1,
               }}
             >
-              {/* Weekday */}
+              {/* Weekday + date */}
               <div
                 style={{
                   fontFamily: 'var(--font-display)',
@@ -139,6 +142,12 @@ export default function WeeklyForecastRail({ days, todayKey, className }: Props)
                 }}
               >
                 {d.weekday}
+              </div>
+              <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 2 }}>
+                {new Date(`${d.date}T00:00:00`).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
               </div>
 
               {/* Score (the hero) */}
