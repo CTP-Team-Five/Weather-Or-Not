@@ -10,12 +10,16 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { DayScore } from '@/lib/computeWeeklySuitability';
+import BestAheadStrip from './BestAheadStrip';
 
 interface Props {
   pinId: string;
   activityLabel: string;
   subline: string;
   fetchedAt: number | null;
+  /** Optional 7-day forecast — when present, renders a one-line "look ahead" strip. */
+  weeklyDays?: DayScore[];
 }
 
 function formatRelativeAgo(ms: number): string {
@@ -33,6 +37,7 @@ export default function ConditionsSummary({
   activityLabel,
   subline,
   fetchedAt,
+  weeklyDays,
 }: Props) {
   const router = useRouter();
   const [now, setNow] = useState(() => Date.now());
@@ -59,6 +64,9 @@ export default function ConditionsSummary({
       <p className="m-0 mb-5 text-[15px] leading-[1.45] font-medium text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         {subline}
       </p>
+      {weeklyDays && weeklyDays.length > 0 && (
+        <BestAheadStrip pinId={pinId} days={weeklyDays} />
+      )}
       <div className="flex gap-2">
         <button
           type="button"
