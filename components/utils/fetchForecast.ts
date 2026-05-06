@@ -100,8 +100,11 @@ function nullable<T>(value: T | null | undefined): T | null {
 export async function fetchForecast(
   lat: number,
   lon: number,
+  forecastDays: number = 7,
 ): Promise<ExtendedWeatherData | null> {
   try {
+    // Open-Meteo free tier supports 1–16 forecast days; clamp to that range.
+    const days = Math.max(1, Math.min(16, Math.round(forecastDays)));
     const url = new URL('https://api.open-meteo.com/v1/forecast');
     url.searchParams.set('latitude',  lat.toString());
     url.searchParams.set('longitude', lon.toString());
@@ -124,7 +127,7 @@ export async function fetchForecast(
     url.searchParams.set('temperature_unit', 'celsius');
     url.searchParams.set('wind_speed_unit',  'kmh');
     url.searchParams.set('timezone',         'auto');
-    url.searchParams.set('forecast_days',    '7');
+    url.searchParams.set('forecast_days',    String(days));
 
     const res = await fetch(url.toString());
     if (!res.ok) {
@@ -156,7 +159,8 @@ export async function fetchForecast(
       marineUrl.searchParams.set('longitude', lon.toString());
       marineUrl.searchParams.set('current', 'wave_height,swell_wave_period');
       marineUrl.searchParams.set('hourly',  'wave_height,swell_wave_period');
-      marineUrl.searchParams.set('forecast_days', '7');
+      marineUrl.searchParams.set('timezone', 'auto');
+      marineUrl.searchParams.set('forecast_days', String(days));
       const marineRes = await fetch(marineUrl.toString());
       if (marineRes.ok) {
         const marine  = await marineRes.json();
@@ -193,12 +197,13 @@ export async function fetchForecast(
       swellPeriod,
     };
 
-    // ── Hourly data (full 7-day horizon = 168 slots) ──
+    // ── Hourly data (full forecast horizon, 24 × forecastDays slots) ──
     // Consumers that only need the next 24 hours (HourlyCurve, theme derivation)
     // slice as needed. computeWeeklySuitability iterates the full range to
     // build per-day SnapshotInputs.
+    const maxHours = 24 * days;
     const hourly: HourlyForecast[] = [];
-    for (let i = 0; i < Math.min(168, hourlyTimes.length); i++) {
+    for (let i = 0; i < Math.min(maxHours, hourlyTimes.length); i++) {
       const t = hourlyTimes[i];
       hourly.push({
         time:                t,
@@ -222,7 +227,7 @@ export async function fetchForecast(
     // ── Daily display data ──
     const daily: DailyForecast[] = [];
     const dailyDates: string[] = data.daily?.time ?? [];
-    for (let i = 0; i < Math.min(7, dailyDates.length); i++) {
+    for (let i = 0; i < Math.min(days, dailyDates.length); i++) {
       daily.push({
         date:             dailyDates[i],
         tempMax:          data.daily.temperature_2m_max?.[i]   ?? 0,

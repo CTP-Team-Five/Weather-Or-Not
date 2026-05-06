@@ -129,16 +129,18 @@ function scoreBestHour(
 }
 
 /**
- * Computes 7-day suitability for a pin. Returns null if weather or activity
- * cannot be resolved — callers degrade gracefully (no rail rendered).
+ * Computes per-day suitability for a pin over the next `days` days
+ * (default 7, max 16 — Open-Meteo's free-tier limit). Returns null if
+ * weather or activity cannot be resolved.
  */
 export async function computeWeeklyForPin(
   pin: SavedPin,
+  forecastDays: number = 7,
 ): Promise<WeeklySuitability | null> {
   const activity = normalizeActivity(pin.activity);
   if (!activity) return null;
 
-  const weather = await fetchForecast(pin.lat, pin.lon);
+  const weather = await fetchForecast(pin.lat, pin.lon, forecastDays);
   if (!weather) return null;
 
   const locationMeta = await fetchLocationMetadata(
@@ -219,9 +221,10 @@ export async function computeWeeklyForPin(
 /** Safe variant — swallows errors and returns null for graceful UI degradation. */
 export async function computeWeeklyForPinSafe(
   pin: SavedPin,
+  forecastDays: number = 7,
 ): Promise<WeeklySuitability | null> {
   try {
-    return await computeWeeklyForPin(pin);
+    return await computeWeeklyForPin(pin, forecastDays);
   } catch (err) {
     console.warn('Failed to compute weekly suitability for pin:', pin.id, err);
     return null;
