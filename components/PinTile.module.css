@@ -146,9 +146,9 @@
   display: block;
 }
 
-.verdictWord.GREAT    { color: hsl(var(--score-great)); }
-.verdictWord.OK       { color: hsl(var(--score-ok)); }
-.verdictWord.TERRIBLE { color: hsl(var(--score-terrible)); }
+.verdictWord.GO    { color: hsl(var(--score-great)); }
+.verdictWord.MAYBE { color: hsl(var(--score-ok)); }
+.verdictWord.SKIP  { color: hsl(var(--score-terrible)); }
 
 /* ── Score bar ────────────────────────────────────────────────────────────── */
 
