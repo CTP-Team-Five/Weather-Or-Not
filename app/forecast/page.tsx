@@ -22,6 +22,11 @@ import {
 import ForecastCalendar from '@/components/forecast/ForecastCalendar';
 import BestMatchStrip from '@/components/forecast/BestMatchStrip';
 import CellDrawer from '@/components/forecast/CellDrawer';
+import ForecastRangeToggle, {
+  DAYS_FOR_RANGE,
+  isForecastRange,
+  type ForecastRange,
+} from '@/components/forecast/ForecastRangeToggle';
 import {
   planFromBestMatch,
   planFromCellDrawer,
@@ -34,8 +39,32 @@ import PlanPreviewDrawer from '@/components/plans/PlanPreviewDrawer';
 import SaveSuccessCard from '@/components/plans/SaveSuccessCard';
 import styles from './page.module.css';
 
+// Always fetch the max horizon — switching range modes is a render concern,
+// not a data concern. Keeps the toggle instant.
 const FORECAST_DAYS = 14;
 const STORAGE_KEY = 'weatherornot_forecast_availability';
+const RANGE_KEY = 'weatherornot_forecast_range';
+
+// Mode-specific header copy. The italic editorial word + the rest match the
+// prototype's HEADER_COPY map so the page tone shifts with intent — "What
+// hour" (3-Day) vs "When" (7-Day) vs "Plan" (14-Day).
+const HEADER_COPY: Record<ForecastRange, { editorial: string; rest: string; subtitle: string }> = {
+  '3':  {
+    editorial: 'What',
+    rest:      'hour should you go?',
+    subtitle:  'Pick a spot and find the best daylight window.',
+  },
+  '7':  {
+    editorial: 'When',
+    rest:      'should you go?',
+    subtitle:  "Mark the days you're free. We'll line up your saved spots and surface the best matches.",
+  },
+  '14': {
+    editorial: 'Plan',
+    rest:      'farther ahead.',
+    subtitle:  'Scan the long-range outlook for your saved spots.',
+  },
+};
 
 type ActivityFilter = 'all' | 'hike' | 'surf' | 'snowboard';
 
@@ -130,6 +159,41 @@ function ForecastPageContent() {
   const [availableDays, setAvailableDays] = useState<Set<number>>(new Set());
   const [availabilityHydrated, setAvailabilityHydrated] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ pin: SavedPin; day: DayScore } | null>(null);
+
+  // Forecast range mode — default '14' so existing users see the same calendar
+  // they had pre-toggle. Persisted across reloads via localStorage.
+  const [range, setRange] = useState<ForecastRange>('14');
+  const [rangeHydrated, setRangeHydrated] = useState(false);
+
+  // Hydrate range from localStorage on mount, same SSR-safe pattern as
+  // availability (start with default; replace post-mount).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(RANGE_KEY);
+      if (raw && isForecastRange(raw)) {
+        setRange(raw);
+      }
+    } catch {
+      /* malformed → keep default */
+    }
+    setRangeHydrated(true);
+  }, []);
+
+  // Persist range after first hydration so the default '14' doesn't clobber
+  // a user's chosen mode on first render.
+  useEffect(() => {
+    if (!rangeHydrated) return;
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(RANGE_KEY, range);
+    } catch {
+      /* quota / private mode — silently drop */
+    }
+  }, [range, rangeHydrated]);
+
+  const visibleDays = DAYS_FOR_RANGE[range];
+  const copy        = HEADER_COPY[range];
 
   // ── Save-plan flow state ──────────────────────────────────────────────
   // `draft` mounts the PlanPreviewDrawer. `justSaved` mounts the inline
@@ -304,32 +368,33 @@ function ForecastPageContent() {
         {/* Header */}
         <header className={styles.header}>
           <div>
-            <div className={styles.eyebrow}>FORECAST · {FORECAST_DAYS} DAYS</div>
+            <div className={styles.eyebrow}>FORECAST · {visibleDays} DAYS</div>
             <h1 className={styles.title}>
-              <span className={styles.titleEditorial}>When</span>should you go?
+              <span className={styles.titleEditorial}>{copy.editorial}</span>
+              {copy.rest}
             </h1>
-            <p className={styles.subtitle}>
-              Mark the days you&apos;re free. We&apos;ll line up your saved spots and
-              surface the best matches.
-            </p>
+            <p className={styles.subtitle}>{copy.subtitle}</p>
           </div>
 
-          <div
-            className={styles.activityFilter}
-            role="group"
-            aria-label="Filter by activity"
-          >
-            {ACTIVITY_FILTERS.map((o) => (
-              <button
-                key={o.v}
-                type="button"
-                onClick={() => setActivityFilter(o.v)}
-                aria-pressed={activityFilter === o.v}
-                className={styles.activityChip}
-              >
-                {o.l}
-              </button>
-            ))}
+          <div className={styles.headerControls}>
+            <ForecastRangeToggle value={range} onChange={setRange} />
+            <div
+              className={styles.activityFilter}
+              role="group"
+              aria-label="Filter by activity"
+            >
+              {ACTIVITY_FILTERS.map((o) => (
+                <button
+                  key={o.v}
+                  type="button"
+                  onClick={() => setActivityFilter(o.v)}
+                  aria-pressed={activityFilter === o.v}
+                  className={styles.activityChip}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
           </div>
         </header>
 
@@ -374,7 +439,7 @@ function ForecastPageContent() {
           />
         </div>
 
-        {/* Calendar / empty / loading */}
+        {/* Calendar / 3-Day mode / empty / loading */}
         {!pinsLoaded ? (
           <div className={styles.dimMessage}>Loading your saved spots…</div>
         ) : savedPins.length === 0 ? (
@@ -391,11 +456,22 @@ function ForecastPageContent() {
               No saved spots match the current activity filter.
             </p>
           </div>
+        ) : range === '3' ? (
+          // 3-Day mode shell — DayHero + BestWindowCard + HourlyForecastRow
+          // land in slices 7b–d. Placeholder lets us ship 7a (the toggle) on
+          // its own.
+          <div className={styles.threeDayPlaceholder}>
+            <div className={styles.threeDayPlaceholderTitle}>3-Day mode</div>
+            <p className={styles.threeDayPlaceholderBody}>
+              Hourly breakdown with the best-window card per day lands next.
+              For now, flip to 7 Day or 14 Day above.
+            </p>
+          </div>
         ) : (
           <ForecastCalendar
             pins={filteredPins}
             forecasts={forecasts}
-            forecastDays={FORECAST_DAYS}
+            forecastDays={visibleDays}
             availableDays={availableDays}
             onToggleDay={toggleDay}
             onCellClick={(pin, day) => setSelectedCell({ pin, day })}

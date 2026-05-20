@@ -68,6 +68,40 @@
   margin-bottom: 16px;
 }
 
+/* ── Header controls stack (range toggle + activity filter) ──────────────── */
+
+.headerControls {
+  display:        flex;
+  flex-direction: column;
+  align-items:    flex-end;
+  gap:            10px;
+}
+
+/* ── 3-Day mode placeholder (until slice 7b lands) ────────────────────────── */
+
+.threeDayPlaceholder {
+  padding:        40px 28px;
+  background:     hsl(var(--surface));
+  border:         1px dashed hsl(var(--border-subtle));
+  border-radius:  16px;
+  text-align:     center;
+}
+
+.threeDayPlaceholderTitle {
+  font-family:    var(--font-display);
+  font-size:      16px;
+  font-weight:    700;
+  color:          hsl(var(--foreground));
+  letter-spacing: -0.01em;
+}
+
+.threeDayPlaceholderBody {
+  margin:    8px 0 0;
+  font-size: 13px;
+  color:     hsl(var(--muted-foreground));
+  line-height: 1.5;
+}
+
 /* ── Activity filter pill group ───────────────────────────────────────────── */
 
 .activityFilter {

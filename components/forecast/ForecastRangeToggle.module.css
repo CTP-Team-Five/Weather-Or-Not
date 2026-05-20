@@ -1,0 +1,43 @@
+/* components/forecast/ForecastRangeToggle.module.css
+   Visual twin of the activity filter pill group on /forecast — same
+   surface / border / muted vocabulary so they read as a stacked pair on
+   the right of the header. */
+
+.group {
+  display:        inline-flex;
+  align-items:    center;
+  gap:            4px;
+  padding:        4px;
+  background:     hsl(var(--surface));
+  border-radius:  999px;
+  border:         1px solid hsl(var(--border-subtle));
+}
+
+.chip {
+  cursor:         pointer;
+  font:           inherit;
+  font-size:      12px;
+  font-weight:    600;
+  padding:        6px 14px;
+  border-radius:  999px;
+  background:     transparent;
+  color:          hsl(var(--muted-foreground));
+  border:         none;
+  transition:     background 120ms ease, color 120ms ease;
+  white-space:    nowrap;
+}
+
+.chip:hover {
+  color:      hsl(var(--foreground));
+  background: hsl(var(--muted) / 0.6);
+}
+
+.chip[aria-pressed='true'] {
+  background: hsl(var(--foreground));
+  color:      hsl(var(--background));
+}
+
+.chip:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
