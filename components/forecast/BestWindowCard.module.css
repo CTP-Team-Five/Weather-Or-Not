@@ -98,3 +98,12 @@
   color:       hsl(var(--foreground));
   line-height: 1.4;
 }
+
+/* ── Actions row (SavePlanButton) ────────────────────────────────────── */
+
+.actions {
+  display:         flex;
+  justify-content: flex-end;
+  padding-top:     8px;
+  border-top:      1px solid hsl(var(--hsl) / 0.18);
+}

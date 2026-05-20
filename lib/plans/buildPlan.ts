@@ -18,7 +18,23 @@ import type {
   Plan,
   PlanDraft,
   PlanSnapshot,
+  Verdict,
 } from './types';
+
+/** Best-hour window inside a day — produced by BestWindowCard (or any
+ *  future per-hour aggregator). Consumed by planFromBestWindow to mint a
+ *  PlanDraft that carries the actual window times instead of the default
+ *  9-17 whole-day window the other factories use. */
+export interface BestWindow {
+  /** 0-23, inclusive — the first hour of the window. */
+  startHour: number;
+  /** 0-23, inclusive — the last hour of the window. */
+  endHour:   number;
+  /** 0-100. Avg over the window (or peak score for the slice 7c approximation). */
+  score:     number;
+  verdict:   Verdict;
+  reason:    string;
+}
 
 /** Days from today (0 = today) for a bare dateIso string. Use this when you
  *  have a forecast-day date but haven't constructed a Plan yet (e.g. the
@@ -130,6 +146,30 @@ export function planFromCellDrawer(
     startIso:   timeIso(day.date, DEFAULT_START_HOUR),
     endIso:     timeIso(day.date, DEFAULT_END_HOUR),
     snapshot:   snapshotFromDayScore(day),
+    confidence: isTentative ? 'tentative' : 'firm',
+  };
+}
+
+/** Build a PlanDraft from a BestWindowCard click on the 3-Day surface.
+ *  Unlike the whole-day factories, this carries the actual hourly window
+ *  the user is saving — start/end map to the window the card displayed
+ *  (e.g. "10 AM – 1 PM" → startHour 10, endHour 13). */
+export function planFromBestWindow(
+  pin:        SavedPin,
+  day:        DayScore,
+  window:     BestWindow,
+  isTentative = false,
+): PlanDraft {
+  return {
+    ...pinIdentity(pin),
+    dateIso:    day.date,
+    startIso:   timeIso(day.date, window.startHour),
+    endIso:     timeIso(day.date, window.endHour),
+    snapshot:   {
+      verdict: window.verdict,
+      score:   window.score,
+      reason:  window.reason,
+    },
     confidence: isTentative ? 'tentative' : 'firm',
   };
 }

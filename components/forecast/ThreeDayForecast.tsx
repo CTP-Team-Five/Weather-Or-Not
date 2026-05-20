@@ -31,6 +31,11 @@ interface Props {
   pins:         SavedPin[];
   forecasts:    Record<string, DayScore[]>;
   weatherByPin: Record<string, ExtendedWeatherData>;
+  /** Optional save-plan callback. When provided, each BestWindowCard
+   *  renders a SavePlanButton in its footer. Wired by the host
+   *  (app/forecast/page.tsx) to open the PlanPreviewDrawer with a
+   *  window-specific draft. */
+  onSavePlan?:  (pin: SavedPin, day: DayScore) => void;
 }
 
 const PIN_KEY   = 'weatherornot_forecast_threeday_pin';
@@ -43,7 +48,12 @@ const HOURS_KEY = 'weatherornot_forecast_threeday_allhours';
 const DAYLIGHT_START_HOUR = 5;
 const DAYLIGHT_END_HOUR   = 21;
 
-export default function ThreeDayForecast({ pins, forecasts, weatherByPin }: Props) {
+export default function ThreeDayForecast({
+  pins,
+  forecasts,
+  weatherByPin,
+  onSavePlan,
+}: Props) {
   // SSR-safe hydration of saved selections — same empty-first-render trick
   // as availability storage on the main page.
   const [pinId,        setPinId]        = useState<string>('');
@@ -138,6 +148,7 @@ export default function ThreeDayForecast({ pins, forecasts, weatherByPin }: Prop
               dayIdx={dayIdx}
               scoredHours={activeScored}
               showAllHours={showAllHours}
+              onSavePlan={onSavePlan ? (d) => onSavePlan(activePin, d) : undefined}
             />
           ))}
         </div>
@@ -234,6 +245,7 @@ interface DayProps {
 interface DaySectionProps extends DayProps {
   scoredHours:  ScoredHour[] | null;
   showAllHours: boolean;
+  onSavePlan?:  (day: DayScore) => void;
 }
 
 function DayHourlySection({
@@ -242,6 +254,7 @@ function DayHourlySection({
   dayIdx,
   scoredHours,
   showAllHours,
+  onSavePlan,
 }: DaySectionProps) {
   // 24 sequential rows per day. Slice the chunk for THIS day. If scoring
   // hasn't finished yet, scoredHours is null and we render a small
@@ -266,7 +279,7 @@ function DayHourlySection({
   return (
     <section className={styles.daySection} data-verdict={day.verdict}>
       <DayHero pin={pin} day={day} dayIdx={dayIdx} />
-      <BestWindowCard day={day} />
+      <BestWindowCard day={day} onSavePlan={onSavePlan} />
 
       {visibleHours == null ? (
         <div className={styles.dayPlaceholder}>Scoring hours…</div>

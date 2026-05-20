@@ -11,10 +11,20 @@
 'use client';
 
 import type { DayScore } from '@/lib/computeWeeklySuitability';
+import {
+  confidenceForDayOffset,
+  dayOffsetForDate,
+} from '@/lib/plans/buildPlan';
+import SavePlanButton from '@/components/plans/SavePlanButton';
 import styles from './BestWindowCard.module.css';
 
 interface Props {
   day: DayScore;
+  /** Optional save callback. When provided AND the peak window hasn't
+   *  passed yet, the card renders a SavePlanButton in its footer. The
+   *  page-level handler computes the actual window times and mints the
+   *  PlanDraft via planFromBestWindow. */
+  onSavePlan?: (day: DayScore) => void;
 }
 
 function formatHour(h: number): string {
@@ -27,7 +37,7 @@ function formatHourRange(start: number, end: number): string {
   return `${formatHour(start)} – ${formatHour(end)}`;
 }
 
-export default function BestWindowCard({ day }: Props) {
+export default function BestWindowCard({ day, onSavePlan }: Props) {
   const peak  = day.peakHour;
   // 3-hour window centered on the peak, clamped so a 5pm peak doesn't roll
   // past 17:00 visually (end is exclusive by convention but rendered as the
@@ -58,6 +68,8 @@ export default function BestWindowCard({ day }: Props) {
     );
   }
 
+  const confidence = confidenceForDayOffset(dayOffsetForDate(day.date));
+
   return (
     <div
       className={styles.card}
@@ -79,6 +91,16 @@ export default function BestWindowCard({ day }: Props) {
       {day.reasons[0] && (
         <div className={styles.reason}>
           {day.reasons[0]} · peak at {formatHour(peak)}
+        </div>
+      )}
+      {onSavePlan && (
+        <div className={styles.actions}>
+          <SavePlanButton
+            verdict={day.verdict}
+            confidence={confidence}
+            variant="primary"
+            onClick={() => onSavePlan(day)}
+          />
         </div>
       )}
     </div>

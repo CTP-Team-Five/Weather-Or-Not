@@ -32,8 +32,10 @@ import ThreeDayForecast from '@/components/forecast/ThreeDayForecast';
 import {
   planFromBestMatch,
   planFromCellDrawer,
+  planFromBestWindow,
   confidenceForDayOffset,
   dayOffsetForDate,
+  type BestWindow,
 } from '@/lib/plans/buildPlan';
 import { usePlans } from '@/lib/plans/usePlans';
 import type { Plan, PlanDraft } from '@/lib/plans/types';
@@ -220,6 +222,24 @@ function ForecastPageContent() {
     setDraft(planFromCellDrawer(pin, day, isTentative));
     // Close the CellDrawer so the PlanPreviewDrawer takes focus cleanly.
     setSelectedCell(null);
+  }, []);
+
+  const handleSaveFromBestWindow = useCallback((pin: SavedPin, day: DayScore) => {
+    // Mirror the window BestWindowCard rendered: peakHour ± 1, clamped to
+    // [0, 23]. When the per-hour sliding window detect lands as its own
+    // slice, this is where the real start/end gets sourced from.
+    const peak  = day.peakHour;
+    const start = Math.max(0,  peak - 1);
+    const end   = Math.min(23, peak + 2);
+    const window: BestWindow = {
+      startHour: start,
+      endHour:   end,
+      score:     day.score,
+      verdict:   day.verdict,
+      reason:    day.reasons[0] ?? 'Mixed conditions.',
+    };
+    const isTentative = confidenceForDayOffset(dayOffsetForDate(day.date)) === 'tentative';
+    setDraft(planFromBestWindow(pin, day, window, isTentative));
   }, []);
 
   const handleConfirmSave = useCallback((note: string | undefined) => {
@@ -469,6 +489,7 @@ function ForecastPageContent() {
             pins={filteredPins}
             forecasts={forecasts}
             weatherByPin={weatherByPin}
+            onSavePlan={handleSaveFromBestWindow}
           />
         ) : (
           <ForecastCalendar
