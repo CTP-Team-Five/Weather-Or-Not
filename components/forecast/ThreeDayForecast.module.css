@@ -308,7 +308,7 @@
   margin-top:  4px;
 }
 
-/* ── Per-day placeholder until 7c / 7d land ──────────────────────────── */
+/* ── Per-day placeholder (loading / empty daylight window) ───────────── */
 
 .dayPlaceholder {
   padding:       18px 20px;
@@ -319,4 +319,38 @@
   color:         hsl(var(--muted-foreground));
   font-size:     12px;
   font-weight:   500;
+}
+
+/* ── Hourly row list (per day) ───────────────────────────────────────── */
+
+.hourList {
+  list-style: none;
+  margin:     0;
+  padding:    0;
+  display:    flex;
+  flex-direction: column;
+  gap:        6px;
+}
+
+.hourListHeader {
+  display:               grid;
+  grid-template-columns: 80px 200px 1fr 220px;
+  gap:                   16px;
+  padding:               6px 14px;
+  font-family:           var(--font-display);
+  font-size:             10px;
+  font-weight:           700;
+  letter-spacing:        0.16em;
+  color:                 hsl(var(--muted-foreground));
+  text-transform:        uppercase;
+}
+
+.hourListHeader span:last-child {
+  text-align: right;
+}
+
+@media (max-width: 960px) {
+  .hourListHeader {
+    display: none;
+  }
 }

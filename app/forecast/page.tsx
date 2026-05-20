@@ -19,6 +19,7 @@ import {
   computeWeeklyForPinSafe,
   type DayScore,
 } from '@/lib/computeWeeklySuitability';
+import type { ExtendedWeatherData } from '@/components/utils/fetchForecast';
 import ForecastCalendar from '@/components/forecast/ForecastCalendar';
 import BestMatchStrip from '@/components/forecast/BestMatchStrip';
 import CellDrawer from '@/components/forecast/CellDrawer';
@@ -151,6 +152,9 @@ function ForecastPageContent() {
   const [savedPins, setSavedPins] = useState<SavedPin[]>([]);
   const [pinsLoaded, setPinsLoaded] = useState(false);
   const [forecasts, setForecasts] = useState<Record<string, DayScore[]>>({});
+  // Weather payloads alongside the daily forecasts — kept so the 3-Day
+  // surface can score hours per pin without re-fetching.
+  const [weatherByPin, setWeatherByPin] = useState<Record<string, ExtendedWeatherData>>({});
   const [computing, setComputing] = useState(false);
 
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
@@ -317,11 +321,14 @@ function ForecastPageContent() {
         ),
       );
       if (cancelled) return;
-      const next: Record<string, DayScore[]> = {};
+      const next:        Record<string, DayScore[]>          = {};
+      const nextWeather: Record<string, ExtendedWeatherData> = {};
       for (const [id, result] of results) {
-        if (result?.days) next[id] = result.days;
+        if (result?.days)    next[id]        = result.days;
+        if (result?.weather) nextWeather[id] = result.weather;
       }
       setForecasts(next);
+      setWeatherByPin(nextWeather);
       setComputing(false);
     })();
     return () => {
@@ -458,7 +465,11 @@ function ForecastPageContent() {
             </p>
           </div>
         ) : range === '3' ? (
-          <ThreeDayForecast pins={filteredPins} forecasts={forecasts} />
+          <ThreeDayForecast
+            pins={filteredPins}
+            forecasts={forecasts}
+            weatherByPin={weatherByPin}
+          />
         ) : (
           <ForecastCalendar
             pins={filteredPins}

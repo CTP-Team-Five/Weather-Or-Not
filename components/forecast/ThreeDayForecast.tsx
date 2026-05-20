@@ -18,21 +18,32 @@
 import { useEffect, useState } from 'react';
 import type { SavedPin } from '@/components/data/pinStore';
 import type { DayScore } from '@/lib/computeWeeklySuitability';
+import type { ExtendedWeatherData } from '@/components/utils/fetchForecast';
+import { scoreHourly, type ScoredHour } from '@/lib/forecast/scoreHourly';
 import { canonicalActivityKey, formatActivityLabel } from './activityKey';
 import { formatTempBare } from '@/lib/formatTemp';
 import { usePreferences } from '@/lib/preferences';
 import BestWindowCard from './BestWindowCard';
+import HourlyForecastRow from './HourlyForecastRow';
 import styles from './ThreeDayForecast.module.css';
 
 interface Props {
-  pins:      SavedPin[];
-  forecasts: Record<string, DayScore[]>;
+  pins:         SavedPin[];
+  forecasts:    Record<string, DayScore[]>;
+  weatherByPin: Record<string, ExtendedWeatherData>;
 }
 
 const PIN_KEY   = 'weatherornot_forecast_threeday_pin';
 const HOURS_KEY = 'weatherornot_forecast_threeday_allhours';
 
-export default function ThreeDayForecast({ pins, forecasts }: Props) {
+// Default daylight window when we can't read sunrise/sunset from a pin's
+// data. Wide enough to cover summer dawns; tight enough to exclude the
+// dead-of-night hours that always score low. User can hit "All hours" to
+// see everything (sunrise hikers, photographers, etc.).
+const DAYLIGHT_START_HOUR = 5;
+const DAYLIGHT_END_HOUR   = 21;
+
+export default function ThreeDayForecast({ pins, forecasts, weatherByPin }: Props) {
   // SSR-safe hydration of saved selections — same empty-first-render trick
   // as availability storage on the main page.
   const [pinId,        setPinId]        = useState<string>('');
@@ -65,6 +76,27 @@ export default function ThreeDayForecast({ pins, forecasts }: Props) {
   // The saved pinId might no longer be in the filtered list (activity filter
   // changed, pin removed, etc.) — fall back to the first available pin.
   const activePin = pins.find((p) => p.id === pinId) ?? pins[0];
+
+  // Hourly scoring cache. Keyed by pin id so swapping pins or activity
+  // filters doesn't re-score the previous selection. Populated by an async
+  // effect that calls scoreHourly() against the page's weather payload.
+  const [scoredByPin, setScoredByPin] = useState<Record<string, ScoredHour[]>>({});
+
+  useEffect(() => {
+    if (!activePin) return;
+    const weather = weatherByPin[activePin.id];
+    if (!weather) return;
+    let cancelled = false;
+    scoreHourly(activePin, weather).then((scored) => {
+      if (cancelled || !scored) return;
+      setScoredByPin((prev) => ({ ...prev, [activePin.id]: scored }));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activePin, weatherByPin]);
+
+  const activeScored = activePin ? scoredByPin[activePin.id] ?? null : null;
 
   if (!activePin) {
     return (
@@ -104,6 +136,8 @@ export default function ThreeDayForecast({ pins, forecasts }: Props) {
               pin={activePin}
               day={day}
               dayIdx={dayIdx}
+              scoredHours={activeScored}
+              showAllHours={showAllHours}
             />
           ))}
         </div>
@@ -197,15 +231,71 @@ interface DayProps {
   dayIdx: number;
 }
 
-function DayHourlySection({ pin, day, dayIdx }: DayProps) {
+interface DaySectionProps extends DayProps {
+  scoredHours:  ScoredHour[] | null;
+  showAllHours: boolean;
+}
+
+function DayHourlySection({
+  pin,
+  day,
+  dayIdx,
+  scoredHours,
+  showAllHours,
+}: DaySectionProps) {
+  // 24 sequential rows per day. Slice the chunk for THIS day. If scoring
+  // hasn't finished yet, scoredHours is null and we render a small
+  // placeholder under the BestWindowCard rather than a broken empty list.
+  const dayHours = scoredHours
+    ? scoredHours.slice(dayIdx * 24, (dayIdx + 1) * 24)
+    : null;
+
+  const visibleHours = dayHours == null
+    ? null
+    : showAllHours
+      ? dayHours
+      : dayHours.filter(
+          (h) => h.localHour >= DAYLIGHT_START_HOUR && h.localHour <= DAYLIGHT_END_HOUR,
+        );
+
+  // Best-window highlight: hours within ±1 of day.peakHour. Matches the
+  // 3-hour band the BestWindowCard above already labelled.
+  const bestStart = Math.max(0, day.peakHour - 1);
+  const bestEnd   = Math.min(23, day.peakHour + 1);
+
   return (
     <section className={styles.daySection} data-verdict={day.verdict}>
       <DayHero pin={pin} day={day} dayIdx={dayIdx} />
       <BestWindowCard day={day} />
-      {/* HourlyForecastRow list — slice 7d. */}
-      <div className={styles.dayPlaceholder}>
-        Hourly rows land in slice 7d.
-      </div>
+
+      {visibleHours == null ? (
+        <div className={styles.dayPlaceholder}>Scoring hours…</div>
+      ) : visibleHours.length === 0 ? (
+        <div className={styles.dayPlaceholder}>
+          No hours in the current daylight window. Switch to All hours to see
+          overnight too.
+        </div>
+      ) : (
+        <ol className={styles.hourList}>
+          <li className={styles.hourListHeader} aria-hidden>
+            <span>Hour</span>
+            <span>Verdict · Score</span>
+            <span>Conditions</span>
+            <span>Why</span>
+          </li>
+          {visibleHours.map((scoredHour) => (
+            <HourlyForecastRow
+              key={scoredHour.time}
+              scoredHour={scoredHour}
+              inBestWindow={
+                !day.peakWindowPassed &&
+                scoredHour.localHour >= bestStart &&
+                scoredHour.localHour <= bestEnd
+              }
+            />
+          ))}
+        </ol>
+      )}
     </section>
   );
 }
