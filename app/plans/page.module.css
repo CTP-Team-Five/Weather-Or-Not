@@ -75,6 +75,49 @@
   line-height: 1.5;
 }
 
+/* ── Upcoming tab: bucketed PlanCard grid ─────────────────────────────── */
+
+.buckets {
+  display:        flex;
+  flex-direction: column;
+  gap:            28px;
+}
+
+.bucket {
+  display:        flex;
+  flex-direction: column;
+  gap:            12px;
+}
+
+.bucketHeader {
+  display:     flex;
+  align-items: baseline;
+  gap:         8px;
+  margin:      0;
+}
+
+.bucketLabel {
+  font-family:    var(--font-display);
+  font-size:      12px;
+  font-weight:    800;
+  letter-spacing: 0.18em;
+  color:          hsl(var(--foreground));
+  text-transform: uppercase;
+}
+
+.bucketCount {
+  font-family: var(--font-display);
+  font-size:   12px;
+  font-weight: 700;
+  color:       hsl(var(--muted-foreground));
+}
+
+.bucketGrid {
+  display:               grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap:                   12px;
+}
+
 /* ── Coming-soon stub (Calendar / Tentative / Past tabs in Phase 1) ───── */
 
 .comingSoon {

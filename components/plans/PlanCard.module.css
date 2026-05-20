@@ -1,0 +1,249 @@
+/* components/plans/PlanCard.module.css
+   Saved-plan card. Light surface, activity-color rail on the left of the
+   spot row, verdict-tinted snapshot block on the right, note + actions row
+   beneath. Drift badge (Phase 3) will slot in between reason and actions
+   when wired. */
+
+.card {
+  display:        flex;
+  flex-direction: column;
+  gap:            14px;
+  padding:        18px 20px;
+  background:     hsl(var(--surface-elevated));
+  border:         1px solid hsl(var(--border-subtle));
+  border-radius:  14px;
+  transition:     border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.card:hover {
+  border-color: hsl(var(--border));
+  box-shadow:
+    0 1px 3px hsl(var(--shadow) / 0.06),
+    0 4px 16px hsl(var(--shadow) / 0.05);
+}
+
+/* ── Header row: date string + tentative pill ─────────────────────────── */
+
+.headerRow {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             12px;
+  flex-wrap:       wrap;
+}
+
+.dateLabel {
+  font-family:    var(--font-display);
+  font-size:      11px;
+  font-weight:    700;
+  letter-spacing: 0.14em;
+  color:          hsl(var(--muted-foreground));
+  text-transform: uppercase;
+}
+
+.tentativePill {
+  font-family:    var(--font-display);
+  font-size:      10px;
+  font-weight:    700;
+  letter-spacing: 0.08em;
+  padding:        3px 8px;
+  border-radius:  999px;
+  background:     hsl(var(--warning) / 0.12);
+  color:          hsl(var(--warning));
+  border:         1px dashed hsl(var(--warning) / 0.45);
+  text-transform: uppercase;
+  white-space:    nowrap;
+}
+
+/* ── Spot row: rail + name/meta + snapshot ────────────────────────────── */
+
+.spotRow {
+  display:               grid;
+  grid-template-columns: auto 1fr auto;
+  gap:                   14px;
+  align-items:           center;
+}
+
+.activityRail {
+  width:         4px;
+  height:        38px;
+  border-radius: 2px;
+  background:    hsl(var(--muted-foreground));
+  flex-shrink:   0;
+}
+
+.card[data-activity='hike']      .activityRail { background: var(--accent-hike); }
+.card[data-activity='surf']      .activityRail { background: var(--accent-surf); }
+.card[data-activity='snowboard'] .activityRail { background: var(--accent-snow); }
+
+.spotCopy {
+  min-width: 0;
+}
+
+.spotName {
+  font-family:    var(--font-display);
+  font-size:      18px;
+  font-weight:    700;
+  color:          hsl(var(--foreground));
+  letter-spacing: -0.01em;
+  line-height:    1.15;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+  white-space:    nowrap;
+}
+
+.spotMeta {
+  font-family:    var(--font-display);
+  font-size:      10px;
+  font-weight:    700;
+  color:          hsl(var(--muted-foreground));
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top:     4px;
+}
+
+.snapshot {
+  display:        flex;
+  flex-direction: column;
+  align-items:    flex-end;
+  gap:            1px;
+  text-align:     right;
+}
+
+.snapshotEyebrow {
+  font-family:    var(--font-display);
+  font-size:      9px;
+  font-weight:    700;
+  letter-spacing: 0.18em;
+  color:          hsl(var(--muted-foreground));
+  text-transform: uppercase;
+}
+
+.snapshotVerdict {
+  font-family:    var(--font-editorial);
+  font-style:     italic;
+  font-weight:    400;
+  font-size:      30px;
+  line-height:    1;
+  letter-spacing: -0.01em;
+  margin-top:     2px;
+}
+
+.card[data-verdict='GO']    .snapshotVerdict { color: hsl(var(--score-great)); }
+.card[data-verdict='MAYBE'] .snapshotVerdict { color: hsl(var(--score-ok)); }
+.card[data-verdict='SKIP']  .snapshotVerdict { color: hsl(var(--score-terrible)); }
+
+.snapshotScore {
+  font-family: var(--font-display);
+  font-size:   12px;
+  font-weight: 700;
+  color:       hsl(var(--muted-foreground));
+  margin-top:  2px;
+}
+
+/* ── Reason sentence ──────────────────────────────────────────────────── */
+
+.reason {
+  margin:      0;
+  font-size:   13.5px;
+  font-weight: 500;
+  color:       hsl(var(--foreground));
+  line-height: 1.45;
+}
+
+/* ── Note (optional) ──────────────────────────────────────────────────── */
+
+.note {
+  display:       flex;
+  align-items:   baseline;
+  gap:           10px;
+  padding:       10px 12px;
+  background:    hsl(var(--muted) / 0.55);
+  border-radius: 8px;
+  font-size:     13px;
+  color:         hsl(var(--foreground));
+  line-height:   1.4;
+}
+
+.noteEyebrow {
+  font-family:    var(--font-display);
+  font-size:      9px;
+  font-weight:    700;
+  letter-spacing: 0.18em;
+  color:          hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  flex-shrink:    0;
+}
+
+.noteBody {
+  min-width: 0;
+}
+
+/* ── Action row ───────────────────────────────────────────────────────── */
+
+.actions {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  flex-wrap:   wrap;
+  padding-top: 12px;
+  border-top:  1px solid hsl(var(--border-subtle));
+}
+
+.openBtn {
+  font-family:    var(--font-display);
+  font-size:      12px;
+  font-weight:    700;
+  padding:        7px 14px;
+  border-radius:  8px;
+  background:     hsl(var(--foreground));
+  color:          hsl(var(--background));
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  transition:     opacity 120ms ease;
+}
+
+.openBtn:hover {
+  opacity: 0.92;
+}
+
+.openBtn:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+.laterPill {
+  font:           inherit;
+  font-size:      11px;
+  font-weight:    600;
+  padding:        6px 10px;
+  border-radius:  999px;
+  background:     hsl(var(--muted));
+  color:          hsl(var(--muted-foreground));
+  border:         1px dashed hsl(var(--border-subtle));
+  cursor:         not-allowed;
+  letter-spacing: 0.02em;
+}
+
+.removeBtn {
+  font:           inherit;
+  font-size:      12px;
+  font-weight:    600;
+  padding:        6px 10px;
+  border-radius:  8px;
+  background:     transparent;
+  color:          hsl(var(--muted-foreground));
+  border:         none;
+  cursor:         pointer;
+  margin-left:    auto;
+  letter-spacing: 0.02em;
+}
+
+.removeBtn:hover {
+  color: hsl(var(--score-terrible));
+}
+
+.removeBtn:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}

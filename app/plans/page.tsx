@@ -9,11 +9,13 @@
 
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { usePlans } from '@/lib/plans/usePlans';
+import { bucketOf, type Plan, type PlanBucket } from '@/lib/plans/types';
 import PlansTabs, { type PlansView, isPlansView } from '@/components/plans/PlansTabs';
 import EmptyState from '@/components/plans/EmptyState';
+import PlanCard from '@/components/plans/PlanCard';
 import styles from './page.module.css';
 
 export default function PlansPage() {
@@ -39,7 +41,7 @@ function PlansPageContent() {
   const raw = searchParams?.get('view') ?? '';
   const view: PlansView = isPlansView(raw) ? raw : 'upcoming';
 
-  const { plans, hydrated } = usePlans();
+  const { plans, hydrated, removePlan } = usePlans();
   const count = hydrated ? plans.length : null;
 
   return (
@@ -70,13 +72,7 @@ function PlansPageContent() {
                 cta={{ label: 'Open Forecast', href: '/forecast' }}
               />
             ) : (
-              // Slice 3 replaces this with the PlanCard grid bucketed by
-              // Today / Tomorrow / This week / Later. For slice 2 we just
-              // confirm the data is reachable.
-              <div className={styles.placeholder}>
-                {count} upcoming plan{count === 1 ? '' : 's'} — PlanCard
-                layout lands in slice 3.
-              </div>
+              <UpcomingBuckets plans={plans} onRemove={removePlan} />
             )
           )}
 
@@ -100,6 +96,71 @@ function ComingSoon({ tab }: { tab: string }) {
     <div className={styles.comingSoon}>
       <div className={styles.comingSoonTitle}>{tab}</div>
       <p className={styles.comingSoonBody}>Coming in Phase 2.</p>
+    </div>
+  );
+}
+
+const BUCKET_ORDER: { key: PlanBucket; label: string }[] = [
+  { key: 'today',    label: 'Today'     },
+  { key: 'tomorrow', label: 'Tomorrow'  },
+  { key: 'thisWeek', label: 'This week' },
+  { key: 'later',    label: 'Later'     },
+];
+
+function UpcomingBuckets({
+  plans,
+  onRemove,
+}: {
+  plans:    Plan[];
+  onRemove: (id: string) => void;
+}) {
+  // Bucket once per plans change. Past plans live on the Past tab (Phase 2),
+  // so we exclude them here even though they have a valid bucket.
+  const buckets = useMemo(() => {
+    const acc: Record<PlanBucket, Plan[]> = {
+      today:    [],
+      tomorrow: [],
+      thisWeek: [],
+      later:    [],
+      past:     [],
+    };
+    for (const p of plans) {
+      acc[bucketOf(p)].push(p);
+    }
+    return acc;
+  }, [plans]);
+
+  const sections = BUCKET_ORDER.filter(({ key }) => buckets[key].length > 0);
+
+  if (sections.length === 0) {
+    // All plans bucketed as 'past' — Upcoming tab is effectively empty.
+    return (
+      <EmptyState
+        title="Nothing upcoming."
+        body="Past plans live on the Past tab when it ships in Phase 2."
+        cta={{ label: 'Open Forecast', href: '/forecast' }}
+      />
+    );
+  }
+
+  return (
+    <div className={styles.buckets}>
+      {sections.map(({ key, label }) => {
+        const items = buckets[key];
+        return (
+          <section key={key} className={styles.bucket}>
+            <header className={styles.bucketHeader}>
+              <span className={styles.bucketLabel}>{label}</span>
+              <span className={styles.bucketCount}>· {items.length}</span>
+            </header>
+            <div className={styles.bucketGrid}>
+              {items.map((p) => (
+                <PlanCard key={p.id} plan={p} onRemove={onRemove} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
