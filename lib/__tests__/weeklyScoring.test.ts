@@ -73,6 +73,8 @@ const STUB_CURRENT = {
   swellPeriod: null,
   swellDirDeg: null,
   seaSurfaceTempC: null,
+  swellWaveHeightM: null,
+  windWaveHeightM: null,
 };
 
 /** Tight builder for an hourly slot — fills sensible nulls for unused fields. */
@@ -95,6 +97,8 @@ function hr(overrides: Partial<HourlyForecast> & { time: string }): HourlyForeca
     swellPeriodS:        null,
     swellDirDeg:         null,
     seaSurfaceTempC:     null,
+    swellWaveHeightM:    null,
+    windWaveHeightM:     null,
     ...overrides,
   };
 }
@@ -636,5 +640,111 @@ describe('aggregateDays — whiteout snow day (visibility 300m)', () => {
   });
   it('reasons mention whiteout or visibility', () => {
     expect(days[0].reasons.join(' ')).toMatch(/whiteout|visibility/i);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Surf — swell-vs-windchop dominance split.
+// Same total wave height, different composition → different verdicts.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SWELL_DOMINANT: ExtendedWeatherData = {
+  current: STUB_CURRENT,
+  daily: [{ date: '2026-05-22', tempMax: 20, tempMin: 16, precipitationSum: 0, weatherCode: 1 }],
+  hourly: [9,10,11,12,13,14,15,16].map((h) => hr({
+    time: `2026-05-22T${String(h).padStart(2,'0')}:00`,
+    temperature: 19, apparentTemperature: 19, windKph: 8, gustKph: 12,
+    weatherCode: 1,
+    waveHeightM: 1.2, swellPeriodS: 12,
+    swellWaveHeightM: 1.0, windWaveHeightM: 0.2,  // 83% swell — clean groundswell
+  })),
+  hourlyUnits: VALID_UNITS,
+};
+
+const WINDCHOP_DOMINANT: ExtendedWeatherData = {
+  ...SWELL_DOMINANT,
+  hourly: SWELL_DOMINANT.hourly.map((h) => ({
+    ...h,
+    swellWaveHeightM: 0.3,   // 25% swell, 75% wind chop — same total, junk water
+    windWaveHeightM: 0.9,
+    swellPeriodS: 7,         // short windswell period to match
+  })),
+};
+
+describe('aggregateDays — swell vs wind-chop dominance', () => {
+  const cleanDays   = aggregateDays('surfing', COASTAL_LOC, SWELL_DOMINANT,   NOW_MS);
+  const choppedDays = aggregateDays('surfing', COASTAL_LOC, WINDCHOP_DOMINANT, NOW_MS);
+
+  it('clean groundswell-dominant day scores GO', () => {
+    expect(cleanDays[0].verdict).toBe('GO');
+  });
+
+  it('wind-chop-dominant day with same total wave height does NOT score GO', () => {
+    expect(choppedDays[0].verdict).not.toBe('GO');
+  });
+
+  it('clean day scores meaningfully higher than chopped (same total wave height)', () => {
+    expect(cleanDays[0].score - choppedDays[0].score).toBeGreaterThanOrEqual(15);
+  });
+
+  it('chopped day mentions wind chop or disorganized lines in its reasons', () => {
+    expect(choppedDays[0].reasons.join(' ')).toMatch(/chop|disorganized|wind swell/i);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Surf — beach orientation (per-pin beachFacingDeg).
+// Same wind speed; only the wind direction relative to beach orientation
+// changes between onshore (bad) and offshore (good).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SOUTH_FACING_BEACH: LocationMetadata = {
+  ...COASTAL_LOC,
+  beachFacingDeg: 180,        // beach faces south (ocean to the south)
+};
+
+const ONSHORE_18KPH: ExtendedWeatherData = {
+  current: STUB_CURRENT,
+  daily: [{ date: '2026-05-22', tempMax: 20, tempMin: 16, precipitationSum: 0, weatherCode: 1 }],
+  hourly: [9,10,11,12,13,14,15,16].map((h) => hr({
+    time: `2026-05-22T${String(h).padStart(2,'0')}:00`,
+    temperature: 19, apparentTemperature: 19,
+    windKph: 18, gustKph: 24, windDirDeg: 180,  // wind FROM south = onshore
+    weatherCode: 1,
+    waveHeightM: 1.0, swellPeriodS: 11,
+  })),
+  hourlyUnits: VALID_UNITS,
+};
+
+const OFFSHORE_18KPH: ExtendedWeatherData = {
+  ...ONSHORE_18KPH,
+  hourly: ONSHORE_18KPH.hourly.map((h) => ({
+    ...h,
+    windDirDeg: 0,            // wind FROM north = offshore at a south-facing beach
+  })),
+};
+
+describe('aggregateDays — beach orientation on/offshore', () => {
+  const onshore  = aggregateDays('surfing', SOUTH_FACING_BEACH, ONSHORE_18KPH,  NOW_MS);
+  const offshore = aggregateDays('surfing', SOUTH_FACING_BEACH, OFFSHORE_18KPH, NOW_MS);
+
+  it('onshore wind into the swell pulls the day below GO', () => {
+    expect(onshore[0].verdict).not.toBe('GO');
+  });
+
+  it('offshore wind at the same speed lets the day reach GO', () => {
+    expect(offshore[0].verdict).toBe('GO');
+  });
+
+  it('offshore beats onshore by a meaningful margin', () => {
+    expect(offshore[0].score - onshore[0].score).toBeGreaterThanOrEqual(15);
+  });
+
+  it('onshore reason names the wind direction problem', () => {
+    expect(onshore[0].reasons.join(' ')).toMatch(/onshore/i);
+  });
+
+  it('offshore reason names the clean wind', () => {
+    expect(offshore[0].reasons.join(' ')).toMatch(/offshore|clean/i);
   });
 });

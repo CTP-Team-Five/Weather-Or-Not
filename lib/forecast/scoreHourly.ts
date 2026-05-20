@@ -57,6 +57,7 @@ export async function scoreHourly(
     pin.lon,
     spotName,
     pin.tags,
+    pin.beachFacingDeg,
   );
 
   return weather.hourly.map((h) => {
@@ -79,6 +80,8 @@ export async function scoreHourly(
       swellPeriodS:       h.swellPeriodS,
       swellDirDeg:        h.swellDirDeg,
       seaSurfaceTempC:    h.seaSurfaceTempC,
+      swellWaveHeightM:   h.swellWaveHeightM,
+      windWaveHeightM:    h.windWaveHeightM,
       hourlyUnits:        weather.hourlyUnits,
     });
     const result = scoreActivity(activity, location, snapshot);

@@ -49,6 +49,7 @@ export async function computeSuitabilityForPin(
     pin.lon,
     pin.canonical_name || pin.area,
     pin.tags,
+    pin.beachFacingDeg,
   );
 
   const weatherSnap = buildWeatherSnapshot({
@@ -70,6 +71,8 @@ export async function computeSuitabilityForPin(
     swellPeriodS:       weather.current.swellPeriod,
     swellDirDeg:        weather.current.swellDirDeg,
     seaSurfaceTempC:    weather.current.seaSurfaceTempC,
+    swellWaveHeightM:   weather.current.swellWaveHeightM,
+    windWaveHeightM:    weather.current.windWaveHeightM,
     hourlyUnits:        weather.hourlyUnits,
   });
 

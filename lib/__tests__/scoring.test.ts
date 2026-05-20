@@ -72,6 +72,8 @@ function goodSkiInput(overrides: Partial<SnapshotInput> = {}): SnapshotInput {
     swellPeriodS:       null,
     swellDirDeg:        null,
     seaSurfaceTempC:    null,
+    swellWaveHeightM:   null,
+    windWaveHeightM:    null,
     hourlyUnits:        VALID_UNITS,
     ...overrides,
   };
@@ -98,6 +100,8 @@ function goodHikeInput(overrides: Partial<SnapshotInput> = {}): SnapshotInput {
     swellPeriodS:       null,
     swellDirDeg:        null,
     seaSurfaceTempC:    null,
+    swellWaveHeightM:   null,
+    windWaveHeightM:    null,
     hourlyUnits:        VALID_UNITS,
     ...overrides,
   };

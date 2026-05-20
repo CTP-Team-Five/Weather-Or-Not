@@ -81,6 +81,10 @@ export interface SnapshotInput {
   swellDirDeg:        number | null;
   /** Sea-surface temperature in °C. Real water temp, not air-temp proxy. */
   seaSurfaceTempC:    number | null;
+  /** Swell-only height. Used with windWaveHeightM to detect swell dominance. */
+  swellWaveHeightM:   number | null;
+  /** Wind-chop-only height. */
+  windWaveHeightM:    number | null;
   /** The hourly_units object returned by Open-Meteo; validated exactly once here. */
   hourlyUnits:        Record<string, string>;
 }
@@ -108,6 +112,8 @@ export function buildWeatherSnapshot(input: SnapshotInput): WeatherSnapshot {
   if (input.swellPeriodS  != null) presentOptionals.add('swellPeriodS');
   if (input.swellDirDeg   != null) presentOptionals.add('swellDirDeg');
   if (input.seaSurfaceTempC != null) presentOptionals.add('seaSurfaceTempC');
+  if (input.swellWaveHeightM != null) presentOptionals.add('swellWaveHeightM');
+  if (input.windWaveHeightM  != null) presentOptionals.add('windWaveHeightM');
 
   // 3. Filter to the activity-specific critical subset.
   const missingCriticalHazards = CRITICAL_FIELDS[input.activity].filter(
@@ -139,6 +145,8 @@ export function buildWeatherSnapshot(input: SnapshotInput): WeatherSnapshot {
     swellPeriodS:           input.swellPeriodS ?? undefined,
     swellDirDeg:            input.swellDirDeg ?? undefined,
     seaSurfaceTempC:        input.seaSurfaceTempC ?? undefined,
+    swellWaveHeightM:       input.swellWaveHeightM ?? undefined,
+    windWaveHeightM:        input.windWaveHeightM ?? undefined,
     dataQuality,
   };
 }

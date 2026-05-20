@@ -162,6 +162,8 @@ function snapshotFromHour(
     swellPeriodS:       h.swellPeriodS,
     swellDirDeg:        h.swellDirDeg,
     seaSurfaceTempC:    h.seaSurfaceTempC,
+    swellWaveHeightM:   h.swellWaveHeightM,
+    windWaveHeightM:    h.windWaveHeightM,
     hourlyUnits,
   });
 }
@@ -574,6 +576,7 @@ export async function computeWeeklyForPin(
     pin.lon,
     pin.canonical_name || pin.area,
     pin.tags,
+    pin.beachFacingDeg,
   );
 
   const emit = debugEnabled()

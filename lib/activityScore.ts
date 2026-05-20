@@ -27,6 +27,13 @@ export type LocationMetadata = {
 
   snowFriendly?: boolean;     // ski resort or clearly snow-sport area
   surfFriendly?: boolean;     // surf beach or tagged surf spot
+
+  /**
+   * Compass bearing the beach faces (where the ocean is from land), 0–359.
+   * When set, surf scoring computes exact on/offshore wind instead of the
+   * swell-vs-wind direction proxy. Per-pin field; unset for most pins.
+   */
+  beachFacingDeg?: number;
 };
 
 export type WeatherSnapshot = {
@@ -58,6 +65,10 @@ export type WeatherSnapshot = {
   swellDirDeg?: number;
   /** Sea-surface temperature in °C. Replaces air-temp proxy in the surf comfort branch. */
   seaSurfaceTempC?: number;
+  /** Swell-only height (no wind chop). With windWaveHeightM, computes swell dominance. */
+  swellWaveHeightM?: number;
+  /** Wind-chop-only height. */
+  windWaveHeightM?: number;
   windDirDeg?: number;
   /** Populated by buildWeatherSnapshot; consumed by Cliff stages. */
   dataQuality: DataQuality;
@@ -154,13 +165,13 @@ function scoreSurfing(loc: LocationMetadata, w: WeatherSnapshot): SuitabilityRes
   if (w.windKph > 70) {
     score10 = 0.5;
     reasons.push('Gale-force winds — paddling unsafe.');
-    return finalizeSurfScore(score10, reasons, maxScore, w);
+    return finalizeSurfScore(score10, reasons, maxScore, w, loc);
   }
 
   if (w.waveHeightM != null && w.waveHeightM > 5) {
     score10 = 1.0;
     reasons.push('Very large surf — advanced/expert only.');
-    return finalizeSurfScore(score10, reasons, maxScore, w);
+    return finalizeSurfScore(score10, reasons, maxScore, w, loc);
   }
 
   // Verifiably flat: tiny waves AND short period together = nothing to ride.
@@ -171,7 +182,7 @@ function scoreSurfing(loc: LocationMetadata, w: WeatherSnapshot): SuitabilityRes
   ) {
     score10 = 0.8;
     reasons.push('Sea is flat — no waves to surf.');
-    return finalizeSurfScore(score10, reasons, maxScore, w);
+    return finalizeSurfScore(score10, reasons, maxScore, w, loc);
   }
 
   // Missing critical hazard data — softer cap. Can still hit MAYBE but
@@ -244,24 +255,55 @@ function scoreSurfing(loc: LocationMetadata, w: WeatherSnapshot): SuitabilityRes
     }
   }
 
-  // Wind direction relative to swell origin. Wind blowing FROM the same
-  // direction as the swell origin = onshore (rides into the wave face,
-  // chop), opposite = offshore (holds the face up, clean). Without beach
-  // orientation this is approximate but a real improvement on speed-only.
-  if (w.windDirDeg != null && w.swellDirDeg != null && w.windKph >= 5) {
-    const diff = angleDistance(w.windDirDeg, w.swellDirDeg);
-    if (diff < 45) {
-      // Onshore — extra penalty proportional to wind strength.
-      if (w.windKph > 15) {
-        score10 -= 1.5;
-        reasons.push('Onshore wind into the swell — chop likely.');
-      } else {
-        score10 -= 0.5;
+  // Swell vs wind-chop dominance. Two days can share the same total wave
+  // height but be totally different rides — one is clean groundswell, the
+  // other is local wind chop. The ratio between the components tells us
+  // which. Only fires when both split fields are present and the total is
+  // meaningful (>= 0.3 m).
+  if (
+    w.swellWaveHeightM != null &&
+    w.windWaveHeightM != null &&
+    w.swellWaveHeightM + w.windWaveHeightM >= 0.3
+  ) {
+    const total = w.swellWaveHeightM + w.windWaveHeightM;
+    const swellShare = w.swellWaveHeightM / total;
+    if (swellShare >= 0.7) {
+      score10 += 0.3;
+      reasons.push('Clean groundswell dominant; little local chop.');
+    } else if (swellShare < 0.3) {
+      score10 -= 1.0;
+      reasons.push('Wind chop dominant; lines disorganized.');
+    } else if (swellShare < 0.5) {
+      score10 -= 0.5;
+      reasons.push('Wind swell mixed in with the groundswell.');
+    }
+  }
+
+  // Wind direction. When beachFacingDeg is set on the pin, compute exact
+  // on/offshore (wind from sea vs land). Otherwise fall back to the
+  // swell-origin proxy — same idea, less precise (swell direction can
+  // shift but beach orientation doesn't).
+  if (w.windDirDeg != null && w.windKph >= 5) {
+    let onshoreDiff: number | null = null;
+    if (loc.beachFacingDeg != null) {
+      // beachFacingDeg = where the ocean is from land. Wind blowing FROM
+      // that direction = wind from sea = onshore.
+      onshoreDiff = angleDistance(w.windDirDeg, loc.beachFacingDeg);
+    } else if (w.swellDirDeg != null) {
+      onshoreDiff = angleDistance(w.windDirDeg, w.swellDirDeg);
+    }
+    if (onshoreDiff != null) {
+      if (onshoreDiff < 45) {
+        if (w.windKph > 15) {
+          score10 -= 1.5;
+          reasons.push('Onshore wind into the surf — chop likely.');
+        } else {
+          score10 -= 0.5;
+        }
+      } else if (onshoreDiff > 135 && w.windKph <= 25) {
+        score10 += 0.8;
+        reasons.push('Offshore wind holding the wave face — clean.');
       }
-    } else if (diff > 135 && w.windKph <= 25) {
-      // Light-to-moderate offshore — bonus.
-      score10 += 0.8;
-      reasons.push('Offshore wind holding the wave face — clean.');
     }
   }
 
@@ -312,7 +354,7 @@ function scoreSurfing(loc: LocationMetadata, w: WeatherSnapshot): SuitabilityRes
     reasons.push('Low visibility; lineup awareness limited.');
   }
 
-  return finalizeSurfScore(score10, reasons, maxScore, w);
+  return finalizeSurfScore(score10, reasons, maxScore, w, loc);
 }
 
 function finalizeSurfScore(
@@ -320,6 +362,7 @@ function finalizeSurfScore(
   reasons:  string[],
   maxScore: number,
   w:        WeatherSnapshot,
+  loc:      LocationMetadata,
 ): SuitabilityResult {
   score10 = Math.max(0, Math.min(maxScore, score10));
   const score100 = Math.round(score10 * 10);
@@ -328,7 +371,7 @@ function finalizeSurfScore(
   // GO-tier days get a data-forward headline (concrete wave/period/wind numbers)
   // instead of generic praise. Mirrors buildHikingSignalReasons.
   const finalReasons = label === 'GREAT'
-    ? buildSurfingSignalReasons(w)
+    ? buildSurfingSignalReasons(w, loc)
     : dedupeReasons(reasons, 3);
 
   return {
@@ -350,10 +393,10 @@ function angleDistance(a: number, b: number): number {
 
 /**
  * Builds a single data-forward headline for GREAT-tier surf days:
- * "1.2 m · 12 s groundswell · 8 km/h light wind · 18°C water"
+ * "1.2 m · 12 s groundswell · 8 km/h offshore · 18°C water"
  * Every fragment is grounded in the snapshot.
  */
-function buildSurfingSignalReasons(w: WeatherSnapshot): string[] {
+function buildSurfingSignalReasons(w: WeatherSnapshot, loc: LocationMetadata): string[] {
   const parts: string[] = [];
 
   if (w.waveHeightM != null) {
@@ -368,9 +411,23 @@ function buildSurfingSignalReasons(w: WeatherSnapshot): string[] {
     parts.push(`${Math.round(w.swellPeriodS)} s ${label}`);
   }
 
-  if (w.windKph < 5) parts.push('no wind');
-  else if (w.windKph < 15) parts.push(`${Math.round(w.windKph)} km/h light wind`);
-  else parts.push(`${Math.round(w.windKph)} km/h wind`);
+  // Wind fragment — name on/offshore when we can compute it. Beach orientation
+  // wins when present (exact); swell origin is the proxy fallback.
+  let windQual: 'offshore' | 'onshore' | null = null;
+  if (w.windDirDeg != null && w.windKph >= 5) {
+    const ref = loc.beachFacingDeg ?? w.swellDirDeg ?? null;
+    if (ref != null) {
+      const diff = ((Math.abs(w.windDirDeg - ref) % 360) > 180
+        ? 360 - (Math.abs(w.windDirDeg - ref) % 360)
+        : Math.abs(w.windDirDeg - ref) % 360);
+      if (diff < 45)        windQual = 'onshore';
+      else if (diff > 135)  windQual = 'offshore';
+    }
+  }
+  if (w.windKph < 5)        parts.push('no wind');
+  else if (windQual)        parts.push(`${Math.round(w.windKph)} km/h ${windQual}`);
+  else if (w.windKph < 15)  parts.push(`${Math.round(w.windKph)} km/h light wind`);
+  else                      parts.push(`${Math.round(w.windKph)} km/h wind`);
 
   const wt = w.seaSurfaceTempC ?? w.tempC;
   const wtLabel = w.seaSurfaceTempC != null ? 'water' : 'air';
