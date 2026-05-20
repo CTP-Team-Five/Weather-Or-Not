@@ -243,13 +243,18 @@ function ForecastPageContent() {
   }, []);
 
   const handleConfirmSave = useCallback((note: string | undefined) => {
-    setDraft((current) => {
-      if (!current) return null;
-      const plan = addPlan(current, note);
-      setJustSaved(plan);
-      return null;
-    });
-  }, [addPlan]);
+    // Side effects (addPlan + setJustSaved) live OUTSIDE the setDraft
+    // updater on purpose. React StrictMode double-invokes updater functions
+    // in dev to surface impure updates — when addPlan ran inside the
+    // updater, it minted two UUIDs and persisted two distinct plans per
+    // save click. Reading `draft` from the closure + putting it in the dep
+    // array fires addPlan exactly once and lets StrictMode keep its
+    // impurity check intact.
+    if (!draft) return;
+    const plan = addPlan(draft, note);
+    setJustSaved(plan);
+    setDraft(null);
+  }, [draft, addPlan]);
 
   // Hydrate availability from localStorage on mount. Doing this in a useEffect
   // (not a lazy useState initializer) is what avoids the SSR hydration mismatch.
