@@ -21,6 +21,7 @@ import type { DayScore } from '@/lib/computeWeeklySuitability';
 import { canonicalActivityKey, formatActivityLabel } from './activityKey';
 import { formatTempBare } from '@/lib/formatTemp';
 import { usePreferences } from '@/lib/preferences';
+import BestWindowCard from './BestWindowCard';
 import styles from './ThreeDayForecast.module.css';
 
 interface Props {
@@ -200,10 +201,10 @@ function DayHourlySection({ pin, day, dayIdx }: DayProps) {
   return (
     <section className={styles.daySection} data-verdict={day.verdict}>
       <DayHero pin={pin} day={day} dayIdx={dayIdx} />
-      {/* BestWindowCard slot — slice 7c.
-          HourlyForecastRow list — slice 7d. */}
+      <BestWindowCard day={day} />
+      {/* HourlyForecastRow list — slice 7d. */}
       <div className={styles.dayPlaceholder}>
-        Best-window card + hourly rows land in slices 7c–d.
+        Hourly rows land in slice 7d.
       </div>
     </section>
   );
