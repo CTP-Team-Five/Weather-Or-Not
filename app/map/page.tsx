@@ -207,14 +207,27 @@ function MapPageContent() {
     activity?: PlacementActivity | null,
   ) => {
     const [lat, lon] = pos;
+
+    // PlaceMenu's "Drop pin here" only renders once an activity is picked, so
+    // by the time handlePin runs we always have one. Defensive bail keeps a
+    // bug from silently routing the user to the deprecated /rating picker.
+    if (!activity) {
+      console.warn("handlePin called without activity; ignoring drop");
+      return;
+    }
+
+    // Reverse-geocode the drop point for a human-friendly name + tags. If
+    // Nominatim rate-limits or errors, degrade to a coordinate-based name
+    // rather than bailing the placement to /rating — losing a name is a
+    // cosmetic miss; losing the placement is a UX failure.
+    let pinName: string;
+    let tags: string[] = [];
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=14&addressdetails=1&extratags=1&namedetails=1`,
         { headers: { "User-Agent": "WeatherOrNot/1.0 (xyz@gmail.com)" } }
       );
       const reverseData = await res.json();
-
-      let pinName: string;
       if (searchResult) {
         pinName = deriveFriendlyNameFromSearch(searchResult);
       } else if (searchLabel) {
@@ -222,71 +235,61 @@ function MapPageContent() {
       } else {
         pinName = deriveFriendlyName(reverseData);
       }
-
-      const canonicalName = pinName;
-      const slug = generateSlug(canonicalName);
-      const tags = inferTags(reverseData);
-
-      // Activity-first flow: save directly, skip /rating, jump straight to
-      // the SpotDetailBoard v2 view at /pins/[id].
-      if (activity) {
-        const newPin: SavedPin = {
-          id: crypto.randomUUID(),
-          name: pinName,
-          area: pinName,
-          lat,
-          lon,
-          activity,
-          createdAt: Date.now(),
-          canonical_name: canonicalName,
-          slug,
-          popularity_score: 1,
-          tags,
-        };
-        PinStore.add(newPin);
-
-        if (supabase) {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { error } = await supabase.from("pins").insert({
-              id: newPin.id,
-              area: newPin.area,
-              lat: newPin.lat,
-              lon: newPin.lon,
-              activity: newPin.activity,
-              canonical_name: newPin.canonical_name,
-              slug: newPin.slug,
-              popularity_score: newPin.popularity_score,
-              tags: newPin.tags,
-            });
-            if (error) {
-              console.warn("Pin saved locally; Supabase sync failed:", {
-                code: error.code,
-                message: error.message,
-                details: error.details,
-                hint: error.hint,
-              });
-            } else {
-              const { error: linkError } = await supabase
-                .from("user_pins")
-                .insert({ user_id: user.id, pin_id: newPin.id });
-              if (linkError) console.warn("Pin saved; user link failed:", linkError);
-            }
-          }
-        }
-
-        router.push(`/pins/${newPin.id}`);
-        return;
-      }
-
-      // Legacy fallback (no activity selected): keep /rating reachable.
-      router.push(
-        `/rating?name=${encodeURIComponent(pinName)}&area=${encodeURIComponent(pinName)}&lat=${lat}&lon=${lon}&canonical=${encodeURIComponent(canonicalName)}&slug=${encodeURIComponent(slug)}&tags=${encodeURIComponent(tags.join(","))}`
-      );
+      tags = inferTags(reverseData);
     } catch (err) {
-      console.error("Reverse geocode failed:", err);
-      router.push(`/rating?lat=${lat}&lon=${lon}`);
+      console.warn("Reverse geocode failed; using coordinate name:", err);
+      pinName = searchLabel || `${lat.toFixed(3)}, ${lon.toFixed(3)}`;
     }
+
+    const canonicalName = pinName;
+    const slug = generateSlug(canonicalName);
+
+    const newPin: SavedPin = {
+      id: crypto.randomUUID(),
+      name: pinName,
+      area: pinName,
+      lat,
+      lon,
+      activity,
+      createdAt: Date.now(),
+      canonical_name: canonicalName,
+      slug,
+      popularity_score: 1,
+      tags,
+    };
+    PinStore.add(newPin);
+
+    if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase.from("pins").insert({
+          id: newPin.id,
+          area: newPin.area,
+          lat: newPin.lat,
+          lon: newPin.lon,
+          activity: newPin.activity,
+          canonical_name: newPin.canonical_name,
+          slug: newPin.slug,
+          popularity_score: newPin.popularity_score,
+          tags: newPin.tags,
+        });
+        if (error) {
+          console.warn("Pin saved locally; Supabase sync failed:", {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+          });
+        } else {
+          const { error: linkError } = await supabase
+            .from("user_pins")
+            .insert({ user_id: user.id, pin_id: newPin.id });
+          if (linkError) console.warn("Pin saved; user link failed:", linkError);
+        }
+      }
+    }
+
+    router.push(`/pins/${newPin.id}`);
   };
 
   const handleDropPin = async () => {

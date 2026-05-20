@@ -1,0 +1,331 @@
+/* components/forecast/ForecastCalendar.module.css
+   Token-correct light calendar grid. Verdict colour is set via a CSS custom
+   property bound to a [data-verdict] attribute on each cell, so hover and
+   focus states stay in CSS without inline JS handlers. */
+
+.grid {
+  background: hsl(var(--surface-elevated));
+  border-radius: 16px;
+  border: 1px solid hsl(var(--border-subtle));
+  padding: 18px;
+  box-shadow:
+    0 1px 3px hsl(var(--shadow) / 0.06),
+    0 4px 16px hsl(var(--shadow) / 0.05);
+  overflow-x: auto;
+}
+
+/* ── Rows ─────────────────────────────────────────────────────────────────── */
+
+.row {
+  display: grid;
+  gap: 6px;
+  align-items: center;
+  min-width: 920px;
+}
+
+.headerRow {
+  margin-bottom: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid hsl(var(--border-subtle));
+}
+
+.spotRow {
+  padding: 6px 0;
+}
+
+.spotRow + .spotRow {
+  border-top: 1px solid hsl(var(--border-subtle) / 0.6);
+}
+
+.headerLabel {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  align-self: end;
+  padding-bottom: 8px;
+  padding-left: 6px;
+}
+
+/* ── Day-toggle header ────────────────────────────────────────────────────── */
+
+.dayHeader {
+  cursor: pointer;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  border: 1px solid transparent;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+  position: relative;
+  min-height: 56px;
+}
+
+.dayHeader:hover {
+  background: hsl(var(--muted) / 0.5);
+  color: hsl(var(--foreground));
+}
+
+.dayHeader:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+.dayHeader[data-today='true'] {
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border));
+}
+
+.dayHeader[aria-pressed='true'] {
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  border-color: hsl(var(--foreground));
+}
+
+.dayHeader[aria-pressed='true']:hover {
+  background: hsl(var(--foreground));
+}
+
+.dayWeekday {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.dayNumber {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 2px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.weekendPip {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: hsl(var(--warning));
+  opacity: 0.7;
+}
+
+.dayHeader[aria-pressed='true'] .weekendPip {
+  display: none;
+}
+
+.activeDot {
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Spot row left column (rail + name) ───────────────────────────────────── */
+
+.pinButton {
+  cursor: pointer;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  text-align: left;
+  color: inherit;
+  min-width: 0;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.pinButton:hover {
+  background: hsl(var(--muted) / 0.5);
+  border-color: hsl(var(--border-subtle));
+}
+
+.pinButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+.pinRail {
+  width: 6px;
+  height: 32px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  background: hsl(var(--muted-foreground));
+}
+
+.pinRail[data-activity='hike']      { background: var(--accent-hike); }
+.pinRail[data-activity='surf']      { background: var(--accent-surf); }
+.pinRail[data-activity='snowboard'] { background: var(--accent-snow); }
+
+.pinTextWrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.pinName {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pinMeta {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Verdict cell ─────────────────────────────────────────────────────────── */
+
+.cell {
+  --hsl: var(--score-ok);
+  cursor: pointer;
+  font: inherit;
+  position: relative;
+  height: 56px;
+  border-radius: 10px;
+  background: hsl(var(--hsl) / 0.10);
+  border: 1px solid hsl(var(--hsl) / 0.30);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+  padding: 0;
+  color: hsl(var(--hsl));
+}
+
+.cell[data-verdict='GO']    { --hsl: var(--score-great); }
+.cell[data-verdict='MAYBE'] { --hsl: var(--score-ok); }
+.cell[data-verdict='SKIP']  { --hsl: var(--score-terrible); }
+
+.cell:hover {
+  background: hsl(var(--hsl) / 0.15);
+  box-shadow: 0 4px 14px hsl(var(--hsl) / 0.20);
+}
+
+.cell:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+.cell[data-available='true'] {
+  background: hsl(var(--hsl) / 0.20);
+  box-shadow:
+    0 0 0 2px hsl(var(--hsl)),
+    0 6px 18px hsl(var(--hsl) / 0.25);
+}
+
+.cell[data-dim='true'] {
+  background: hsl(var(--muted) / 0.4);
+  border-color: hsl(var(--border-subtle));
+  color: hsl(var(--muted-foreground));
+  opacity: 0.55;
+}
+
+.cell[data-dim='true']:hover {
+  background: hsl(var(--muted) / 0.5);
+  box-shadow: 0 2px 8px hsl(var(--shadow) / 0.08);
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cell[data-available='true'] {
+    transform: translateY(-1px);
+  }
+  .cell:hover {
+    transform: translateY(-2px);
+  }
+  .cell[data-dim='true']:hover {
+    transform: none;
+  }
+}
+
+.cellScore {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: inherit;
+}
+
+.cellVerdict {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 3px;
+  color: inherit;
+}
+
+/* "Today, peak window already passed" — fades the cell while keeping its
+   colour so the user sees we're reporting what's still ahead, not the full
+   day average. */
+.cell[data-past-peak='true']::after {
+  content: 'LATER';
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-family: var(--font-display);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: hsl(var(--hsl));
+  opacity: 0.75;
+}
+
+/* ── Empty placeholder (no forecast data for this slot — beyond Open-Meteo's
+   horizon for marine surf pins, etc) ──────────────────────────────────────── */
+
+.cellEmpty {
+  height: 56px;
+  border-radius: 10px;
+  background: hsl(var(--muted) / 0.25);
+  border: 1px dashed hsl(var(--border-subtle));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: hsl(var(--muted-foreground) / 0.7);
+}

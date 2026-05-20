@@ -15,8 +15,15 @@ import { ExtendedWeatherData, getWeatherDescription } from '@/components/utils/f
 import { incrementPopularity } from '@/lib/supabase/incrementPopularity';
 import { SuitabilityResult } from '@/lib/activityScore';
 import { computeSuitabilityForPin } from '@/lib/computeSuitability';
+import {
+  computeWeeklyForPinSafe,
+  type WeeklySuitability,
+} from '@/lib/computeWeeklySuitability';
+import WeeklyForecastRail from '@/components/spotdetail/WeeklyForecastRail';
 import { AmbientTheme, deriveTheme } from '@/lib/weatherTheme';
 import { applyTheme, clearTheme } from '@/lib/applyTheme';
+import { weatherStateFromCode } from '@/lib/weatherState';
+import { useDynamicFavicon } from '@/lib/useDynamicFavicon';
 import {
   getWeatherThemeClass,
   applyWeatherThemeClass,
@@ -317,6 +324,7 @@ export default function PinReportPage() {
   const [weather, setWeather] = useState<ExtendedWeatherData | null>(null);
   const [suitability, setSuitability] = useState<SuitabilityResult | null>(null);
   const [ambientTheme, setAmbientTheme] = useState<AmbientTheme | null>(null);
+  const [weekly, setWeekly] = useState<WeeklySuitability | null>(null);
   const [otherPins, setOtherPins] = useState<SavedPin[]>([]);
   const [revealed, setRevealed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -362,9 +370,16 @@ export default function PinReportPage() {
         setOtherPins(PinStore.all().filter((p) => p.id !== pinData!.id));
         incrementPopularity(pinData.id);
         try {
-          const computed = await computeSuitabilityForPin(pinData);
+          // Run "right now" + "next 7 days" in parallel. The weekly call also
+          // fetches forecast data, but Open-Meteo CDN-caches identical queries
+          // so the second hit is cheap.
+          const [computed, weeklyResult] = await Promise.all([
+            computeSuitabilityForPin(pinData),
+            computeWeeklyForPinSafe(pinData),
+          ]);
           setWeather(computed.weather);
           setSuitability(computed.suitability);
+          setWeekly(weeklyResult);
         } catch (err) {
           console.error('Failed to compute suitability:', err);
           setError('Failed to load weather data');
@@ -404,6 +419,11 @@ export default function PinReportPage() {
       setAmbientTheme(null);
     };
   }, [pin, weather]);
+
+  // Tab favicon + URL-bar tint follow the live weather state.
+  useDynamicFavicon(
+    weather ? weatherStateFromCode(weather.current.weatherCode) : null,
+  );
 
   const verdict = suitability ? LABEL_TO_VERDICT[suitability.label] : null;
 
@@ -728,28 +748,37 @@ export default function PinReportPage() {
           </div>
 
           <div style={cardStyle}>
-            <SectionLabel>NEXT 7 DAYS</SectionLabel>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(7, 1fr)',
-                gap: 8,
-                marginTop: 14,
-              }}
-            >
-              {weather.daily.slice(0, 7).map((day, i) => (
-                <DayCard
-                  key={day.date}
-                  date={day.date}
-                  tempMax={day.tempMax}
-                  tempMin={day.tempMin}
-                  precip={day.precipitationSum}
-                  highlight={i === 0}
-                  highlightVerdict={verdict}
-                  tempUnit={prefs.tempUnit}
-                />
-              ))}
-            </div>
+            {weekly ? (
+              <WeeklyForecastRail days={weekly.days} />
+            ) : (
+              // Weekly scoring failed but the right-now snapshot succeeded —
+              // fall back to the un-scored daily grid so the section still
+              // gives the user temps + a today-frame.
+              <>
+                <SectionLabel>NEXT 7 DAYS</SectionLabel>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(7, 1fr)',
+                    gap: 8,
+                    marginTop: 14,
+                  }}
+                >
+                  {weather.daily.slice(0, 7).map((day, i) => (
+                    <DayCard
+                      key={day.date}
+                      date={day.date}
+                      tempMax={day.tempMax}
+                      tempMin={day.tempMin}
+                      precip={day.precipitationSum}
+                      highlight={i === 0}
+                      highlightVerdict={verdict}
+                      tempUnit={prefs.tempUnit}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         </div>
 

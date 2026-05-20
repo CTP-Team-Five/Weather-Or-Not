@@ -19,6 +19,7 @@ import type { ExtendedWeatherData } from '@/components/utils/fetchForecast';
 import type { SuitabilityResult } from '@/lib/activityScore';
 import type { AmbientTheme } from '@/lib/weatherTheme';
 import type { WeatherState } from '@/lib/weatherState';
+import type { DayScore } from '@/lib/computeWeeklySuitability';
 import { LABEL_TO_VERDICT, type Verdict } from '@/lib/decision';
 import { deriveHeroContent } from '@/lib/heroContent';
 import { deriveSpotReasons } from '@/lib/spotReasons';
@@ -46,6 +47,8 @@ interface Props {
   ambientTheme: AmbientTheme;
   state: WeatherState;
   fetchedAt: number | null;
+  /** 7-day scored forecast. Optional — renders the look-ahead strip when present. */
+  weeklyDays?: DayScore[];
   onDelete?: () => void;
 }
 
@@ -87,6 +90,7 @@ export default function SpotDetailBoard({
   ambientTheme,
   state,
   fetchedAt,
+  weeklyDays,
   onDelete,
 }: Props) {
   const verdict = LABEL_TO_VERDICT[suitability.label];
@@ -212,6 +216,7 @@ export default function SpotDetailBoard({
                 activityLabel={activityTitle}
                 subline={hero.subline}
                 fetchedAt={fetchedAt}
+                weeklyDays={weeklyDays}
               />
             </WeatherGlassPlate>
           </div>

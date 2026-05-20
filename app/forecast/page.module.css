@@ -1,0 +1,294 @@
+/* app/forecast/page.module.css
+   Planning calendar — "When should you go?"
+   Light surface to match the rest of the app. The verdict cells inside the
+   calendar carry the colour story; the page chrome stays calm. */
+
+.shell {
+  min-height: calc(100vh - var(--navbar-height));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  padding: 32px 40px 60px;
+}
+
+.inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Header row: title + activity filter ──────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.eyebrow {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 5vw, 44px);
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-top: 6px;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.titleEditorial {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-weight: 400;
+  color: hsl(var(--accent));
+  margin-right: 0.18em;
+}
+
+.subtitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  margin-top: 8px;
+  max-width: 540px;
+  line-height: 1.45;
+}
+
+/* ── Activity filter pill group ───────────────────────────────────────────── */
+
+.activityFilter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: hsl(var(--surface));
+  border-radius: 999px;
+  border: 1px solid hsl(var(--border-subtle));
+}
+
+.activityChip {
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  border: none;
+  transition: background 120ms ease, color 120ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.activityChip:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--muted) / 0.6);
+}
+
+.activityChip[aria-pressed='true'] {
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+}
+
+.activityChip[aria-pressed='true']:hover {
+  background: hsl(var(--foreground));
+}
+
+.activityChip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+.activityIcon {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Quick-set bar ────────────────────────────────────────────────────────── */
+
+.quickSet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.quickSetLabel {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.chip {
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: hsl(var(--surface));
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border-subtle));
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.chip:hover {
+  background: hsl(var(--surface-elevated));
+  border-color: hsl(var(--border));
+}
+
+.chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+.clearBtn {
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  padding: 6px 10px;
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.clearBtn:hover {
+  color: hsl(var(--foreground));
+  background: hsl(var(--muted) / 0.5);
+}
+
+.clearBtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+/* ── Best-match block + calendar block spacing ────────────────────────────── */
+
+.bestMatch {
+  margin-bottom: 20px;
+}
+
+/* ── Empty / loading messages ─────────────────────────────────────────────── */
+
+.dimMessage {
+  padding: 40px 20px;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.emptyState {
+  padding: 40px 24px;
+  border-radius: 16px;
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border-subtle));
+  text-align: center;
+}
+
+.emptyTitle {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.01em;
+}
+
+.emptyBody {
+  font-size: 13px;
+  color: hsl(var(--muted-foreground));
+  margin-top: 6px;
+  line-height: 1.45;
+}
+
+.computingNote {
+  margin-top: 12px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  color: hsl(var(--muted-foreground));
+  text-align: center;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ── Legend row ───────────────────────────────────────────────────────────── */
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 16px;
+  padding: 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  flex-wrap: wrap;
+}
+
+.legendDot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendDot[data-verdict='GO']    { --hsl: var(--score-great); }
+.legendDot[data-verdict='MAYBE'] { --hsl: var(--score-ok); }
+.legendDot[data-verdict='SKIP']  { --hsl: var(--score-terrible); }
+
+.legendDot::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: hsl(var(--hsl));
+}
+
+.legendHint {
+  margin-left: auto;
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+}
+
+/* ── Mobile tightening ────────────────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .shell {
+    padding: 24px 16px 48px;
+  }
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .activityFilter {
+    align-self: flex-start;
+  }
+  .legendHint {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 4px;
+  }
+}

@@ -1,0 +1,221 @@
+/* components/forecast/CellDrawer.module.css
+   Cell-detail dialog. Anchored bottom-centre on desktop, full-bleed bottom on
+   mobile. The header is verdict-tinted; the body is the canonical light
+   surface card. The verdict word uses the editorial italic-with-period
+   treatment that's canonical across the rest of the app. */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: hsl(var(--shadow) / 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scrim {
+    animation: drawerScrimIn 200ms ease;
+  }
+}
+
+.dialog {
+  --hsl: var(--score-ok);
+  width: min(560px, 92vw);
+  margin-bottom: 40px;
+  background: hsl(var(--surface-elevated));
+  border-radius: 16px;
+  border: 1px solid hsl(var(--border-subtle));
+  box-shadow: 0 30px 80px hsl(var(--shadow) / 0.35);
+  overflow: hidden;
+}
+
+.dialog[data-verdict='GO']    { --hsl: var(--score-great); }
+.dialog[data-verdict='MAYBE'] { --hsl: var(--score-ok); }
+.dialog[data-verdict='SKIP']  { --hsl: var(--score-terrible); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .dialog {
+    animation: drawerSlideIn 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@media (max-width: 520px) {
+  .dialog {
+    width: 100%;
+    margin-bottom: 0;
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+/* ── Header (verdict-tinted gradient) ─────────────────────────────────────── */
+
+.header {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, hsl(var(--hsl)) 0%, hsl(var(--hsl) / 0.85) 100%);
+  color: hsl(var(--score-great-foreground));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* MAYBE uses the dark foreground variant for contrast against amber. */
+.dialog[data-verdict='MAYBE'] .header {
+  color: hsl(var(--score-ok-foreground));
+}
+
+.headerLeft {
+  min-width: 0;
+  flex: 1;
+}
+
+.eyebrow {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.spotName {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  margin-top: 4px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerRight {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.score {
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+/* Canonical verdict treatment — Instrument Serif italic with the period. */
+.verdict {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 28px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  margin-top: 4px;
+  text-shadow: 0 0 24px hsl(var(--hsl) / 0.45);
+}
+
+/* ── Body ─────────────────────────────────────────────────────────────────── */
+
+.body {
+  padding: 20px 24px;
+}
+
+.whyLabel {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.whyText {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-top: 6px;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+/* ── Actions ──────────────────────────────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.openBtn {
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+  border: 1px solid hsl(var(--foreground));
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.openBtn:hover {
+  background: hsl(var(--foreground) / 0.9);
+}
+
+.openBtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+.closeBtn {
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+  border: 1px solid hsl(var(--border-subtle));
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.closeBtn:hover {
+  background: hsl(var(--muted) / 0.5);
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border));
+}
+
+.closeBtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+/* ── Animations (reduced-motion gated) ────────────────────────────────────── */
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes drawerScrimIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes drawerSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

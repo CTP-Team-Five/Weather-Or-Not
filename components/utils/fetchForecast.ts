@@ -4,12 +4,29 @@
 // Fields not available in the `current` block (snowfall, visibility,
 // precipitation_probability, soil_moisture) are taken from the hourly
 // slot that aligns closest to the current observation time.
+//
+// The hourly array spans the full forecast horizon (168 slots = 7×24)
+// and carries every field needed to rebuild a SnapshotInput for any
+// future hour — used by computeWeeklySuitability to score upcoming days.
 
 export interface HourlyForecast {
-  time:          string;
-  temperature:   number;
-  windKph:       number;
-  precipitation: number;
+  time:                string;
+  temperature:         number;
+  apparentTemperature: number;
+  windKph:             number;
+  windDirDeg:          number | null;
+  gustKph:             number | null;
+  precipitation:       number;
+  precipProb:          number | null;
+  weatherCode:         number;
+  snowfallCm:          number | null;
+  /** Snow depth in metres. Convert to cm at the scoring layer. */
+  snowDepthM:          number | null;
+  visibilityM:         number | null;
+  soilMoistureVwc:     number | null;
+  /** From Open-Meteo Marine API, when available. */
+  waveHeightM:         number | null;
+  swellPeriodS:        number | null;
 }
 
 export interface DailyForecast {
@@ -17,6 +34,8 @@ export interface DailyForecast {
   tempMax:           number;
   tempMin:           number;
   precipitationSum:  number;
+  /** Dominant Open-Meteo WMO code for the day; drives the day-card icon. */
+  weatherCode:       number;
 }
 
 export interface CurrentWeather {
@@ -81,8 +100,11 @@ function nullable<T>(value: T | null | undefined): T | null {
 export async function fetchForecast(
   lat: number,
   lon: number,
+  forecastDays: number = 7,
 ): Promise<ExtendedWeatherData | null> {
   try {
+    // Open-Meteo free tier supports 1–16 forecast days; clamp to that range.
+    const days = Math.max(1, Math.min(16, Math.round(forecastDays)));
     const url = new URL('https://api.open-meteo.com/v1/forecast');
     url.searchParams.set('latitude',  lat.toString());
     url.searchParams.set('longitude', lon.toString());
@@ -93,18 +115,19 @@ export async function fetchForecast(
     );
     url.searchParams.set(
       'hourly',
-      'temperature_2m,wind_speed_10m,precipitation,' +
-      'wind_gusts_10m,snowfall,snow_depth,visibility,' +
-      'precipitation_probability,soil_moisture_0_to_1cm',
+      'temperature_2m,apparent_temperature,' +
+      'wind_speed_10m,wind_direction_10m,wind_gusts_10m,' +
+      'precipitation,precipitation_probability,weather_code,' +
+      'snowfall,snow_depth,visibility,soil_moisture_0_to_1cm',
     );
     url.searchParams.set(
       'daily',
-      'temperature_2m_max,temperature_2m_min,precipitation_sum',
+      'temperature_2m_max,temperature_2m_min,precipitation_sum,weather_code',
     );
     url.searchParams.set('temperature_unit', 'celsius');
     url.searchParams.set('wind_speed_unit',  'kmh');
     url.searchParams.set('timezone',         'auto');
-    url.searchParams.set('forecast_days',    '7');
+    url.searchParams.set('forecast_days',    String(days));
 
     const res = await fetch(url.toString());
     if (!res.ok) {
@@ -124,18 +147,32 @@ export async function fetchForecast(
     const ci = findCurrentHourIndex(hourlyTimes, data.current?.time ?? new Date().toISOString());
 
     // ── Marine data (optional) ──
+    // Always attempted; silently fails for inland points. The hourly arrays
+    // are needed by computeWeeklySuitability to score future surf days.
     let waveHeight:  number | null = null;
     let swellPeriod: number | null = null;
+    const marineHourlyWave: Map<string, number> = new Map();
+    const marineHourlySwell: Map<string, number> = new Map();
     try {
       const marineUrl = new URL('https://marine-api.open-meteo.com/v1/marine');
       marineUrl.searchParams.set('latitude',  lat.toString());
       marineUrl.searchParams.set('longitude', lon.toString());
       marineUrl.searchParams.set('current', 'wave_height,swell_wave_period');
+      marineUrl.searchParams.set('hourly',  'wave_height,swell_wave_period');
+      marineUrl.searchParams.set('timezone', 'auto');
+      marineUrl.searchParams.set('forecast_days', String(days));
       const marineRes = await fetch(marineUrl.toString());
       if (marineRes.ok) {
         const marine  = await marineRes.json();
         waveHeight    = nullable(marine.current?.wave_height);
         swellPeriod   = nullable(marine.current?.swell_wave_period);
+        const mTimes: string[] = marine.hourly?.time ?? [];
+        const mWave:  (number|null)[] = marine.hourly?.wave_height ?? [];
+        const mSwell: (number|null)[] = marine.hourly?.swell_wave_period ?? [];
+        for (let i = 0; i < mTimes.length; i++) {
+          if (mWave[i]  != null) marineHourlyWave.set(mTimes[i], mWave[i] as number);
+          if (mSwell[i] != null) marineHourlySwell.set(mTimes[i], mSwell[i] as number);
+        }
       }
     } catch {
       // Marine data is optional; continue without it
@@ -160,26 +197,43 @@ export async function fetchForecast(
       swellPeriod,
     };
 
-    // ── Hourly display data (next 24 slots) ──
+    // ── Hourly data (full forecast horizon, 24 × forecastDays slots) ──
+    // Consumers that only need the next 24 hours (HourlyCurve, theme derivation)
+    // slice as needed. computeWeeklySuitability iterates the full range to
+    // build per-day SnapshotInputs.
+    const maxHours = 24 * days;
     const hourly: HourlyForecast[] = [];
-    for (let i = 0; i < Math.min(24, hourlyTimes.length); i++) {
+    for (let i = 0; i < Math.min(maxHours, hourlyTimes.length); i++) {
+      const t = hourlyTimes[i];
       hourly.push({
-        time:          hourlyTimes[i],
-        temperature:   data.hourly.temperature_2m?.[i]  ?? 0,
-        windKph:       data.hourly.wind_speed_10m?.[i]  ?? 0,
-        precipitation: data.hourly.precipitation?.[i]   ?? 0,
+        time:                t,
+        temperature:         data.hourly.temperature_2m?.[i]      ?? 0,
+        apparentTemperature: data.hourly.apparent_temperature?.[i] ?? 0,
+        windKph:             data.hourly.wind_speed_10m?.[i]      ?? 0,
+        windDirDeg:          nullable(data.hourly.wind_direction_10m?.[i]),
+        gustKph:             nullable(data.hourly.wind_gusts_10m?.[i]),
+        precipitation:       data.hourly.precipitation?.[i]       ?? 0,
+        precipProb:          nullable(data.hourly.precipitation_probability?.[i]),
+        weatherCode:         data.hourly.weather_code?.[i]        ?? 0,
+        snowfallCm:          nullable(data.hourly.snowfall?.[i]),
+        snowDepthM:          nullable(data.hourly.snow_depth?.[i]),
+        visibilityM:         nullable(data.hourly.visibility?.[i]),
+        soilMoistureVwc:     nullable(data.hourly.soil_moisture_0_to_1cm?.[i]),
+        waveHeightM:         marineHourlyWave.get(t)  ?? null,
+        swellPeriodS:        marineHourlySwell.get(t) ?? null,
       });
     }
 
     // ── Daily display data ──
     const daily: DailyForecast[] = [];
     const dailyDates: string[] = data.daily?.time ?? [];
-    for (let i = 0; i < Math.min(7, dailyDates.length); i++) {
+    for (let i = 0; i < Math.min(days, dailyDates.length); i++) {
       daily.push({
         date:             dailyDates[i],
         tempMax:          data.daily.temperature_2m_max?.[i]   ?? 0,
         tempMin:          data.daily.temperature_2m_min?.[i]   ?? 0,
         precipitationSum: data.daily.precipitation_sum?.[i]    ?? 0,
+        weatherCode:      data.daily.weather_code?.[i]         ?? 0,
       });
     }
 

@@ -1,0 +1,384 @@
+// app/forecast/page.tsx
+// "When should you go?" — multi-spot planning calendar.
+// Rows = saved spots, columns = next N days. Click day headers to mark when
+// you're free; the BEST MATCHES strip surfaces top spots ranked by avg score
+// across the days you selected.
+//
+// Light surface to match the rest of the app. Verdict colour comes from the
+// shared --score-* HSL tokens (via CSS modules); the eyebrow accent uses the
+// theme --accent token. No locally-redefined hex palettes here.
+
+'use client';
+
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/lib/useAuth';
+import { PinStore, SavedPin } from '@/components/data/pinStore';
+import {
+  computeWeeklyForPinSafe,
+  type DayScore,
+} from '@/lib/computeWeeklySuitability';
+import ForecastCalendar from '@/components/forecast/ForecastCalendar';
+import BestMatchStrip from '@/components/forecast/BestMatchStrip';
+import CellDrawer from '@/components/forecast/CellDrawer';
+import styles from './page.module.css';
+
+const FORECAST_DAYS = 14;
+const STORAGE_KEY = 'weatherornot_forecast_availability';
+
+type ActivityFilter = 'all' | 'hike' | 'surf' | 'snowboard';
+
+const ACTIVITY_FILTERS: { v: ActivityFilter; l: string }[] = [
+  { v: 'all',       l: 'All' },
+  { v: 'hike',      l: 'Hike' },
+  { v: 'surf',      l: 'Surf' },
+  { v: 'snowboard', l: 'Snow' },
+];
+
+function matchesFilter(pin: SavedPin, filter: ActivityFilter): boolean {
+  if (filter === 'all') return true;
+  const a = pin.activity.toLowerCase();
+  if (filter === 'hike') return a === 'hike' || a === 'hiking';
+  if (filter === 'surf') return a === 'surf' || a === 'surfing';
+  // 'snowboard' filter buckets ski + snowboard together
+  return a === 'snowboard' || a === 'snowboarding' || a === 'ski' || a === 'skiing';
+}
+
+// ── localStorage persistence helpers ───────────────────────────────────────
+// Round-trips a Set<number> to JSON. Anything malformed → empty set, never
+// throws. Indexes outside [0, FORECAST_DAYS) are filtered out so a horizon
+// change doesn't reanimate stale selections.
+
+function loadStoredAvailability(): Set<number> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return new Set();
+    const valid = arr.filter(
+      (n): n is number =>
+        typeof n === 'number' &&
+        Number.isFinite(n) &&
+        n >= 0 &&
+        n < FORECAST_DAYS,
+    );
+    return new Set(valid);
+  } catch {
+    return new Set();
+  }
+}
+
+function persistAvailability(days: Set<number>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([...days].sort((a, b) => a - b)),
+    );
+  } catch {
+    /* quota / private mode — silently drop */
+  }
+}
+
+// useSearchParams forces client-render bailout, so the page must sit behind
+// a Suspense boundary. The default export wraps; everything else lives in
+// ForecastPageContent.
+export default function ForecastPage() {
+  return (
+    <Suspense fallback={<ForecastShellLoading />}>
+      <ForecastPageContent />
+    </Suspense>
+  );
+}
+
+function ForecastShellLoading() {
+  return (
+    <div className={`font-geist ${styles.shell}`}>
+      <div className={styles.inner}>
+        <div className={styles.dimMessage}>Loading planner…</div>
+      </div>
+    </div>
+  );
+}
+
+function ForecastPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user } = useAuth();
+
+  const [savedPins, setSavedPins] = useState<SavedPin[]>([]);
+  const [pinsLoaded, setPinsLoaded] = useState(false);
+  const [forecasts, setForecasts] = useState<Record<string, DayScore[]>>({});
+  const [computing, setComputing] = useState(false);
+
+  const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
+  // Start empty so server and client first-render agree; saved state arrives
+  // post-mount via the hydration effect below. `availabilityHydrated` gates
+  // the persist effect so the empty-Set first render doesn't clobber storage.
+  const [availableDays, setAvailableDays] = useState<Set<number>>(new Set());
+  const [availabilityHydrated, setAvailabilityHydrated] = useState(false);
+  const [selectedCell, setSelectedCell] = useState<{ pin: SavedPin; day: DayScore } | null>(null);
+
+  // Hydrate availability from localStorage on mount. Doing this in a useEffect
+  // (not a lazy useState initializer) is what avoids the SSR hydration mismatch.
+  useEffect(() => {
+    setAvailableDays(loadStoredAvailability());
+    setAvailabilityHydrated(true);
+  }, []);
+
+  // Deep-link override: when LOOK AHEAD on a spot detail (or any external
+  // link) carries ?day=N, replace the saved selection with just that day.
+  // The URL is explicit user intent; it wins over scratchpad state. Declared
+  // after the hydration effect so the searchParams setter wins under React's
+  // automatic batching when both fire on the same mount.
+  useEffect(() => {
+    const raw = searchParams?.get('day');
+    if (raw == null) return;
+    const n = parseInt(raw, 10);
+    if (!Number.isFinite(n) || n < 0 || n >= FORECAST_DAYS) return;
+    setAvailableDays(new Set([n]));
+  }, [searchParams]);
+
+  // Persist availability whenever it changes — but only after first hydration,
+  // so we don't write the placeholder empty Set over real saved state.
+  useEffect(() => {
+    if (!availabilityHydrated) return;
+    persistAvailability(availableDays);
+  }, [availableDays, availabilityHydrated]);
+
+  // ── Load saved pins (local first, remote merge if signed in) ──
+  useEffect(() => {
+    setSavedPins(PinStore.all());
+    setPinsLoaded(true);
+
+    if (!supabase || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase!
+          .from('user_pins')
+          .select('pin_id, pins(*)')
+          .eq('user_id', user.id);
+        if (cancelled || error || !data) return;
+        const remote: SavedPin[] = data
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .filter((row: any) => row.pins)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((row: any) => {
+            const p = row.pins;
+            return {
+              id:               p.id,
+              area:             p.area,
+              lat:              p.lat,
+              lon:              p.lon,
+              activity:         p.activity,
+              createdAt:        new Date(p.created_at).getTime(),
+              canonical_name:   p.canonical_name,
+              slug:             p.slug,
+              popularity_score: p.popularity_score,
+              tags:             p.tags,
+            } as SavedPin;
+          });
+        if (remote.length === 0) return;
+        setSavedPins((prev) => {
+          const merged = new Map<string, SavedPin>();
+          for (const p of [...prev, ...remote]) merged.set(p.id, p);
+          return Array.from(merged.values());
+        });
+      } catch (err) {
+        console.warn('Forecast: remote pin fetch failed', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  // ── Compute per-pin forecast in parallel ──
+  useEffect(() => {
+    if (!pinsLoaded || savedPins.length === 0) {
+      setForecasts({});
+      return;
+    }
+    let cancelled = false;
+    setComputing(true);
+    (async () => {
+      const results = await Promise.all(
+        savedPins.map((p) =>
+          computeWeeklyForPinSafe(p, FORECAST_DAYS).then((r) => [p.id, r] as const),
+        ),
+      );
+      if (cancelled) return;
+      const next: Record<string, DayScore[]> = {};
+      for (const [id, result] of results) {
+        if (result?.days) next[id] = result.days;
+      }
+      setForecasts(next);
+      setComputing(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [savedPins, pinsLoaded]);
+
+  // ── Derived ──
+  const filteredPins = useMemo(
+    () => savedPins.filter((p) => matchesFilter(p, activityFilter)),
+    [savedPins, activityFilter],
+  );
+
+  // ── Day toggle / quick-set helpers ──
+  const toggleDay = (i: number) =>
+    setAvailableDays((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  const clearAvailability = () => setAvailableDays(new Set());
+
+  const selectWeekend = () => {
+    const next = new Set<number>();
+    for (let i = 0; i < FORECAST_DAYS; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      const dow = d.getDay();
+      if (dow === 0 || dow === 6) next.add(i);
+    }
+    setAvailableDays(next);
+  };
+
+  const selectNextWeek = () => {
+    const next = new Set<number>();
+    for (let i = 7; i < Math.min(14, FORECAST_DAYS); i++) next.add(i);
+    setAvailableDays(next);
+  };
+
+  // ── Render ──
+  return (
+    <div className={`font-geist ${styles.shell}`}>
+      <div className={styles.inner}>
+        {/* Header */}
+        <header className={styles.header}>
+          <div>
+            <div className={styles.eyebrow}>FORECAST · {FORECAST_DAYS} DAYS</div>
+            <h1 className={styles.title}>
+              <span className={styles.titleEditorial}>When</span>should you go?
+            </h1>
+            <p className={styles.subtitle}>
+              Mark the days you&apos;re free. We&apos;ll line up your saved spots and
+              surface the best matches.
+            </p>
+          </div>
+
+          <div
+            className={styles.activityFilter}
+            role="group"
+            aria-label="Filter by activity"
+          >
+            {ACTIVITY_FILTERS.map((o) => (
+              <button
+                key={o.v}
+                type="button"
+                onClick={() => setActivityFilter(o.v)}
+                aria-pressed={activityFilter === o.v}
+                className={styles.activityChip}
+              >
+                {o.l}
+              </button>
+            ))}
+          </div>
+        </header>
+
+        {/* Quick-set bar */}
+        <div className={styles.quickSet}>
+          <span className={styles.quickSetLabel}>Plan for</span>
+          <button type="button" onClick={selectWeekend} className={styles.chip}>
+            Next weekend
+          </button>
+          <button type="button" onClick={selectNextWeek} className={styles.chip}>
+            Next week
+          </button>
+          {availableDays.size > 0 && (
+            <button
+              type="button"
+              onClick={clearAvailability}
+              className={styles.clearBtn}
+              aria-label={`Clear ${availableDays.size} selected ${availableDays.size === 1 ? 'day' : 'days'}`}
+            >
+              Clear ({availableDays.size}) ✕
+            </button>
+          )}
+        </div>
+
+        {/* Best matches */}
+        <div className={styles.bestMatch}>
+          <BestMatchStrip
+            availableDays={availableDays}
+            pins={filteredPins}
+            forecasts={forecasts}
+          />
+        </div>
+
+        {/* Calendar / empty / loading */}
+        {!pinsLoaded ? (
+          <div className={styles.dimMessage}>Loading your saved spots…</div>
+        ) : savedPins.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyTitle}>No saved spots yet</div>
+            <p className={styles.emptyBody}>
+              Pin a few places on the map first — the calendar comes alive once
+              you have spots saved.
+            </p>
+          </div>
+        ) : filteredPins.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyBody}>
+              No saved spots match the current activity filter.
+            </p>
+          </div>
+        ) : (
+          <ForecastCalendar
+            pins={filteredPins}
+            forecasts={forecasts}
+            forecastDays={FORECAST_DAYS}
+            availableDays={availableDays}
+            onToggleDay={toggleDay}
+            onCellClick={(pin, day) => setSelectedCell({ pin, day })}
+            onPinClick={(pin) => router.push(`/pins/${pin.id}`)}
+          />
+        )}
+
+        {computing && pinsLoaded && savedPins.length > 0 && (
+          <div className={styles.computingNote}>Computing forecasts…</div>
+        )}
+
+        {/* Legend */}
+        <div className={styles.legend}>
+          <span className={styles.legendDot} data-verdict="GO">
+            GO · 70+
+          </span>
+          <span className={styles.legendDot} data-verdict="MAYBE">
+            MAYBE · 31–69
+          </span>
+          <span className={styles.legendDot} data-verdict="SKIP">
+            SKIP · ≤ 30
+          </span>
+          <span className={styles.legendHint}>
+            Click a cell for the why · click day numbers to mark availability
+          </span>
+        </div>
+      </div>
+
+      {selectedCell && (
+        <CellDrawer
+          pin={selectedCell.pin}
+          day={selectedCell.day}
+          onClose={() => setSelectedCell(null)}
+        />
+      )}
+    </div>
+  );
+}

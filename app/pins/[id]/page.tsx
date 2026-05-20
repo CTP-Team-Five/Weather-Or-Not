@@ -16,6 +16,10 @@ import { ExtendedWeatherData } from '@/components/utils/fetchForecast';
 import { incrementPopularity } from '@/lib/supabase/incrementPopularity';
 import { SuitabilityResult } from '@/lib/activityScore';
 import { computeSuitabilityForPin } from '@/lib/computeSuitability';
+import {
+  computeWeeklyForPinSafe,
+  type WeeklySuitability,
+} from '@/lib/computeWeeklySuitability';
 import { AmbientTheme, deriveTheme } from '@/lib/weatherTheme';
 import { applyTheme, clearTheme } from '@/lib/applyTheme';
 import {
@@ -24,6 +28,7 @@ import {
   clearWeatherThemeClass,
 } from '@/lib/weatherThemeClass';
 import { weatherStateFromCode } from '@/lib/weatherState';
+import { useDynamicFavicon } from '@/lib/useDynamicFavicon';
 import SpotDetailBoard from '@/components/spotdetail/SpotDetailBoard';
 
 export default function PinDetailPage() {
@@ -35,6 +40,7 @@ export default function PinDetailPage() {
   const [weather, setWeather] = useState<ExtendedWeatherData | null>(null);
   const [suitability, setSuitability] = useState<SuitabilityResult | null>(null);
   const [ambientTheme, setAmbientTheme] = useState<AmbientTheme | null>(null);
+  const [weekly, setWeekly] = useState<WeeklySuitability | null>(null);
   const [fetchedAt, setFetchedAt] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,9 +87,16 @@ export default function PinDetailPage() {
         setPin(pinData);
         incrementPopularity(pinData.id);
         try {
-          const computed = await computeSuitabilityForPin(pinData);
+          // Fire current + weekly in parallel. Weekly is best-effort — a
+          // failure here only hides the "look ahead" strip; the core view
+          // still loads from the current snapshot.
+          const [computed, weeklyResult] = await Promise.all([
+            computeSuitabilityForPin(pinData),
+            computeWeeklyForPinSafe(pinData),
+          ]);
           setWeather(computed.weather);
           setSuitability(computed.suitability);
+          setWeekly(weeklyResult);
           setFetchedAt(Date.now());
         } catch (err) {
           console.error('Failed to compute suitability:', err);
@@ -124,6 +137,11 @@ export default function PinDetailPage() {
       setAmbientTheme(null);
     };
   }, [pin, weather]);
+
+  // Tab favicon + URL-bar tint follow the live weather state.
+  useDynamicFavicon(
+    weather ? weatherStateFromCode(weather.current.weatherCode) : null,
+  );
 
   if (isLoading) {
     return (
@@ -178,6 +196,7 @@ export default function PinDetailPage() {
       ambientTheme={ambientTheme}
       state={state}
       fetchedAt={fetchedAt}
+      weeklyDays={weekly?.days}
       onDelete={handleDelete}
     />
   );

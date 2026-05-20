@@ -7,6 +7,7 @@ import { HiCog6Tooth } from "react-icons/hi2";
 import { SavedPin } from "./data/pinStore";
 import { getWeatherDescription } from "./utils/fetchForecast";
 import { computeSuitabilityForPinSafe, ComputedSuitability } from "@/lib/computeSuitability";
+import { LABEL_TO_VERDICT } from "@/lib/decision";
 import { deriveTheme } from "@/lib/weatherTheme";
 import { applyTheme } from "@/lib/applyTheme";
 import { ActivityIcon } from "@/components/icons/ActivityIcons";
@@ -100,6 +101,7 @@ export default function PinTile({ pin, featured = false, className, onOpen, onEd
   };
 
   const label = computed?.suitability.label;
+  const verdict = label ? LABEL_TO_VERDICT[label] : undefined;
   const cur = computed?.weather.current;
 
   // Shared header used by both layouts
@@ -167,8 +169,8 @@ export default function PinTile({ pin, featured = false, className, onOpen, onEd
             {/* Left: verdict + score */}
             <div className={styles.featuredLeft}>
               <div className={styles.verdictRow}>
-                <span className={`${styles.verdictWord} ${label ? styles[label] : ""}`}>
-                  {label}
+                <span className={`${styles.verdictWord} ${verdict ? styles[verdict] : ""}`}>
+                  {verdict}
                 </span>
               </div>
               <div
@@ -242,8 +244,8 @@ export default function PinTile({ pin, featured = false, className, onOpen, onEd
           /* ── Standard layout ── */
           <>
             <div className={styles.verdictRow}>
-              <span className={`${styles.verdictWord} ${label ? styles[label] : ""}`}>
-                {label}
+              <span className={`${styles.verdictWord} ${verdict ? styles[verdict] : ""}`}>
+                {verdict}
               </span>
             </div>
 

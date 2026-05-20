@@ -1,0 +1,25 @@
+{
+  "name": "WeatherOrNot",
+  "short_name": "WeatherOrNot",
+  "description": "Outdoor activity weather app — pin spots, get a 0-100 suitability verdict.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7efe1",
+  "theme_color": "#f7efe1",
+  "icons": [
+    {
+      "src": "/icons/icon-app.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/favicon-clear.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
