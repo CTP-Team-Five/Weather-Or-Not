@@ -29,6 +29,7 @@ const NAV_ITEMS: { label: string; href: string }[] = [
   { label: 'PINS', href: '/' },
   { label: 'MAP', href: '/map' },
   { label: 'FORECAST', href: '/forecast' },
+  { label: 'PLANS', href: '/plans' },
 ];
 
 const ACCENT: Record<WeatherState, string> = {
