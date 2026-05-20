@@ -25,7 +25,6 @@ import { deriveHeroContent } from '@/lib/heroContent';
 import { deriveSpotReasons } from '@/lib/spotReasons';
 import { getBackgroundImage, toActivitySlot } from '@/lib/activityMedia';
 import { usePreferences } from '@/lib/preferences';
-import { formatTemp } from '@/lib/formatTemp';
 import WeatherTopBar from './WeatherTopBar';
 import WeatherGlassPlate from './WeatherGlassPlate';
 import WhyContents from './WhyContents';
@@ -131,18 +130,10 @@ export default function SpotDetailBoard({
   const activityUpper = ACTIVITY_UPPERCASE[activityKey] ?? pin.activity.toUpperCase();
   const activityTitle = ACTIVITY_TITLECASE[activityKey] ?? pin.activity;
 
-  // Live weather pill data for WeatherTopBar. The pill renders only on this
-  // page (pin detail), where there's a single-spot weather context to point
-  // at. It sits to the right of the brand in the left grid cell so the
-  // PINS / MAP / FORECAST nav stays in the centre.
-  const STATE_LABEL: Record<WeatherState, string> = {
-    clear: 'Clear',
-    cloudy: 'Cloudy',
-    raining: 'Raining',
-    snowing: 'Snowing',
-  };
-  const weatherLabel = STATE_LABEL[state];
-  const temperature = formatTemp(weather.current.temperature, prefs.tempUnit);
+  // weatherLabel + temperature were previously surfaced in the centered
+  // "Live · Raining · 54°F" chip on the top bar. The chip was removed when
+  // PINS / MAP / FORECAST took the centre slot, so these are no longer
+  // computed here — the same values still appear inside ConditionsSummary.
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -161,13 +152,7 @@ export default function SpotDetailBoard({
         />
       )}
 
-      <WeatherTopBar
-        state={state}
-        pinId={pin.id}
-        onDelete={onDelete}
-        weatherLabel={weatherLabel}
-        temperature={temperature}
-      />
+      <WeatherTopBar state={state} pinId={pin.id} onDelete={onDelete} />
 
       <section className="relative h-[calc(100vh-64px)] overflow-hidden">
         {/* Hero photo — untouched. Weather lives in chrome only. */}
