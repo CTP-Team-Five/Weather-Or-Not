@@ -22,6 +22,8 @@ import {
 import WeeklyForecastRail from '@/components/spotdetail/WeeklyForecastRail';
 import { AmbientTheme, deriveTheme } from '@/lib/weatherTheme';
 import { applyTheme, clearTheme } from '@/lib/applyTheme';
+import { weatherStateFromCode } from '@/lib/weatherState';
+import { useDynamicFavicon } from '@/lib/useDynamicFavicon';
 import {
   getWeatherThemeClass,
   applyWeatherThemeClass,
@@ -417,6 +419,11 @@ export default function PinReportPage() {
       setAmbientTheme(null);
     };
   }, [pin, weather]);
+
+  // Tab favicon + URL-bar tint follow the live weather state.
+  useDynamicFavicon(
+    weather ? weatherStateFromCode(weather.current.weatherCode) : null,
+  );
 
   const verdict = suitability ? LABEL_TO_VERDICT[suitability.label] : null;
 

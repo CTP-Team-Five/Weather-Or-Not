@@ -28,6 +28,7 @@ import {
   clearWeatherThemeClass,
 } from '@/lib/weatherThemeClass';
 import { weatherStateFromCode } from '@/lib/weatherState';
+import { useDynamicFavicon } from '@/lib/useDynamicFavicon';
 import SpotDetailBoard from '@/components/spotdetail/SpotDetailBoard';
 
 export default function PinDetailPage() {
@@ -136,6 +137,11 @@ export default function PinDetailPage() {
       setAmbientTheme(null);
     };
   }, [pin, weather]);
+
+  // Tab favicon + URL-bar tint follow the live weather state.
+  useDynamicFavicon(
+    weather ? weatherStateFromCode(weather.current.weatherCode) : null,
+  );
 
   if (isLoading) {
     return (

@@ -87,6 +87,11 @@ export default function MapSearch({ onSelect, autoFocus = false }: MapSearchProp
         const shortLabel = result.name || result.display_name.split(",")[0].trim();
         setQuery(shortLabel);
         setResults([]);
+        setActiveIndex(0);
+        // Hand focus back to the map so the user is interacting with the spot
+        // they just flew to, not still typing in the search box. Without this,
+        // hitting Enter / arrow keys keeps editing the query field.
+        inputRef.current?.blur();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

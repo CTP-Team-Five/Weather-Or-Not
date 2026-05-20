@@ -81,9 +81,9 @@ export default function HomepageHero() {
       />
 
       {/* Centered content */}
-      <div className="relative flex flex-1 flex-col items-center justify-center px-10 py-[60px] text-center">
+      <div className="relative flex flex-1 flex-col items-center justify-center px-10 py-[44px] text-center">
         <div
-          className="mb-6 text-[11px] font-bold uppercase tracking-[0.24em]"
+          className="mb-5 text-[11px] font-bold uppercase tracking-[0.24em]"
           style={{
             color: 'rgba(15,23,42,0.55)',
             animation: 'fadeUp 700ms ease-out both',
@@ -93,9 +93,11 @@ export default function HomepageHero() {
         </div>
 
         <h1
-          className="m-0 max-w-[980px] font-extrabold leading-[0.98] tracking-[-0.035em] text-slate-900"
+          className="m-0 max-w-[820px] font-extrabold leading-[0.98] tracking-[-0.035em] text-slate-900"
           style={{
-            fontSize: 'clamp(54px, 7.5vw, 112px)',
+            // Tuned to fit a 14" Zenbook at 100% zoom without overflowing the
+            // viewport. Caps lower than the previous 112px shouty headline.
+            fontSize: 'clamp(44px, 5.5vw, 84px)',
             textShadow: '0 2px 30px rgba(255,255,255,0.5)',
             textWrap: 'balance',
             animation: 'fadeUp 800ms ease-out 0.08s both',
@@ -111,7 +113,7 @@ export default function HomepageHero() {
         </h1>
 
         <p
-          className="mt-7 mb-0 max-w-[540px] text-[19px] font-semibold leading-[1.5] text-slate-900"
+          className="mt-5 mb-0 max-w-[520px] text-[17px] font-semibold leading-[1.5] text-slate-900"
           style={{
             textShadow: '0 1px 2px rgba(255,255,255,0.85), 0 0 18px rgba(255,255,255,0.55)',
             animation: 'fadeUp 800ms ease-out 0.18s both',
@@ -121,7 +123,7 @@ export default function HomepageHero() {
         </p>
 
         <div
-          className="mt-9 w-full max-w-[540px]"
+          className="mt-6 w-full max-w-[520px]"
           style={{ animation: 'fadeUp 800ms ease-out 0.28s both' }}
         >
           <button
@@ -177,7 +179,7 @@ export default function HomepageHero() {
 
       {/* Onboarding strip — always visible at the bottom of the hero */}
       <div
-        className="relative border-t border-slate-900/[0.06] px-10 py-8"
+        className="relative border-t border-slate-900/[0.06] px-10 py-6"
         style={{
           background: 'rgba(255,255,255,0.92)',
           backdropFilter: 'blur(20px)',

@@ -55,6 +55,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="en">
+      <head>
+        {/* Default favicon — sun. Pages with weather context override at runtime
+            via useDynamicFavicon (see lib/useDynamicFavicon.ts). */}
+        <link rel="icon" type="image/svg+xml" href="/icons/favicon-clear.svg" />
+        <link rel="apple-touch-icon" href="/icons/favicon-clear.svg" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#f7efe1" />
+      </head>
       <body
         className={`${barlowCondensed.variable} ${barlow.variable} ${geist.variable} ${instrumentSerif.variable} no-navbar-padding`}
       >

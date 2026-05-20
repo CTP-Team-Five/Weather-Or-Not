@@ -1,0 +1,283 @@
+/* components/forecast/BestMatchStrip.module.css
+   Top-4 spots ranked by avg score across the days the user marked free.
+   Light surface to match the rest of the app. The TOP PICK card carries the
+   verdict-tinted accent; the others stay neutral. */
+
+/* ── Placeholder (no days picked yet) ─────────────────────────────────────── */
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px;
+  background: hsl(var(--surface));
+  border-radius: 14px;
+  border: 1px solid hsl(var(--border-subtle));
+}
+
+.placeholderIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: hsl(var(--accent) / 0.10);
+  border: 1px solid hsl(var(--accent) / 0.20);
+  color: hsl(var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.placeholderTitle {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.005em;
+}
+
+.placeholderHint {
+  font-size: 12px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ── No-match dim card (filter excludes everything) ───────────────────────── */
+
+.noMatch {
+  padding: 18px 24px;
+  background: hsl(var(--surface));
+  border-radius: 14px;
+  border: 1px solid hsl(var(--border-subtle));
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+}
+
+/* ── Strip ────────────────────────────────────────────────────────────────── */
+
+.strip {
+  padding: 22px;
+  background: hsl(var(--surface-elevated));
+  border-radius: 16px;
+  border: 1px solid hsl(var(--border-subtle));
+  box-shadow:
+    0 1px 3px hsl(var(--shadow) / 0.06),
+    0 4px 16px hsl(var(--shadow) / 0.05);
+}
+
+.stripHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stripEyebrow {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.stripHeading {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-top: 4px;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.stripHeadingAccent {
+  color: hsl(var(--accent));
+}
+
+.stripCount {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  align-self: flex-end;
+}
+
+/* ── Card grid ────────────────────────────────────────────────────────────── */
+
+.cards {
+  display: grid;
+  gap: 12px;
+}
+
+.cards[data-count='1'] { grid-template-columns: 1fr; }
+.cards[data-count='2'] { grid-template-columns: repeat(2, 1fr); }
+.cards[data-count='3'] { grid-template-columns: repeat(3, 1fr); }
+.cards[data-count='4'] { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 920px) {
+  .cards[data-count='3'],
+  .cards[data-count='4'] {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .cards[data-count='2'],
+  .cards[data-count='3'],
+  .cards[data-count='4'] {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Individual card ──────────────────────────────────────────────────────── */
+
+.card {
+  --hsl: var(--score-ok);
+  position: relative;
+  padding: 16px;
+  background: hsl(var(--surface));
+  border: 1px solid hsl(var(--border-subtle));
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: background 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.card[data-verdict='GO']    { --hsl: var(--score-great); }
+.card[data-verdict='MAYBE'] { --hsl: var(--score-ok); }
+.card[data-verdict='SKIP']  { --hsl: var(--score-terrible); }
+
+.card:hover {
+  background: hsl(var(--surface-elevated));
+  border-color: hsl(var(--border));
+  box-shadow:
+    0 1px 3px hsl(var(--shadow) / 0.08),
+    0 8px 22px hsl(var(--shadow) / 0.07);
+}
+
+.card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.card[data-rank='1'] {
+  border-color: hsl(var(--hsl) / 0.45);
+  background: hsl(var(--hsl) / 0.06);
+}
+
+.card[data-rank='1']:hover {
+  background: hsl(var(--hsl) / 0.10);
+  border-color: hsl(var(--hsl) / 0.6);
+}
+
+.topBadge {
+  position: absolute;
+  top: -9px;
+  left: 14px;
+  padding: 2px 8px;
+  background: hsl(var(--hsl));
+  color: hsl(var(--score-great-foreground));
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* Override foreground colour per verdict so contrast on the badge stays
+   correct (great/terrible use white; ok uses the dark fg variant). */
+.card[data-verdict='MAYBE'] .topBadge {
+  color: hsl(var(--score-ok-foreground));
+}
+
+/* ── Card body ────────────────────────────────────────────────────────────── */
+
+.cardEyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+.cardActivityDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: hsl(var(--muted-foreground));
+  flex-shrink: 0;
+}
+
+.cardActivityDot[data-activity='hike']      { background: var(--accent-hike); }
+.cardActivityDot[data-activity='surf']      { background: var(--accent-surf); }
+.cardActivityDot[data-activity='snowboard'] { background: var(--accent-snow); }
+
+.cardName {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-top: 4px;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardScoreRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cardScoreNum {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  color: hsl(var(--hsl));
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+
+.cardScoreMeta {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  color: hsl(var(--muted-foreground));
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+.cardWhy {
+  font-size: 12px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  margin-top: 8px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

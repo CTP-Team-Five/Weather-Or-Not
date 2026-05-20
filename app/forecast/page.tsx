@@ -1,13 +1,17 @@
 // app/forecast/page.tsx
 // "When should you go?" — multi-spot planning calendar.
-// Rows = saved spots, columns = next 14 days. Click day headers to mark when
+// Rows = saved spots, columns = next N days. Click day headers to mark when
 // you're free; the BEST MATCHES strip surfaces top spots ranked by avg score
 // across the days you selected.
+//
+// Light surface to match the rest of the app. Verdict colour comes from the
+// shared --score-* HSL tokens (via CSS modules); the eyebrow accent uses the
+// theme --accent token. No locally-redefined hex palettes here.
 
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/useAuth';
 import { PinStore, SavedPin } from '@/components/data/pinStore';
@@ -18,8 +22,10 @@ import {
 import ForecastCalendar from '@/components/forecast/ForecastCalendar';
 import BestMatchStrip from '@/components/forecast/BestMatchStrip';
 import CellDrawer from '@/components/forecast/CellDrawer';
+import styles from './page.module.css';
 
 const FORECAST_DAYS = 14;
+const STORAGE_KEY = 'weatherornot_forecast_availability';
 
 type ActivityFilter = 'all' | 'hike' | 'surf' | 'snowboard';
 
@@ -39,8 +45,67 @@ function matchesFilter(pin: SavedPin, filter: ActivityFilter): boolean {
   return a === 'snowboard' || a === 'snowboarding' || a === 'ski' || a === 'skiing';
 }
 
+// ── localStorage persistence helpers ───────────────────────────────────────
+// Round-trips a Set<number> to JSON. Anything malformed → empty set, never
+// throws. Indexes outside [0, FORECAST_DAYS) are filtered out so a horizon
+// change doesn't reanimate stale selections.
+
+function loadStoredAvailability(): Set<number> {
+  if (typeof window === 'undefined') return new Set();
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return new Set();
+    const valid = arr.filter(
+      (n): n is number =>
+        typeof n === 'number' &&
+        Number.isFinite(n) &&
+        n >= 0 &&
+        n < FORECAST_DAYS,
+    );
+    return new Set(valid);
+  } catch {
+    return new Set();
+  }
+}
+
+function persistAvailability(days: Set<number>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify([...days].sort((a, b) => a - b)),
+    );
+  } catch {
+    /* quota / private mode — silently drop */
+  }
+}
+
+// useSearchParams forces client-render bailout, so the page must sit behind
+// a Suspense boundary. The default export wraps; everything else lives in
+// ForecastPageContent.
 export default function ForecastPage() {
+  return (
+    <Suspense fallback={<ForecastShellLoading />}>
+      <ForecastPageContent />
+    </Suspense>
+  );
+}
+
+function ForecastShellLoading() {
+  return (
+    <div className={`font-geist ${styles.shell}`}>
+      <div className={styles.inner}>
+        <div className={styles.dimMessage}>Loading planner…</div>
+      </div>
+    </div>
+  );
+}
+
+function ForecastPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
 
   const [savedPins, setSavedPins] = useState<SavedPin[]>([]);
@@ -49,8 +114,39 @@ export default function ForecastPage() {
   const [computing, setComputing] = useState(false);
 
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
+  // Start empty so server and client first-render agree; saved state arrives
+  // post-mount via the hydration effect below. `availabilityHydrated` gates
+  // the persist effect so the empty-Set first render doesn't clobber storage.
   const [availableDays, setAvailableDays] = useState<Set<number>>(new Set());
+  const [availabilityHydrated, setAvailabilityHydrated] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ pin: SavedPin; day: DayScore } | null>(null);
+
+  // Hydrate availability from localStorage on mount. Doing this in a useEffect
+  // (not a lazy useState initializer) is what avoids the SSR hydration mismatch.
+  useEffect(() => {
+    setAvailableDays(loadStoredAvailability());
+    setAvailabilityHydrated(true);
+  }, []);
+
+  // Deep-link override: when LOOK AHEAD on a spot detail (or any external
+  // link) carries ?day=N, replace the saved selection with just that day.
+  // The URL is explicit user intent; it wins over scratchpad state. Declared
+  // after the hydration effect so the searchParams setter wins under React's
+  // automatic batching when both fire on the same mount.
+  useEffect(() => {
+    const raw = searchParams?.get('day');
+    if (raw == null) return;
+    const n = parseInt(raw, 10);
+    if (!Number.isFinite(n) || n < 0 || n >= FORECAST_DAYS) return;
+    setAvailableDays(new Set([n]));
+  }, [searchParams]);
+
+  // Persist availability whenever it changes — but only after first hydration,
+  // so we don't write the placeholder empty Set over real saved state.
+  useEffect(() => {
+    if (!availabilityHydrated) return;
+    persistAvailability(availableDays);
+  }, [availableDays, availabilityHydrated]);
 
   // ── Load saved pins (local first, remote merge if signed in) ──
   useEffect(() => {
@@ -100,7 +196,7 @@ export default function ForecastPage() {
     };
   }, [user]);
 
-  // ── Compute 14-day forecast per pin in parallel ──
+  // ── Compute per-pin forecast in parallel ──
   useEffect(() => {
     if (!pinsLoaded || savedPins.length === 0) {
       setForecasts({});
@@ -162,151 +258,55 @@ export default function ForecastPage() {
 
   // ── Render ──
   return (
-    <div
-      style={{
-        minHeight: 'calc(100vh - 64px)',
-        background:
-          'radial-gradient(1200px 600px at 20% 0%, #14192c 0%, #0a0e1a 60%, #060912 100%)',
-        padding: '32px 40px 60px',
-        color: 'white',
-      }}
-    >
-      <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+    <div className={`font-geist ${styles.shell}`}>
+      <div className={styles.inner}>
         {/* Header */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'space-between',
-            marginBottom: 28,
-            gap: 24,
-            flexWrap: 'wrap',
-          }}
-        >
+        <header className={styles.header}>
           <div>
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: '#fbbf24',
-                letterSpacing: '0.14em',
-              }}
-            >
-              FORECAST · {FORECAST_DAYS} DAYS
-            </div>
-            <div
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 38,
-                fontWeight: 700,
-                color: 'white',
-                marginTop: 6,
-                lineHeight: 1.1,
-                letterSpacing: '-0.025em',
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: 'var(--font-editorial)',
-                  fontStyle: 'italic',
-                  fontWeight: 400,
-                  color: '#fbbf24',
-                }}
-              >
-                When
-              </span>{' '}
-              should you go?
-            </div>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 500,
-                color: 'rgba(255,255,255,0.65)',
-                marginTop: 6,
-                maxWidth: 540,
-              }}
-            >
+            <div className={styles.eyebrow}>FORECAST · {FORECAST_DAYS} DAYS</div>
+            <h1 className={styles.title}>
+              <span className={styles.titleEditorial}>When</span>should you go?
+            </h1>
+            <p className={styles.subtitle}>
               Mark the days you&apos;re free. We&apos;ll line up your saved spots and
               surface the best matches.
-            </div>
+            </p>
           </div>
 
           <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: 4,
-              background: 'rgba(255,255,255,0.06)',
-              borderRadius: 999,
-              border: '1px solid rgba(255,255,255,0.08)',
-            }}
+            className={styles.activityFilter}
+            role="group"
+            aria-label="Filter by activity"
           >
             {ACTIVITY_FILTERS.map((o) => (
               <button
                 key={o.v}
                 type="button"
                 onClick={() => setActivityFilter(o.v)}
-                style={{
-                  cursor: 'pointer',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  padding: '6px 14px',
-                  borderRadius: 999,
-                  background: activityFilter === o.v ? '#fbbf24' : 'transparent',
-                  color: activityFilter === o.v ? '#0a0e1a' : 'rgba(255,255,255,0.7)',
-                  border: 'none',
-                  transition: 'all 120ms ease',
-                  font: 'inherit',
-                }}
+                aria-pressed={activityFilter === o.v}
+                className={styles.activityChip}
               >
                 {o.l}
               </button>
             ))}
           </div>
-        </div>
+        </header>
 
         {/* Quick-set bar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            marginBottom: 16,
-            flexWrap: 'wrap',
-          }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: 'rgba(255,255,255,0.5)',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-            }}
-          >
-            Plan for
-          </div>
-          <button type="button" onClick={selectWeekend} style={chipStyle}>
+        <div className={styles.quickSet}>
+          <span className={styles.quickSetLabel}>Plan for</span>
+          <button type="button" onClick={selectWeekend} className={styles.chip}>
             Next weekend
           </button>
-          <button type="button" onClick={selectNextWeek} style={chipStyle}>
+          <button type="button" onClick={selectNextWeek} className={styles.chip}>
             Next week
           </button>
           {availableDays.size > 0 && (
             <button
               type="button"
               onClick={clearAvailability}
-              style={{
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: 600,
-                color: 'rgba(255,255,255,0.55)',
-                padding: '6px 10px',
-                marginLeft: 'auto',
-                background: 'transparent',
-                border: 'none',
-              }}
+              className={styles.clearBtn}
+              aria-label={`Clear ${availableDays.size} selected ${availableDays.size === 1 ? 'day' : 'days'}`}
             >
               Clear ({availableDays.size}) ✕
             </button>
@@ -314,39 +314,30 @@ export default function ForecastPage() {
         </div>
 
         {/* Best matches */}
-        <div style={{ marginBottom: 20 }}>
+        <div className={styles.bestMatch}>
           <BestMatchStrip
             availableDays={availableDays}
             pins={filteredPins}
             forecasts={forecasts}
-            activityFilter={activityFilter}
           />
         </div>
 
         {/* Calendar / empty / loading */}
         {!pinsLoaded ? (
-          <div style={dimMessageStyle}>Loading your saved spots…</div>
+          <div className={styles.dimMessage}>Loading your saved spots…</div>
         ) : savedPins.length === 0 ? (
-          <div style={emptyStateStyle}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'white' }}>
-              No saved spots yet
-            </div>
-            <div
-              style={{
-                fontSize: 13,
-                color: 'rgba(255,255,255,0.6)',
-                marginTop: 6,
-              }}
-            >
-              Pin a few places on the map first — the calendar comes alive once you
-              have spots saved.
-            </div>
+          <div className={styles.emptyState}>
+            <div className={styles.emptyTitle}>No saved spots yet</div>
+            <p className={styles.emptyBody}>
+              Pin a few places on the map first — the calendar comes alive once
+              you have spots saved.
+            </p>
           </div>
         ) : filteredPins.length === 0 ? (
-          <div style={emptyStateStyle}>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>
+          <div className={styles.emptyState}>
+            <p className={styles.emptyBody}>
               No saved spots match the current activity filter.
-            </div>
+            </p>
           </div>
         ) : (
           <ForecastCalendar
@@ -356,44 +347,28 @@ export default function ForecastPage() {
             availableDays={availableDays}
             onToggleDay={toggleDay}
             onCellClick={(pin, day) => setSelectedCell({ pin, day })}
-            onPinClick={(pin) => router.push(`/pins/${pin.slug || pin.id}`)}
+            onPinClick={(pin) => router.push(`/pins/${pin.id}`)}
           />
         )}
 
         {computing && pinsLoaded && savedPins.length > 0 && (
-          <div
-            style={{
-              marginTop: 12,
-              fontSize: 11,
-              color: 'rgba(255,255,255,0.5)',
-              textAlign: 'center',
-              letterSpacing: '0.1em',
-            }}
-          >
-            COMPUTING FORECASTS…
-          </div>
+          <div className={styles.computingNote}>Computing forecasts…</div>
         )}
 
         {/* Legend */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 18,
-            marginTop: 16,
-            padding: '12px 4px',
-            fontSize: 11,
-            fontWeight: 600,
-            color: 'rgba(255,255,255,0.5)',
-            flexWrap: 'wrap',
-          }}
-        >
-          <LegendDot c="#14b88a" label="GO · 70+" />
-          <LegendDot c="#eab308" label="MAYBE · 31–69" />
-          <LegendDot c="#ef4444" label="SKIP · ≤ 30" />
-          <div style={{ marginLeft: 'auto', fontSize: 11 }}>
-            Click a cell for the why · Click day numbers to mark availability
-          </div>
+        <div className={styles.legend}>
+          <span className={styles.legendDot} data-verdict="GO">
+            GO · 70+
+          </span>
+          <span className={styles.legendDot} data-verdict="MAYBE">
+            MAYBE · 31–69
+          </span>
+          <span className={styles.legendDot} data-verdict="SKIP">
+            SKIP · ≤ 30
+          </span>
+          <span className={styles.legendHint}>
+            Click a cell for the why · click day numbers to mark availability
+          </span>
         </div>
       </div>
 
@@ -404,47 +379,6 @@ export default function ForecastPage() {
           onClose={() => setSelectedCell(null)}
         />
       )}
-    </div>
-  );
-}
-
-// ── Local style fragments ──
-
-const chipStyle: React.CSSProperties = {
-  cursor: 'pointer',
-  fontSize: 12,
-  fontWeight: 600,
-  padding: '6px 12px',
-  borderRadius: 999,
-  background: 'rgba(255,255,255,0.06)',
-  color: 'rgba(255,255,255,0.85)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  transition: 'all 120ms ease',
-  font: 'inherit',
-};
-
-const dimMessageStyle: React.CSSProperties = {
-  padding: '40px 20px',
-  textAlign: 'center',
-  color: 'rgba(255,255,255,0.55)',
-  fontSize: 12,
-  letterSpacing: '0.1em',
-  textTransform: 'uppercase',
-};
-
-const emptyStateStyle: React.CSSProperties = {
-  padding: '40px 24px',
-  borderRadius: 14,
-  background: 'rgba(255,255,255,0.04)',
-  border: '1px solid rgba(255,255,255,0.08)',
-  textAlign: 'center',
-};
-
-function LegendDot({ c, label }: { c: string; label: string }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <div style={{ width: 8, height: 8, borderRadius: 2, background: c }} />
-      <span>{label}</span>
     </div>
   );
 }

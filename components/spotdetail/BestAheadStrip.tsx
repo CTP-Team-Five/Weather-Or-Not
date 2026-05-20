@@ -1,14 +1,16 @@
 // components/spotdetail/BestAheadStrip.tsx
 // Single-line "look ahead" strip for the cinematic detail page. Picks the
 // best non-today day from the 7-day forecast and surfaces it with one tap
-// through to the full report. Lives inside ConditionsSummary; sized to the
-// 420px right glass plate.
+// through to the multi-spot /forecast planner with that day pre-selected,
+// so users instantly see how this spot's best-day stacks against their
+// other saved spots. Lives inside ConditionsSummary; sized to the 420px
+// right glass plate.
 //
 // Display rules:
-//   - Best upcoming day is GO  → "LOOK AHEAD · THU 87 GO →"
-//   - Best upcoming day is MAYBE → "PEAK AHEAD · SAT 64 MAYBE →"
-//   - Whole week is SKIP        → "NO GO DAYS THIS WEEK"
-//   - Today is already the peak → "TODAY IS YOUR WINDOW"
+//   - Best upcoming day is GO  → "LOOK AHEAD · THU 87 GO →"  → /forecast?day=N
+//   - Best upcoming day is MAYBE → "PEAK AHEAD · SAT 64 MAYBE →" → /forecast?day=N
+//   - Whole week is SKIP        → "NO GO DAYS THIS WEEK" → /forecast (no day)
+//   - Today is already the peak → "TODAY IS YOUR WINDOW"   → /forecast?day=0
 
 'use client';
 
@@ -16,8 +18,7 @@ import { useRouter } from 'next/navigation';
 import type { DayScore } from '@/lib/computeWeeklySuitability';
 
 interface Props {
-  pinId: string;
-  days:  DayScore[];
+  days: DayScore[];
 }
 
 const VERDICT_COLOR: Record<string, string> = {
@@ -26,7 +27,7 @@ const VERDICT_COLOR: Record<string, string> = {
   SKIP:  'var(--score-terrible)',
 };
 
-export default function BestAheadStrip({ pinId, days }: Props) {
+export default function BestAheadStrip({ days }: Props) {
   const router = useRouter();
 
   if (days.length === 0) return null;
@@ -66,10 +67,31 @@ export default function BestAheadStrip({ pinId, days }: Props) {
     color = `hsl(${VERDICT_COLOR[bestAhead.verdict] ?? 'var(--score-ok)'})`;
   }
 
+  // Day index to pre-select on /forecast. allSkip → no pre-selection (let the
+  // user pick), todayWins → today, otherwise the bestAhead day.
+  const targetDayIdx = allSkip
+    ? -1
+    : todayWins
+      ? 0
+      : days.indexOf(bestAhead);
+
+  const handleClick = () => {
+    if (targetDayIdx >= 0) {
+      router.push(`/forecast?day=${targetDayIdx}`);
+    } else {
+      router.push('/forecast');
+    }
+  };
+
   return (
     <button
       type="button"
-      onClick={() => router.push(`/pins/${pinId}/report`)}
+      onClick={handleClick}
+      aria-label={
+        targetDayIdx >= 0
+          ? `Open planning calendar with ${bestAhead.weekday} pre-selected`
+          : 'Open planning calendar'
+      }
       className="group mb-3 flex w-full items-center justify-between rounded-md border border-white/10 bg-white/5 px-3 py-2 text-left transition hover:bg-white/10"
     >
       <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/55">

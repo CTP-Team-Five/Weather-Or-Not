@@ -65,7 +65,7 @@ export default function ConditionsSummary({
         {subline}
       </p>
       {weeklyDays && weeklyDays.length > 0 && (
-        <BestAheadStrip pinId={pinId} days={weeklyDays} />
+        <BestAheadStrip days={weeklyDays} />
       )}
       <div className="flex gap-2">
         <button
