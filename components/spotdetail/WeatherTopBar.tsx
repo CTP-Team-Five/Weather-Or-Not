@@ -23,14 +23,6 @@ interface Props {
   state: WeatherState;
   pinId?: string;
   onDelete?: () => void;
-  /** Human-readable weather state ("Clear" / "Cloudy" / "Raining" / "Snowing").
-   *  Paired with `temperature` to render the "Live · …" pulse pill next to the
-   *  brand. Both must be present for the pill to render — pages without a
-   *  single-spot weather context (home, /map, /forecast) omit them and the
-   *  pill is hidden. */
-  weatherLabel?: string;
-  /** Pre-formatted temperature string ("62°F" / "14°C"). See `weatherLabel`. */
-  temperature?: string;
 }
 
 const NAV_ITEMS: { label: string; href: string }[] = [
@@ -57,8 +49,6 @@ export default function WeatherTopBar({
   state,
   pinId,
   onDelete,
-  weatherLabel,
-  temperature,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -145,12 +135,6 @@ export default function WeatherTopBar({
         goPillFg: '#ffffff',
         goPillBorder: 'rgba(255,255,255,0.30)',
         goPillDot: '#34d399',
-        // Live weather pill — chrome-neutral on the dark wet scrim. Reads as
-        // part of the bar, not a verdict signal (which the GO-count pill is).
-        livePillBg: 'rgba(255,255,255,0.18)',
-        livePillFg: '#ffffff',
-        livePillBorder: 'rgba(255,255,255,0.30)',
-        livePillDot: '#ffffff',
         authText: '#ffffff',
         authBtnBg: 'rgba(255,255,255,0.15)',
         authBtnBorder: 'rgba(255,255,255,0.30)',
@@ -165,19 +149,12 @@ export default function WeatherTopBar({
         goPillFg: '#0d9971',
         goPillBorder: 'rgba(20,184,138,0.30)',
         goPillDot: '#14b88a',
-        // Live weather pill — chrome-neutral on the light dry scrim.
-        livePillBg: 'rgba(15,23,42,0.05)',
-        livePillFg: '#0f172a',
-        livePillBorder: 'rgba(15,23,42,0.10)',
-        livePillDot: '#0f172a',
         authText: '#475569',
         authBtnBg: 'transparent',
         authBtnBorder: 'rgba(15,23,42,0.10)',
         avatarBg: 'rgba(15,23,42,0.06)',
         avatarFg: '#0f172a',
       };
-
-  const showLivePill = Boolean(weatherLabel && temperature);
 
   return (
     <header className="font-geist sticky top-0 z-50 h-16 w-full">
@@ -213,54 +190,18 @@ export default function WeatherTopBar({
             color: isWet ? '#ffffff' : '#0f172a',
           }}
         >
-          {/* Left — brand + optional live weather pill.
-              The pill renders only when the host page passed weatherLabel +
-              temperature (i.e. it has a single-spot weather context). Sits
-              inside the left grid cell so it doesn't fight the centre nav. */}
-          <div
-            className="flex items-center gap-3"
-            style={{ justifySelf: 'start' }}
+          {/* Left — brand */}
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 text-[20px] font-extrabold tracking-tight"
+            style={{ justifySelf: 'start', color: 'inherit' }}
+            aria-label="WeatherOrNot home"
           >
-            <Link
-              href="/"
-              className="flex items-center gap-2.5 text-[20px] font-extrabold tracking-tight"
-              style={{ color: 'inherit' }}
-              aria-label="WeatherOrNot home"
-            >
-              <BrandMark state={state} />
-              <span>
-                Weather<span style={{ color: accent }}>OrNot</span>
-              </span>
-            </Link>
-
-            {showLivePill && (
-              <span
-                className="hidden items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] sm:inline-flex"
-                style={{
-                  background: tone.livePillBg,
-                  color: tone.livePillFg,
-                  border: `1px solid ${tone.livePillBorder}`,
-                }}
-                title={`Live conditions: ${weatherLabel}, ${temperature}`}
-                aria-label={`Live conditions: ${weatherLabel}, ${temperature}`}
-              >
-                <span
-                  aria-hidden
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: tone.livePillDot,
-                    // currentColor inside @keyframes dotPing reads from `color`,
-                    // so the ping outline matches the dot itself.
-                    color: tone.livePillDot,
-                    animation: 'dotPing 2s ease-out infinite',
-                  }}
-                />
-                Live · {weatherLabel} · {temperature}
-              </span>
-            )}
-          </div>
+            <BrandMark state={state} />
+            <span>
+              Weather<span style={{ color: accent }}>OrNot</span>
+            </span>
+          </Link>
 
           {/* Center — nav */}
           <nav className="flex items-center justify-center gap-1">
