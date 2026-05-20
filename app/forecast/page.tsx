@@ -10,7 +10,7 @@
 
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/useAuth';
@@ -22,6 +22,16 @@ import {
 import ForecastCalendar from '@/components/forecast/ForecastCalendar';
 import BestMatchStrip from '@/components/forecast/BestMatchStrip';
 import CellDrawer from '@/components/forecast/CellDrawer';
+import {
+  planFromBestMatch,
+  planFromCellDrawer,
+  confidenceForDayOffset,
+  dayOffsetForDate,
+} from '@/lib/plans/buildPlan';
+import { usePlans } from '@/lib/plans/usePlans';
+import type { Plan, PlanDraft } from '@/lib/plans/types';
+import PlanPreviewDrawer from '@/components/plans/PlanPreviewDrawer';
+import SaveSuccessCard from '@/components/plans/SaveSuccessCard';
 import styles from './page.module.css';
 
 const FORECAST_DAYS = 14;
@@ -120,6 +130,37 @@ function ForecastPageContent() {
   const [availableDays, setAvailableDays] = useState<Set<number>>(new Set());
   const [availabilityHydrated, setAvailabilityHydrated] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ pin: SavedPin; day: DayScore } | null>(null);
+
+  // ── Save-plan flow state ──────────────────────────────────────────────
+  // `draft` mounts the PlanPreviewDrawer. `justSaved` mounts the inline
+  // SaveSuccessCard. Both null when nothing's in flight. Save: user clicks
+  // SavePlanButton on a forecast surface → host computes confidence + builds
+  // a draft → drawer opens → user adds note → addPlan persists → success card
+  // renders inline → fades after 8s.
+  const { addPlan } = usePlans();
+  const [draft, setDraft] = useState<PlanDraft | null>(null);
+  const [justSaved, setJustSaved] = useState<Plan | null>(null);
+
+  const handleSaveFromBestMatch = useCallback((pin: SavedPin, day: DayScore) => {
+    const isTentative = confidenceForDayOffset(dayOffsetForDate(day.date)) === 'tentative';
+    setDraft(planFromBestMatch(pin, day, isTentative));
+  }, []);
+
+  const handleSaveFromCellDrawer = useCallback((pin: SavedPin, day: DayScore) => {
+    const isTentative = confidenceForDayOffset(dayOffsetForDate(day.date)) === 'tentative';
+    setDraft(planFromCellDrawer(pin, day, isTentative));
+    // Close the CellDrawer so the PlanPreviewDrawer takes focus cleanly.
+    setSelectedCell(null);
+  }, []);
+
+  const handleConfirmSave = useCallback((note: string | undefined) => {
+    setDraft((current) => {
+      if (!current) return null;
+      const plan = addPlan(current, note);
+      setJustSaved(plan);
+      return null;
+    });
+  }, [addPlan]);
 
   // Hydrate availability from localStorage on mount. Doing this in a useEffect
   // (not a lazy useState initializer) is what avoids the SSR hydration mismatch.
@@ -313,12 +354,23 @@ function ForecastPageContent() {
           )}
         </div>
 
+        {/* SaveSuccessCard — inline post-save confirmation. Auto-fades 8s. */}
+        {justSaved && (
+          <div className={styles.successWrap}>
+            <SaveSuccessCard
+              plan={justSaved}
+              onDismiss={() => setJustSaved(null)}
+            />
+          </div>
+        )}
+
         {/* Best matches */}
         <div className={styles.bestMatch}>
           <BestMatchStrip
             availableDays={availableDays}
             pins={filteredPins}
             forecasts={forecasts}
+            onSavePlan={handleSaveFromBestMatch}
           />
         </div>
 
@@ -377,6 +429,19 @@ function ForecastPageContent() {
           pin={selectedCell.pin}
           day={selectedCell.day}
           onClose={() => setSelectedCell(null)}
+          onSavePlan={handleSaveFromCellDrawer}
+        />
+      )}
+
+      {/* PlanPreviewDrawer — opens whenever a SavePlanButton anywhere on this
+          page set the draft. Closes via Cancel / Esc / scrim-tap (handled by
+          the component itself), or transitions into the SaveSuccessCard on
+          successful save. */}
+      {draft && (
+        <PlanPreviewDrawer
+          draft={draft}
+          onSave={handleConfirmSave}
+          onCancel={() => setDraft(null)}
         />
       )}
     </div>

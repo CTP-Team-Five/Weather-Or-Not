@@ -62,6 +62,12 @@
   line-height: 1.45;
 }
 
+/* ── SaveSuccessCard wrapper (inline post-save confirmation) ──────────────── */
+
+.successWrap {
+  margin-bottom: 16px;
+}
+
 /* ── Activity filter pill group ───────────────────────────────────────────── */
 
 .activityFilter {
