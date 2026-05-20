@@ -24,9 +24,15 @@ export interface HourlyForecast {
   snowDepthM:          number | null;
   visibilityM:         number | null;
   soilMoistureVwc:     number | null;
+  /** Direct solar radiation in W/m². Powers spring-melt detection for snow. */
+  directRadiationWm2:  number | null;
   /** From Open-Meteo Marine API, when available. */
   waveHeightM:         number | null;
   swellPeriodS:        number | null;
+  /** Direction the swell is coming FROM, in degrees (0 = N, 90 = E). */
+  swellDirDeg:         number | null;
+  /** Sea-surface temperature in °C. Real water temp, not air-temp proxy. */
+  seaSurfaceTempC:     number | null;
 }
 
 export interface DailyForecast {
@@ -57,9 +63,15 @@ export interface CurrentWeather {
   precipProb:         number | null;
   /** Raw volumetric water content m³/m³ — NOT percent saturated */
   soilMoistureVwc:    number | null;
+  /** Direct solar radiation in W/m² (matching the closest hourly slot). */
+  directRadiationWm2: number | null;
   // ── From Open-Meteo Marine API ──
   waveHeight:         number | null;
   swellPeriod:        number | null;
+  /** Direction the swell is coming FROM, in degrees (0 = N, 90 = E). */
+  swellDirDeg:        number | null;
+  /** Sea-surface temperature in °C. */
+  seaSurfaceTempC:    number | null;
 }
 
 export interface ExtendedWeatherData {
@@ -118,7 +130,8 @@ export async function fetchForecast(
       'temperature_2m,apparent_temperature,' +
       'wind_speed_10m,wind_direction_10m,wind_gusts_10m,' +
       'precipitation,precipitation_probability,weather_code,' +
-      'snowfall,snow_depth,visibility,soil_moisture_0_to_1cm',
+      'snowfall,snow_depth,visibility,soil_moisture_0_to_1cm,' +
+      'direct_radiation',
     );
     url.searchParams.set(
       'daily',
@@ -149,29 +162,39 @@ export async function fetchForecast(
     // ── Marine data (optional) ──
     // Always attempted; silently fails for inland points. The hourly arrays
     // are needed by computeWeeklySuitability to score future surf days.
-    let waveHeight:  number | null = null;
-    let swellPeriod: number | null = null;
-    const marineHourlyWave: Map<string, number> = new Map();
-    const marineHourlySwell: Map<string, number> = new Map();
+    let waveHeight:     number | null = null;
+    let swellPeriod:    number | null = null;
+    let swellDirCurrent: number | null = null;
+    let sstCurrent:     number | null = null;
+    const marineHourlyWave:     Map<string, number> = new Map();
+    const marineHourlySwell:    Map<string, number> = new Map();
+    const marineHourlySwellDir: Map<string, number> = new Map();
+    const marineHourlySst:      Map<string, number> = new Map();
     try {
       const marineUrl = new URL('https://marine-api.open-meteo.com/v1/marine');
       marineUrl.searchParams.set('latitude',  lat.toString());
       marineUrl.searchParams.set('longitude', lon.toString());
-      marineUrl.searchParams.set('current', 'wave_height,swell_wave_period');
-      marineUrl.searchParams.set('hourly',  'wave_height,swell_wave_period');
+      marineUrl.searchParams.set('current', 'wave_height,swell_wave_period,swell_wave_direction,sea_surface_temperature');
+      marineUrl.searchParams.set('hourly',  'wave_height,swell_wave_period,swell_wave_direction,sea_surface_temperature');
       marineUrl.searchParams.set('timezone', 'auto');
       marineUrl.searchParams.set('forecast_days', String(days));
       const marineRes = await fetch(marineUrl.toString());
       if (marineRes.ok) {
-        const marine  = await marineRes.json();
-        waveHeight    = nullable(marine.current?.wave_height);
-        swellPeriod   = nullable(marine.current?.swell_wave_period);
-        const mTimes: string[] = marine.hourly?.time ?? [];
-        const mWave:  (number|null)[] = marine.hourly?.wave_height ?? [];
-        const mSwell: (number|null)[] = marine.hourly?.swell_wave_period ?? [];
+        const marine    = await marineRes.json();
+        waveHeight      = nullable(marine.current?.wave_height);
+        swellPeriod     = nullable(marine.current?.swell_wave_period);
+        swellDirCurrent = nullable(marine.current?.swell_wave_direction);
+        sstCurrent      = nullable(marine.current?.sea_surface_temperature);
+        const mTimes:    string[] = marine.hourly?.time ?? [];
+        const mWave:     (number|null)[] = marine.hourly?.wave_height ?? [];
+        const mSwell:    (number|null)[] = marine.hourly?.swell_wave_period ?? [];
+        const mSwellDir: (number|null)[] = marine.hourly?.swell_wave_direction ?? [];
+        const mSst:      (number|null)[] = marine.hourly?.sea_surface_temperature ?? [];
         for (let i = 0; i < mTimes.length; i++) {
-          if (mWave[i]  != null) marineHourlyWave.set(mTimes[i], mWave[i] as number);
-          if (mSwell[i] != null) marineHourlySwell.set(mTimes[i], mSwell[i] as number);
+          if (mWave[i]     != null) marineHourlyWave.set(mTimes[i],     mWave[i] as number);
+          if (mSwell[i]    != null) marineHourlySwell.set(mTimes[i],    mSwell[i] as number);
+          if (mSwellDir[i] != null) marineHourlySwellDir.set(mTimes[i], mSwellDir[i] as number);
+          if (mSst[i]      != null) marineHourlySst.set(mTimes[i],      mSst[i] as number);
         }
       }
     } catch {
@@ -193,8 +216,11 @@ export async function fetchForecast(
       visibilityM:          nullable(data.hourly?.visibility?.[ci]),
       precipProb:           nullable(data.hourly?.precipitation_probability?.[ci]),
       soilMoistureVwc:      nullable(data.hourly?.soil_moisture_0_to_1cm?.[ci]),
+      directRadiationWm2:   nullable(data.hourly?.direct_radiation?.[ci]),
       waveHeight,
       swellPeriod,
+      swellDirDeg:          swellDirCurrent,
+      seaSurfaceTempC:      sstCurrent,
     };
 
     // ── Hourly data (full forecast horizon, 24 × forecastDays slots) ──
@@ -219,8 +245,11 @@ export async function fetchForecast(
         snowDepthM:          nullable(data.hourly.snow_depth?.[i]),
         visibilityM:         nullable(data.hourly.visibility?.[i]),
         soilMoistureVwc:     nullable(data.hourly.soil_moisture_0_to_1cm?.[i]),
-        waveHeightM:         marineHourlyWave.get(t)  ?? null,
-        swellPeriodS:        marineHourlySwell.get(t) ?? null,
+        directRadiationWm2:  nullable(data.hourly.direct_radiation?.[i]),
+        waveHeightM:         marineHourlyWave.get(t)     ?? null,
+        swellPeriodS:        marineHourlySwell.get(t)    ?? null,
+        swellDirDeg:         marineHourlySwellDir.get(t) ?? null,
+        seaSurfaceTempC:     marineHourlySst.get(t)      ?? null,
       });
     }
 

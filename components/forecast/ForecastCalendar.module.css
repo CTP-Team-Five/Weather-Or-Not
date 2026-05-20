@@ -296,6 +296,21 @@
   color: inherit;
 }
 
+/* Time-of-day chip — only present on days where one bucket scores
+   meaningfully better than the others (and no hazard reason is in play).
+   Renders below the verdict in a slightly muted, lighter weight so it reads
+   as supplementary info, not as a second verdict. */
+.cellTime {
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-top: 2px;
+  color: inherit;
+  opacity: 0.75;
+}
+
 /* "Today, peak window already passed" — fades the cell while keeping its
    colour so the user sees we're reporting what's still ahead, not the full
    day average. */

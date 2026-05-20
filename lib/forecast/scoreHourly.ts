@@ -73,10 +73,13 @@ export async function scoreHourly(
       snowDepthM:      h.snowDepthM,
       snowfallCm:      h.snowfallCm,
       visibilityM:     h.visibilityM,
-      soilMoistureVwc: h.soilMoistureVwc,
-      waveHeightM:     h.waveHeightM,
-      swellPeriodS:    h.swellPeriodS,
-      hourlyUnits:     weather.hourlyUnits,
+      soilMoistureVwc:    h.soilMoistureVwc,
+      directRadiationWm2: h.directRadiationWm2,
+      waveHeightM:        h.waveHeightM,
+      swellPeriodS:       h.swellPeriodS,
+      swellDirDeg:        h.swellDirDeg,
+      seaSurfaceTempC:    h.seaSurfaceTempC,
+      hourlyUnits:        weather.hourlyUnits,
     });
     const result = scoreActivity(activity, location, snapshot);
     return {
