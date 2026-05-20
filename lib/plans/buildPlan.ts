@@ -14,10 +14,28 @@ import type { SavedPin } from '@/components/data/pinStore';
 import type { DayScore } from '@/lib/computeWeeklySuitability';
 import type {
   Activity,
+  Confidence,
   Plan,
   PlanDraft,
   PlanSnapshot,
 } from './types';
+
+/** Days from today (0 = today) for a bare dateIso string. Use this when you
+ *  have a forecast-day date but haven't constructed a Plan yet (e.g. the
+ *  SavePlanButton needs to pick the right copy before the user clicks save). */
+export function dayOffsetForDate(dateIso: string, now: Date = new Date()): number {
+  const dayMidnight = new Date(`${dateIso}T00:00:00`).getTime();
+  const today       = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  return Math.round((dayMidnight - today.getTime()) / 86_400_000);
+}
+
+/** Long-range forecast (day 7+) loses accuracy, so saves from those days
+ *  are 'tentative' — UI swaps the CTA copy to 'Watch this day' and the
+ *  PlanPreviewDrawer surfaces a confidence disclaimer. */
+export function confidenceForDayOffset(dayOffset: number): Confidence {
+  return dayOffset >= 7 ? 'tentative' : 'firm';
+}
 
 // Default whole-day window when the source surface doesn't carry an hourly
 // range. Matches the peak window the scoring engine uses (lib/computeWeekly

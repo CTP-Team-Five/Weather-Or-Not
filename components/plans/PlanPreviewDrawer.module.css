@@ -1,0 +1,284 @@
+/* components/plans/PlanPreviewDrawer.module.css
+   Right-anchored desktop panel with a scrim. Mobile bottom-sheet variant
+   is a later slice; for now the panel collapses to most of the viewport on
+   narrow widths via a min() width. */
+
+.scrim {
+  position:        fixed;
+  inset:           0;
+  z-index:         200;
+  background:      hsl(var(--shadow) / 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  display:         flex;
+  justify-content: flex-end;
+  align-items:     stretch;
+  animation:       drawerScrim 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes drawerScrim {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes drawerSlide {
+    from { transform: translateX(40px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+}
+
+.panel {
+  width:        min(480px, 92vw);
+  height:       100%;
+  background:   hsl(var(--surface-elevated));
+  border-left:  1px solid hsl(var(--border-subtle));
+  box-shadow:   -20px 0 60px hsl(var(--shadow) / 0.25);
+  padding:      28px 28px 24px;
+  overflow-y:   auto;
+  font-family:  var(--font-body);
+  display:      flex;
+  flex-direction: column;
+  gap:          18px;
+  animation:    drawerSlide 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Header ───────────────────────────────────────────────────────────── */
+
+.eyebrow {
+  font-family:    var(--font-display);
+  font-size:      11px;
+  font-weight:    700;
+  letter-spacing: 0.22em;
+  color:          hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  margin:         0;
+}
+
+.title {
+  font-family:    var(--font-display);
+  font-size:      26px;
+  font-weight:    700;
+  color:          hsl(var(--foreground));
+  letter-spacing: -0.02em;
+  margin:         0;
+  line-height:    1.1;
+}
+
+/* ── Meta row (WHEN / WHERE / VERDICT) ────────────────────────────────── */
+
+.metaRow {
+  display:               grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:                   12px;
+  padding:               16px;
+  background:            hsl(var(--surface));
+  border:                1px solid hsl(var(--border-subtle));
+  border-radius:         12px;
+}
+
+.metaBlock {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  min-width:      0;
+}
+
+.metaLabel {
+  font-family:    var(--font-display);
+  font-size:      10px;
+  font-weight:    700;
+  letter-spacing: 0.14em;
+  color:          hsl(var(--muted-foreground));
+}
+
+.metaValue {
+  font-family:    var(--font-display);
+  font-size:      14px;
+  font-weight:    700;
+  color:          hsl(var(--foreground));
+  margin-top:     4px;
+  line-height:    1.2;
+}
+
+.metaValue[data-verdict='GO']    { color: hsl(var(--score-great)); }
+.metaValue[data-verdict='MAYBE'] { color: hsl(var(--score-ok)); }
+.metaValue[data-verdict='SKIP']  { color: hsl(var(--score-terrible)); }
+
+.verdictWord {
+  font-family:    var(--font-editorial);
+  font-style:     italic;
+  font-weight:    400;
+  font-size:      22px;
+  letter-spacing: -0.01em;
+}
+
+.metaSub {
+  font-size:  11px;
+  font-weight: 500;
+  color:      hsl(var(--muted-foreground));
+  margin-top: 2px;
+}
+
+/* ── Tentative banner (14-day saves only) ─────────────────────────────── */
+
+.tentativeBanner {
+  padding:        12px 14px;
+  border:         1px dashed hsl(var(--warning) / 0.5);
+  background:     hsl(var(--warning) / 0.08);
+  border-radius:  10px;
+  font-size:      12px;
+  color:          hsl(var(--foreground));
+  line-height:    1.45;
+}
+
+/* ── Verdict-tinted reason plate ──────────────────────────────────────── */
+
+.reasonPlate {
+  padding:       14px 16px;
+  border-radius: 12px;
+  font-size:     13.5px;
+  font-weight:   500;
+  line-height:   1.5;
+  color:         hsl(var(--foreground));
+}
+
+.reasonPlate[data-verdict='GO'] {
+  background: hsl(var(--score-great) / 0.10);
+  border:     1px solid hsl(var(--score-great) / 0.30);
+}
+.reasonPlate[data-verdict='MAYBE'] {
+  background: hsl(var(--score-ok) / 0.14);
+  border:     1px solid hsl(var(--score-ok) / 0.34);
+}
+.reasonPlate[data-verdict='SKIP'] {
+  background: hsl(var(--score-terrible) / 0.10);
+  border:     1px solid hsl(var(--score-terrible) / 0.30);
+}
+
+/* ── Note textarea ────────────────────────────────────────────────────── */
+
+.noteLabel {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+
+.noteLabelText {
+  font-family:    var(--font-display);
+  font-size:      10px;
+  font-weight:    700;
+  letter-spacing: 0.14em;
+  color:          hsl(var(--muted-foreground));
+}
+
+.noteInput {
+  font:           inherit;
+  font-size:      13px;
+  padding:        10px 12px;
+  border:         1px solid hsl(var(--border-subtle));
+  border-radius:  10px;
+  background:     hsl(var(--surface));
+  color:          hsl(var(--foreground));
+  resize:         vertical;
+  min-height:     60px;
+  line-height:    1.45;
+}
+
+.noteInput:focus {
+  outline:    none;
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.25);
+}
+
+/* ── Future-state row (Alert + Calendar are Later stubs) ──────────────── */
+
+.futureRow {
+  display: flex;
+  gap:     8px;
+  flex-wrap: wrap;
+}
+
+.laterPill {
+  font:           inherit;
+  font-size:      11px;
+  font-weight:    600;
+  padding:        6px 12px;
+  border-radius:  999px;
+  background:     hsl(var(--muted));
+  color:          hsl(var(--muted-foreground));
+  border:         1px dashed hsl(var(--border-subtle));
+  cursor:         not-allowed;
+  letter-spacing: 0.02em;
+}
+
+/* ── Action row ───────────────────────────────────────────────────────── */
+
+.actions {
+  display:         flex;
+  justify-content: flex-end;
+  align-items:     center;
+  gap:             10px;
+  margin-top:      auto;
+  padding-top:     14px;
+  border-top:      1px solid hsl(var(--border-subtle));
+}
+
+.cancelBtn {
+  font:           inherit;
+  font-size:      13px;
+  font-weight:    600;
+  padding:        9px 16px;
+  border-radius:  10px;
+  background:     transparent;
+  color:          hsl(var(--muted-foreground));
+  border:         1px solid hsl(var(--border-subtle));
+  cursor:         pointer;
+}
+
+.cancelBtn:hover {
+  color: hsl(var(--foreground));
+}
+
+.cancelBtn:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+.saveBtn {
+  font:           inherit;
+  font-family:    var(--font-display);
+  font-size:      13px;
+  font-weight:    700;
+  padding:        10px 18px;
+  border-radius:  10px;
+  border:         1px solid transparent;
+  cursor:         pointer;
+  letter-spacing: 0.02em;
+  transition:     transform 120ms ease, box-shadow 120ms ease;
+}
+
+.saveBtn[data-verdict='GO'] {
+  background:   hsl(var(--score-great));
+  color:        hsl(var(--score-great-foreground));
+  border-color: hsl(var(--score-great));
+}
+.saveBtn[data-verdict='MAYBE'] {
+  background:   hsl(var(--score-ok));
+  color:        hsl(var(--score-ok-foreground));
+  border-color: hsl(var(--score-ok));
+}
+.saveBtn[data-verdict='SKIP'] {
+  background:   hsl(var(--score-terrible));
+  color:        hsl(var(--score-terrible-foreground));
+  border-color: hsl(var(--score-terrible));
+}
+
+.saveBtn:hover {
+  transform:  translateY(-1px);
+  box-shadow: 0 6px 18px hsl(var(--shadow) / 0.18);
+}
+
+.saveBtn:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}

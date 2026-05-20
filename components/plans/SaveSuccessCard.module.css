@@ -1,0 +1,140 @@
+/* components/plans/SaveSuccessCard.module.css
+   Inline post-save card on /forecast. Verdict-tinted check + soft surface
+   with the verdict's accent only on the badge — keeps the rest of the
+   card readable. */
+
+.card {
+  display:        grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items:    center;
+  gap:            16px;
+  padding:        12px 14px;
+  background:     hsl(var(--surface-elevated));
+  border:         1px solid hsl(var(--border-subtle));
+  border-left:    4px solid hsl(var(--score-great));
+  border-radius:  12px;
+  box-shadow:     0 4px 14px hsl(var(--shadow) / 0.08);
+  animation:      successIn 240ms ease-out;
+  font-family:    var(--font-body);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes successIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+.card[data-verdict='GO']    { border-left-color: hsl(var(--score-great)); }
+.card[data-verdict='MAYBE'] { border-left-color: hsl(var(--score-ok)); }
+.card[data-verdict='SKIP']  { border-left-color: hsl(var(--score-terrible)); }
+
+/* ── Check badge ──────────────────────────────────────────────────────── */
+
+.check {
+  display:        inline-flex;
+  align-items:    center;
+  justify-content: center;
+  width:          28px;
+  height:         28px;
+  border-radius:  50%;
+  font-weight:    800;
+  font-size:      14px;
+  font-family:    var(--font-display);
+  flex-shrink:    0;
+}
+
+.card[data-verdict='GO']    .check { background: hsl(var(--score-great) / 0.18);   color: hsl(var(--score-great)); }
+.card[data-verdict='MAYBE'] .check { background: hsl(var(--score-ok) / 0.22);      color: hsl(var(--score-ok)); }
+.card[data-verdict='SKIP']  .check { background: hsl(var(--score-terrible) / 0.18); color: hsl(var(--score-terrible)); }
+
+/* ── Copy ─────────────────────────────────────────────────────────────── */
+
+.copy {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  min-width:      0;
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-size:   14px;
+  font-weight: 700;
+  color:       hsl(var(--foreground));
+}
+
+.subline {
+  font-size:  12px;
+  font-weight: 500;
+  color:      hsl(var(--muted-foreground));
+}
+
+/* ── Actions ──────────────────────────────────────────────────────────── */
+
+.actions {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  flex-wrap:   wrap;
+}
+
+.primaryLink {
+  font-family:    var(--font-display);
+  font-size:      12px;
+  font-weight:    700;
+  padding:        7px 12px;
+  border-radius:  8px;
+  background:     hsl(var(--foreground));
+  color:          hsl(var(--background));
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+.primaryLink:hover {
+  opacity: 0.92;
+}
+
+.primaryLink:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+.laterBtn {
+  font:           inherit;
+  font-size:      11px;
+  font-weight:    600;
+  padding:        6px 10px;
+  border-radius:  999px;
+  background:     hsl(var(--muted));
+  color:          hsl(var(--muted-foreground));
+  border:         1px dashed hsl(var(--border-subtle));
+  cursor:         not-allowed;
+  letter-spacing: 0.02em;
+}
+
+.dismiss {
+  font:           inherit;
+  background:     transparent;
+  border:         none;
+  color:          hsl(var(--muted-foreground));
+  font-size:      20px;
+  width:          28px;
+  height:         28px;
+  border-radius:  6px;
+  cursor:         pointer;
+  display:        inline-flex;
+  align-items:    center;
+  justify-content: center;
+  line-height:    1;
+}
+
+.dismiss:hover {
+  background: hsl(var(--muted));
+  color:      hsl(var(--foreground));
+}
+
+.dismiss:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
