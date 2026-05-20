@@ -1,0 +1,322 @@
+/* components/forecast/ThreeDayForecast.module.css
+   3-Day mode surface. All tokens shared with the rest of the app —
+   --score-* for verdict colour, --accent-* for activity rails,
+   surface / border / muted for chrome. No local hex. */
+
+.wrap {
+  display:        flex;
+  flex-direction: column;
+  gap:            24px;
+}
+
+.emptyState {
+  padding:       40px 24px;
+  background:    hsl(var(--surface));
+  border:        1px dashed hsl(var(--border-subtle));
+  border-radius: 16px;
+  text-align:    center;
+}
+
+.emptyBody {
+  margin:    0;
+  font-size: 13px;
+  color:     hsl(var(--muted-foreground));
+}
+
+/* ── Controls row: pin picker + daylight toggle ──────────────────────── */
+
+.controls {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  flex-wrap:       wrap;
+  gap:             18px;
+  padding:         14px 18px;
+  background:      hsl(var(--surface));
+  border:          1px solid hsl(var(--border-subtle));
+  border-radius:   14px;
+}
+
+.controlLabel {
+  font-family:    var(--font-display);
+  font-size:      10px;
+  font-weight:    700;
+  letter-spacing: 0.18em;
+  color:          hsl(var(--muted-foreground));
+  text-transform: uppercase;
+}
+
+.pickerWrap {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  flex:        1 1 280px;
+  min-width:   0;
+}
+
+.pickerSelectWrap {
+  position:    relative;
+  flex:        1;
+  display:     flex;
+  align-items: center;
+}
+
+.pickerRail {
+  position:      absolute;
+  left:          10px;
+  width:         4px;
+  height:        22px;
+  border-radius: 2px;
+  z-index:       1;
+  pointer-events: none;
+  background:    hsl(var(--muted-foreground));
+}
+
+.pickerRail[data-activity='hike']      { background: var(--accent-hike); }
+.pickerRail[data-activity='surf']      { background: var(--accent-surf); }
+.pickerRail[data-activity='snowboard'] { background: var(--accent-snow); }
+
+.pickerSelect {
+  appearance:         none;
+  -webkit-appearance: none;
+  width:              100%;
+  padding:            10px 36px 10px 26px;
+  border-radius:      10px;
+  border:             1px solid hsl(var(--border-subtle));
+  background:         hsl(var(--surface-elevated));
+  color:              hsl(var(--foreground));
+  font-family:        var(--font-display);
+  font-size:          14px;
+  font-weight:        600;
+  cursor:             pointer;
+}
+
+.pickerSelect:focus {
+  outline:      none;
+  border-color: hsl(var(--ring));
+  box-shadow:   0 0 0 3px hsl(var(--ring) / 0.25);
+}
+
+.pickerCaret {
+  position:       absolute;
+  right:          12px;
+  color:          hsl(var(--muted-foreground));
+  pointer-events: none;
+  font-size:      10px;
+}
+
+.daylightWrap {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+}
+
+.daylightGroup {
+  display:        inline-flex;
+  align-items:    center;
+  gap:            4px;
+  padding:        4px;
+  background:     hsl(var(--surface-elevated));
+  border-radius:  999px;
+  border:         1px solid hsl(var(--border-subtle));
+}
+
+.daylightChip {
+  font:           inherit;
+  font-size:      12px;
+  font-weight:    600;
+  padding:        5px 12px;
+  border-radius:  999px;
+  background:     transparent;
+  color:          hsl(var(--muted-foreground));
+  border:         none;
+  cursor:         pointer;
+  transition:     background 120ms ease, color 120ms ease;
+}
+
+.daylightChip:hover {
+  color: hsl(var(--foreground));
+}
+
+.daylightChip[aria-pressed='true'] {
+  background: hsl(var(--foreground));
+  color:      hsl(var(--background));
+}
+
+.daylightChip:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+/* ── Per-day section + DayHero ───────────────────────────────────────── */
+
+.sections {
+  display:        flex;
+  flex-direction: column;
+  gap:            28px;
+}
+
+.daySection {
+  display:        flex;
+  flex-direction: column;
+  gap:            14px;
+}
+
+.dayHero {
+  --hsl: var(--score-ok);
+
+  display:         flex;
+  justify-content: space-between;
+  align-items:     flex-end;
+  gap:             24px;
+  padding:         18px 22px;
+  border-radius:   18px;
+  background:      hsl(var(--surface-elevated));
+  border:          1px solid hsl(var(--border-subtle));
+  box-shadow:
+    0 1px 3px hsl(var(--shadow) / 0.06),
+    0 4px 16px hsl(var(--shadow) / 0.04);
+  flex-wrap: wrap;
+}
+
+.dayHero[data-verdict='GO']    { --hsl: var(--score-great); }
+.dayHero[data-verdict='MAYBE'] { --hsl: var(--score-ok); }
+.dayHero[data-verdict='SKIP']  { --hsl: var(--score-terrible); }
+
+.dayHeroLeft {
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+  min-width:      0;
+  flex:           1 1 240px;
+}
+
+.dayHeroLabel {
+  display:     flex;
+  align-items: baseline;
+  gap:         8px;
+}
+
+.dayHeroDay {
+  font-family:    var(--font-display);
+  font-size:      22px;
+  font-weight:    700;
+  letter-spacing: -0.015em;
+  color:          hsl(var(--foreground));
+}
+
+.dayHeroDate {
+  font-family: var(--font-display);
+  font-size:   13px;
+  font-weight: 600;
+  color:       hsl(var(--muted-foreground));
+}
+
+.dayHeroSpot {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  min-width:   0;
+}
+
+.activityRail {
+  width:         4px;
+  height:        32px;
+  border-radius: 2px;
+  background:    hsl(var(--muted-foreground));
+  flex-shrink:   0;
+}
+
+.activityRail[data-activity='hike']      { background: var(--accent-hike); }
+.activityRail[data-activity='surf']      { background: var(--accent-surf); }
+.activityRail[data-activity='snowboard'] { background: var(--accent-snow); }
+
+.spotName {
+  font-family:    var(--font-display);
+  font-size:      15px;
+  font-weight:    700;
+  color:          hsl(var(--foreground));
+  line-height:    1.15;
+  letter-spacing: -0.005em;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+  white-space:    nowrap;
+}
+
+.spotMeta {
+  font-family:    var(--font-display);
+  font-size:      10px;
+  font-weight:    700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color:          hsl(var(--muted-foreground));
+  margin-top:     3px;
+}
+
+.dayHeroVerdictWrap {
+  display:        flex;
+  flex-direction: column;
+  align-items:    flex-end;
+  gap:            4px;
+  text-align:     right;
+  min-width:      0;
+}
+
+.dayHeroVerdict {
+  font-family:    var(--font-editorial);
+  font-style:     italic;
+  font-weight:    400;
+  font-size:      clamp(44px, 7vw, 64px);
+  line-height:    0.9;
+  letter-spacing: -0.01em;
+  color:          hsl(var(--hsl));
+}
+
+.dayHeroMeta {
+  display:     flex;
+  align-items: baseline;
+  gap:         6px;
+  font-family: var(--font-display);
+}
+
+.dayHeroScore {
+  font-size:   24px;
+  font-weight: 800;
+  color:       hsl(var(--foreground));
+  letter-spacing: -0.02em;
+}
+
+.dayHeroScoreOver {
+  font-size:   12px;
+  font-weight: 600;
+  color:       hsl(var(--muted-foreground));
+  margin-right: 6px;
+}
+
+.dayHeroTemps {
+  font-size:   13px;
+  font-weight: 700;
+  color:       hsl(var(--muted-foreground));
+}
+
+.dayHeroSummary {
+  font-size:   13px;
+  font-weight: 500;
+  color:       hsl(var(--muted-foreground));
+  max-width:   340px;
+  line-height: 1.4;
+  margin-top:  4px;
+}
+
+/* ── Per-day placeholder until 7c / 7d land ──────────────────────────── */
+
+.dayPlaceholder {
+  padding:       18px 20px;
+  background:    hsl(var(--surface));
+  border:        1px dashed hsl(var(--border-subtle));
+  border-radius: 12px;
+  text-align:    center;
+  color:         hsl(var(--muted-foreground));
+  font-size:     12px;
+  font-weight:   500;
+}

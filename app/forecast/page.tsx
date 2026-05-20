@@ -27,6 +27,7 @@ import ForecastRangeToggle, {
   isForecastRange,
   type ForecastRange,
 } from '@/components/forecast/ForecastRangeToggle';
+import ThreeDayForecast from '@/components/forecast/ThreeDayForecast';
 import {
   planFromBestMatch,
   planFromCellDrawer,
@@ -457,16 +458,7 @@ function ForecastPageContent() {
             </p>
           </div>
         ) : range === '3' ? (
-          // 3-Day mode shell — DayHero + BestWindowCard + HourlyForecastRow
-          // land in slices 7b–d. Placeholder lets us ship 7a (the toggle) on
-          // its own.
-          <div className={styles.threeDayPlaceholder}>
-            <div className={styles.threeDayPlaceholderTitle}>3-Day mode</div>
-            <p className={styles.threeDayPlaceholderBody}>
-              Hourly breakdown with the best-window card per day lands next.
-              For now, flip to 7 Day or 14 Day above.
-            </p>
-          </div>
+          <ThreeDayForecast pins={filteredPins} forecasts={forecasts} />
         ) : (
           <ForecastCalendar
             pins={filteredPins}
