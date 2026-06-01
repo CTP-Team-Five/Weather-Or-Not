@@ -6,6 +6,7 @@ import { Decision, Verdict } from '@/lib/decision';
 import { ActivityIcon } from '@/components/icons/ActivityIcons';
 import { usePreferences } from '@/lib/preferences';
 import { cToF } from '@/lib/formatTemp';
+import { formatWindSpeed, kphToMph } from '@/lib/formatDistance';
 import styles from './SelectedSpotBoard.module.css';
 
 interface Props {
@@ -123,9 +124,17 @@ export default function SelectedSpotBoard({ decision }: Props) {
         <Metric
           icon={<WiStrongWind size={18} />}
           label="Wind"
-          value={weather.windKph.toFixed(0)}
-          unit="km/h"
-          sub={weather.gustKph != null ? `gusts ${weather.gustKph.toFixed(0)}` : null}
+          value={
+            prefs.distUnit === 'mi'
+              ? Math.round(kphToMph(weather.windKph)).toString()
+              : Math.round(weather.windKph).toString()
+          }
+          unit={prefs.distUnit === 'mi' ? 'mph' : 'km/h'}
+          sub={
+            weather.gustKph != null
+              ? `gusts ${formatWindSpeed(weather.gustKph, prefs.distUnit)}`
+              : null
+          }
         />
 
         <span className={styles.separator} aria-hidden="true" />

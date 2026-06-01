@@ -7,6 +7,22 @@ export interface BackgroundImage {
   alt: string;
   /** Where the focal point is, for object-position. Default: 'center' */
   position?: string;
+  /** Attribution payload — present only when the image comes from a
+   *  third-party API (e.g. Unsplash) whose license requires credit. */
+  credit?: {
+    /** Photographer display name */
+    name: string;
+    /** Link to the photographer's profile (with UTM tag per API guidelines) */
+    profileUrl: string;
+    /** Direct link to this photo on the source site (not the home page). */
+    sourceUrl: string;
+    /** Human-readable location attached to the photo by the photographer,
+     *  if any — e.g. "Newport, RI" or "Yosemite National Park". Sometimes
+     *  absent (most Unsplash photos have no location). */
+    location?: string;
+    /** Source platform — drives the "on Unsplash"/"on Flickr"/etc label */
+    source: 'unsplash' | 'wikimedia' | 'pexels';
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

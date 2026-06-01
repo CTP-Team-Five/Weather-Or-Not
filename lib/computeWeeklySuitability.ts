@@ -297,6 +297,13 @@ function dayHazardCap(
         ? `Rain probability peaks at ${Math.round(peakPoPMax)}% during the day — conditions may shift.`
         : 'Rain in the forecast — conditions may shift during the day.';
     }
+    // Drizzle (51–57) or light precip total — not dangerous but not a GO day.
+    else if (worstCode >= 51 || sumPrecip >= 1.5) {
+      cap    = Math.min(cap, 80);
+      reason = sumPrecip >= 1.5
+        ? `Light rain/drizzle expected (~${sumPrecip.toFixed(1)} mm) — not ideal but doable.`
+        : 'Drizzle in the forecast — conditions damp but manageable.';
+    }
   }
   else {
     // Snow-activity caps. Only LIQUID precipitation is a hazard — rain on

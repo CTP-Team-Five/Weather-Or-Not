@@ -743,17 +743,30 @@ function scoreHiking(loc: LocationMetadata, w: WeatherSnapshot): SuitabilityResu
 
   // ─── CURVE: Quality scoring (deduction-based) ───
 
-  // Sky / weather code. Clear-sky days now score above partly-cloudy; fog
-  // takes a real bite. Rain codes (51+) are handled by the rain branch below.
+  // Sky / weather code.
   if (w.weatherCode !== undefined) {
     if (w.weatherCode === 0) {
       // Clear sky — no deduction (caps still 9.5)
     } else if (w.weatherCode >= 1 && w.weatherCode <= 3) {
-      // Mostly clear → partly cloudy → overcast. Small step down.
       score10 -= 0.3;
     } else if (w.weatherCode >= 45 && w.weatherCode <= 48) {
       score10 -= 1.5;
       reasons.push('Fog or low cloud; trail visibility may be poor.');
+    } else if (w.weatherCode >= 51 && w.weatherCode <= 57) {
+      score10 -= 1.5;
+      reasons.push('Drizzle expected; trails will be wet.');
+    } else if (w.weatherCode >= 61 && w.weatherCode <= 67) {
+      score10 -= 2.5;
+      reasons.push('Rain expected; trails wet and slippery.');
+    } else if (w.weatherCode >= 80 && w.weatherCode <= 82) {
+      score10 -= 2.0;
+      reasons.push('Rain showers expected; bring rain gear.');
+    } else if (w.weatherCode >= 71 && w.weatherCode <= 77) {
+      score10 -= 1.0;
+      reasons.push('Snow expected; winter conditions on trails.');
+    } else if (w.weatherCode >= 85 && w.weatherCode <= 86) {
+      score10 -= 1.5;
+      reasons.push('Snow showers expected; conditions variable.');
     }
   }
 

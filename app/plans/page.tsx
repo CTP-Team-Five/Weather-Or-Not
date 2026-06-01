@@ -1,46 +1,14 @@
-// app/plans/page.tsx
-// /plans — saved-decisions page. Phase 1 ships the shell + Upcoming tab's
-// EmptyState. The other tabs (Calendar / Tentative / Past) render their
-// chrome but show a "Coming in Phase 2." stub so the IA is visible without
-// faking content. PlanCard + bucketed Upcoming list land in slice 3.
-//
-// useSearchParams forces a client-render bailout, so the page sits behind
-// a Suspense boundary — same pattern as app/forecast/page.tsx.
-
 'use client';
 
-import { Suspense, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useMemo } from 'react';
 import { usePlans } from '@/lib/plans/usePlans';
 import { bucketOf, type Plan, type PlanBucket } from '@/lib/plans/types';
-import PlansTabs, { type PlansView, isPlansView } from '@/components/plans/PlansTabs';
 import EmptyState from '@/components/plans/EmptyState';
 import PlanCard from '@/components/plans/PlanCard';
+import CalendarAgendaView from '@/components/plans/CalendarAgendaView';
 import styles from './page.module.css';
 
 export default function PlansPage() {
-  return (
-    <Suspense fallback={<PlansShellLoading />}>
-      <PlansPageContent />
-    </Suspense>
-  );
-}
-
-function PlansShellLoading() {
-  return (
-    <div className={`font-geist ${styles.shell}`}>
-      <div className={styles.inner}>
-        <div className={styles.dimMessage}>Loading plans…</div>
-      </div>
-    </div>
-  );
-}
-
-function PlansPageContent() {
-  const searchParams = useSearchParams();
-  const raw = searchParams?.get('view') ?? '';
-  const view: PlansView = isPlansView(raw) ? raw : 'upcoming';
-
   const { plans, hydrated, removePlan } = usePlans();
   const count = hydrated ? plans.length : null;
 
@@ -53,49 +21,29 @@ function PlansPageContent() {
             <p className={styles.subtitle}>Outdoor windows you&apos;ve held</p>
             <p className={styles.count} aria-live="polite">
               {count == null
-                ? ' '
+                ? ' '
                 : count === 0
                   ? 'No saved decisions yet.'
                   : `${count} saved decision${count === 1 ? '' : 's'}.`}
             </p>
           </div>
-
-          <PlansTabs active={view} />
         </header>
 
         <section className={styles.body}>
-          {view === 'upcoming' && (
-            count === 0 || count == null ? (
-              <EmptyState
-                title="No plans yet."
-                body="Find a good forecast window and save it."
-                cta={{ label: 'Open Forecast', href: '/forecast' }}
-              />
-            ) : (
+          {count === 0 || count == null ? (
+            <EmptyState
+              title="No plans yet."
+              body="Find a good forecast window and save it."
+              cta={{ label: 'Open Forecast', href: '/forecast' }}
+            />
+          ) : (
+            <>
+              <CalendarAgendaView plans={plans} onRemove={removePlan} />
               <UpcomingBuckets plans={plans} onRemove={removePlan} />
-            )
-          )}
-
-          {view === 'calendar' && (
-            <ComingSoon tab="Calendar view" />
-          )}
-          {view === 'tentative' && (
-            <ComingSoon tab="Tentative plans" />
-          )}
-          {view === 'past' && (
-            <ComingSoon tab="Past plans" />
+            </>
           )}
         </section>
       </div>
-    </div>
-  );
-}
-
-function ComingSoon({ tab }: { tab: string }) {
-  return (
-    <div className={styles.comingSoon}>
-      <div className={styles.comingSoonTitle}>{tab}</div>
-      <p className={styles.comingSoonBody}>Coming in Phase 2.</p>
     </div>
   );
 }
@@ -114,8 +62,6 @@ function UpcomingBuckets({
   plans:    Plan[];
   onRemove: (id: string) => void;
 }) {
-  // Bucket once per plans change. Past plans live on the Past tab (Phase 2),
-  // so we exclude them here even though they have a valid bucket.
   const buckets = useMemo(() => {
     const acc: Record<PlanBucket, Plan[]> = {
       today:    [],
@@ -132,16 +78,7 @@ function UpcomingBuckets({
 
   const sections = BUCKET_ORDER.filter(({ key }) => buckets[key].length > 0);
 
-  if (sections.length === 0) {
-    // All plans bucketed as 'past' — Upcoming tab is effectively empty.
-    return (
-      <EmptyState
-        title="Nothing upcoming."
-        body="Past plans live on the Past tab when it ships in Phase 2."
-        cta={{ label: 'Open Forecast', href: '/forecast' }}
-      />
-    );
-  }
+  if (sections.length === 0) return null;
 
   return (
     <div className={styles.buckets}>

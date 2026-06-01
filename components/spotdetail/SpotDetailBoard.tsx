@@ -23,22 +23,13 @@ import type { DayScore } from '@/lib/computeWeeklySuitability';
 import { LABEL_TO_VERDICT, type Verdict } from '@/lib/decision';
 import { deriveHeroContent } from '@/lib/heroContent';
 import { deriveSpotReasons } from '@/lib/spotReasons';
-import { getBackgroundImage, toActivitySlot } from '@/lib/activityMedia';
+import { getBackgroundImage, toActivitySlot, type BackgroundImage } from '@/lib/activityMedia';
+import { fetchActivityImage } from '@/components/utils/fetchActivityImage';
 import { usePreferences } from '@/lib/preferences';
 import WeatherTopBar from './WeatherTopBar';
 import WeatherGlassPlate from './WeatherGlassPlate';
 import WhyContents from './WhyContents';
 import ConditionsSummary from './ConditionsSummary';
-
-// Full-viewport verdict tint shown for ~600ms when the board first mounts
-// for a given pin id. Same colour family as the verdict word but with α so
-// the underlying spot photo + plates stay visible behind it.
-const FLASH_COLOR: Record<Verdict, string> = {
-  GO:    'rgba(20, 184, 138, 0.42)',
-  MAYBE: 'rgba(234, 179, 8, 0.44)',
-  SKIP:  'rgba(239, 68, 68, 0.42)',
-};
-const FLASH_DURATION_MS = 600;
 
 interface Props {
   pin: SavedPin;
@@ -96,25 +87,12 @@ export default function SpotDetailBoard({
   const verdict = LABEL_TO_VERDICT[suitability.label];
   const prefs = usePreferences();
 
-  // Mount flash — fires whenever the user lands on (or navigates between)
-  // pin detail pages. Re-keyed on pin.id so the same animation replays for
-  // each new pin. Disabled when the user turned off `verdictFlash` in
-  // /account preferences.
-  const [flashing, setFlashing] = useState(prefs.verdictFlash);
-  useEffect(() => {
-    if (!prefs.verdictFlash) {
-      setFlashing(false);
-      return;
-    }
-    setFlashing(true);
-    const t = setTimeout(() => setFlashing(false), FLASH_DURATION_MS);
-    return () => clearTimeout(t);
-  }, [pin.id, prefs.verdictFlash]);
   const reasons = deriveSpotReasons(
     activitySlotForReasons(pin.activity),
     weather,
     suitability,
     prefs.tempUnit,
+    prefs.distUnit,
   );
   const hero = deriveHeroContent(
     pin.activity,
@@ -124,8 +102,33 @@ export default function SpotDetailBoard({
     suitability.reasons,
   );
 
-  const photo = getBackgroundImage(toActivitySlot(pin.activity));
   const spotName = pin.name || pin.canonical_name || pin.area;
+
+  // Hero photo. Seeded with the curated static default for the activity so
+  // the first paint is instant + the page is safe under SSR / no-API-key.
+  // On mount (and whenever the pin id changes) we kick off an Unsplash
+  // search keyed by the spot name — "Bear Mountain hiking" gets an actual
+  // Bear Mountain photo, not a generic mountain stock shot. Subsequent
+  // visits to the same pin read straight from the localStorage cache.
+  const [photo, setPhoto] = useState<BackgroundImage>(() =>
+    getBackgroundImage(toActivitySlot(pin.activity)),
+  );
+  useEffect(() => {
+    let cancelled = false;
+    setPhoto(getBackgroundImage(toActivitySlot(pin.activity)));
+    fetchActivityImage({
+      activity: pin.activity,
+      spotName,
+      region: pin.area,
+    }).then((img) => {
+      if (cancelled) return;
+      setPhoto(img);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [pin.id, pin.activity, spotName, pin.area]);
+
   const activityKey = pin.activity.toLowerCase().trim();
   const activityUpper = ACTIVITY_UPPERCASE[activityKey] ?? pin.activity.toUpperCase();
   const activityTitle = ACTIVITY_TITLECASE[activityKey] ?? pin.activity;
@@ -137,21 +140,6 @@ export default function SpotDetailBoard({
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Verdict mount flash — fires for ~600ms whenever this pin mounts. */}
-      {flashing && (
-        <div
-          aria-hidden
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-            pointerEvents: 'none',
-            background: FLASH_COLOR[verdict],
-            animation: `pinDetailFlash ${FLASH_DURATION_MS}ms ease-out forwards`,
-          }}
-        />
-      )}
-
       <WeatherTopBar state={state} pinId={pin.id} onDelete={onDelete} />
 
       <section className="relative h-[calc(100vh-64px)] overflow-hidden">
@@ -221,6 +209,52 @@ export default function SpotDetailBoard({
             </WeatherGlassPlate>
           </div>
         </div>
+
+        {/* Photo credit — Unsplash API Terms §9 require attributing the
+            photographer + linking back to Unsplash whenever an API-sourced
+            photo is displayed. The "Unsplash" link points at this specific
+            photo's page so users can open the source. Location label is
+            shown when the photographer attached one (most don't). */}
+        {photo.credit && (
+          <div
+            key={`credit-${pin.id}`}
+            className="absolute bottom-3 left-3 z-20 text-[11px] text-white/90"
+          >
+            <span
+              className="inline-flex flex-col items-start gap-0.5 rounded-md px-2.5 py-1.5"
+              style={{
+                background: 'rgba(15,23,42,0.45)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              <span>
+                Photo by{' '}
+                <a
+                  href={photo.credit.profileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-white underline-offset-2 hover:underline"
+                >
+                  {photo.credit.name}
+                </a>{' '}
+                on{' '}
+                <a
+                  href={photo.credit.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-white underline-offset-2 hover:underline"
+                >
+                  Unsplash
+                </a>
+              </span>
+              {photo.credit.location && (
+                <span className="text-white/60">{photo.credit.location}</span>
+              )}
+            </span>
+          </div>
+        )}
       </section>
     </div>
   );

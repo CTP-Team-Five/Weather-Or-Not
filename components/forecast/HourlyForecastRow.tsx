@@ -12,6 +12,7 @@
 import type { ScoredHour } from '@/lib/forecast/scoreHourly';
 import { formatTempBare } from '@/lib/formatTemp';
 import { usePreferences } from '@/lib/preferences';
+import { formatWindSpeed, formatVisibility } from '@/lib/formatDistance';
 import styles from './HourlyForecastRow.module.css';
 
 interface Props {
@@ -31,8 +32,8 @@ export default function HourlyForecastRow({ scoredHour, inBestWindow }: Props) {
 
   const tempValue = formatTempBare(hour.temperature, prefs.tempUnit);
   const feelsValue = formatTempBare(hour.apparentTemperature, prefs.tempUnit);
-  const visibilityKm = hour.visibilityM != null
-    ? Math.round(hour.visibilityM / 1000)
+  const visibilityLabel = hour.visibilityM != null
+    ? formatVisibility(hour.visibilityM, prefs.distUnit)
     : null;
 
   return (
@@ -71,8 +72,12 @@ export default function HourlyForecastRow({ scoredHour, inBestWindow }: Props) {
         />
         <Stat
           label="Wind"
-          value={`${hour.windKph} km/h`}
-          sub={hour.gustKph != null ? `gusts ${hour.gustKph}` : ''}
+          value={formatWindSpeed(hour.windKph, prefs.distUnit)}
+          sub={
+            hour.gustKph != null
+              ? `gusts ${formatWindSpeed(hour.gustKph, prefs.distUnit)}`
+              : ''
+          }
         />
         <Stat
           label="Rain"
@@ -81,7 +86,7 @@ export default function HourlyForecastRow({ scoredHour, inBestWindow }: Props) {
         />
         <Stat
           label="Vis"
-          value={visibilityKm != null ? `${visibilityKm} km` : '—'}
+          value={visibilityLabel ?? '—'}
           sub=""
         />
       </div>

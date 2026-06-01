@@ -157,7 +157,13 @@ function ForecastPageContent() {
   // Weather payloads alongside the daily forecasts — kept so the 3-Day
   // surface can score hours per pin without re-fetching.
   const [weatherByPin, setWeatherByPin] = useState<Record<string, ExtendedWeatherData>>({});
-  const [computing, setComputing] = useState(false);
+  // Gate the calendar render until EVERY pin's forecast is in. Bumps to true
+  // only when forecasts has an entry for every saved pin id. Reset on every
+  // savedPins change so adding a pin re-enters the loading state cleanly.
+  const [forecastsReady, setForecastsReady] = useState(false);
+  // 10s timeout fallback. If the parallel fetch doesn't resolve in time we
+  // surface an error instead of leaving the page in a loading limbo forever.
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
   // Start empty so server and client first-render agree; saved state arrives
@@ -331,31 +337,61 @@ function ForecastPageContent() {
     };
   }, [user]);
 
-  // ── Compute per-pin forecast in parallel ──
+  // ── Compute per-pin forecast in parallel, gated by a 10s timeout ──
+  // The page should NOT render the calendar until every pin's forecast has
+  // arrived (no half-empty calendar shell). If the parallel fetch takes more
+  // than 10 seconds we abort the wait and surface a `loadError` instead.
   useEffect(() => {
-    if (!pinsLoaded || savedPins.length === 0) {
+    if (!pinsLoaded) return;
+    if (savedPins.length === 0) {
       setForecasts({});
+      setWeatherByPin({});
+      setForecastsReady(true);
+      setLoadError(null);
       return;
     }
     let cancelled = false;
-    setComputing(true);
-    (async () => {
-      const results = await Promise.all(
-        savedPins.map((p) =>
-          computeWeeklyForPinSafe(p, FORECAST_DAYS).then((r) => [p.id, r] as const),
-        ),
-      );
+    setForecastsReady(false);
+    setLoadError(null);
+
+    const fetchAll = Promise.all(
+      savedPins.map((p) =>
+        computeWeeklyForPinSafe(p, FORECAST_DAYS).then((r) => [p.id, r] as const),
+      ),
+    );
+    const timeout = new Promise<'timeout'>((resolve) => {
+      setTimeout(() => resolve('timeout'), 10_000);
+    });
+
+    Promise.race([fetchAll, timeout]).then((winner) => {
       if (cancelled) return;
+      if (winner === 'timeout') {
+        setLoadError(
+          "We couldn't reach the forecast service in time. Check your connection and refresh.",
+        );
+        return;
+      }
       const next:        Record<string, DayScore[]>          = {};
       const nextWeather: Record<string, ExtendedWeatherData> = {};
-      for (const [id, result] of results) {
+      for (const [id, result] of winner) {
         if (result?.days)    next[id]        = result.days;
         if (result?.weather) nextWeather[id] = result.weather;
       }
+      // Only flip ready if EVERY pin produced day data. A partial response
+      // (e.g. one pin's API call failed silently inside the Safe wrapper)
+      // counts as an error from the user's standpoint.
+      const allHaveData = savedPins.every((p) => next[p.id] && next[p.id].length > 0);
       setForecasts(next);
       setWeatherByPin(nextWeather);
-      setComputing(false);
-    })();
+      if (allHaveData) {
+        setForecastsReady(true);
+      } else {
+        setLoadError(
+          "We couldn't load the forecast for one or more saved spots. Try refreshing.",
+        );
+      }
+    });
+
     return () => {
       cancelled = true;
     };
@@ -472,7 +508,10 @@ function ForecastPageContent() {
           />
         </div>
 
-        {/* Calendar / 3-Day mode / empty / loading */}
+        {/* Calendar / 3-Day mode / empty / loading / error
+            The calendar is gated on `forecastsReady` — we never paint a
+            half-empty shell. Loading state runs until every pin's forecast
+            has arrived OR the 10s timeout fires. */}
         {!pinsLoaded ? (
           <div className={styles.dimMessage}>Loading your saved spots…</div>
         ) : savedPins.length === 0 ? (
@@ -483,6 +522,21 @@ function ForecastPageContent() {
               you have spots saved.
             </p>
           </div>
+        ) : loadError ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyTitle}>Forecast unavailable</div>
+            <p className={styles.emptyBody}>{loadError}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className={styles.chip}
+              style={{ marginTop: 12 }}
+            >
+              Refresh
+            </button>
+          </div>
+        ) : !forecastsReady ? (
+          <div className={styles.dimMessage}>Computing forecasts…</div>
         ) : filteredPins.length === 0 ? (
           <div className={styles.emptyState}>
             <p className={styles.emptyBody}>
@@ -506,10 +560,6 @@ function ForecastPageContent() {
             onCellClick={(pin, day) => setSelectedCell({ pin, day })}
             onPinClick={(pin) => router.push(`/pins/${pin.id}`)}
           />
-        )}
-
-        {computing && pinsLoaded && savedPins.length > 0 && (
-          <div className={styles.computingNote}>Computing forecasts…</div>
         )}
 
         {/* Legend */}

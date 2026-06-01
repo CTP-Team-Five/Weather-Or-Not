@@ -13,6 +13,7 @@ import { applyTheme } from "@/lib/applyTheme";
 import { ActivityIcon } from "@/components/icons/ActivityIcons";
 import { usePreferences } from "@/lib/preferences";
 import { formatTempBare, formatTemp } from "@/lib/formatTemp";
+import { formatWindSpeed } from "@/lib/formatDistance";
 import styles from "./PinTile.module.css";
 
 type PinTileProps = {
@@ -211,7 +212,7 @@ export default function PinTile({ pin, featured = false, className, onOpen, onEd
                 {getWeatherDescription(cur.weatherCode).toLowerCase()}
               </span>
               <div className={styles.conditionStats}>
-                <span>💨 {cur.windKph.toFixed(0)} km/h</span>
+                <span>💨 {formatWindSpeed(cur.windKph, prefs.distUnit)}</span>
                 {cur.precipProb != null && cur.precipProb > 0 && (
                   <span>🌧️ {cur.precipProb}%</span>
                 )}
@@ -228,7 +229,7 @@ export default function PinTile({ pin, featured = false, className, onOpen, onEd
                       {formatTempBare(hour.temperature, prefs.tempUnit)}
                     </span>
                     <span className={styles.forecastWind}>
-                      {hour.windKph.toFixed(0)}<span className={styles.forecastUnit}> km</span>
+                      {formatWindSpeed(hour.windKph, prefs.distUnit)}
                     </span>
                     {hour.precipitation > 0 && (
                       <span className={styles.forecastPrecip}>
@@ -275,7 +276,7 @@ export default function PinTile({ pin, featured = false, className, onOpen, onEd
               </span>
               <span className={styles.dot}>·</span>
               <span className={styles.weatherValue}>
-                {cur.windKph.toFixed(0)} km/h
+                {formatWindSpeed(cur.windKph, prefs.distUnit)}
               </span>
               <span className={styles.dot}>·</span>
               <span className={styles.weatherValue}>

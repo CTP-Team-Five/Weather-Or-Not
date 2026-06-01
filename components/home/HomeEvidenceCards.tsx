@@ -1,6 +1,8 @@
 'use client';
 
 import { Decision } from '@/lib/decision';
+import { usePreferences } from '@/lib/preferences';
+import { formatWindSpeed } from '@/lib/formatDistance';
 import styles from './HomeEvidenceCards.module.css';
 
 interface Props {
@@ -14,6 +16,7 @@ function chipClass(type: string): string {
 }
 
 export default function HomeEvidenceCards({ decision }: Props) {
+  const prefs = usePreferences();
   const { weather, chips, reasons, pin } = decision;
   const isSurf = pin.activity === 'surf';
 
@@ -46,7 +49,7 @@ export default function HomeEvidenceCards({ decision }: Props) {
         <div className={styles.card}>
           <span className={styles.cardLabel}>Wind</span>
           <span className={styles.cardValue}>
-            {weather.windKph.toFixed(0)} <span className={styles.unit}>km/h</span>
+            {formatWindSpeed(weather.windKph, prefs.distUnit)}
           </span>
           {weather.gustKph != null && (
             <span className={styles.cardSub}>

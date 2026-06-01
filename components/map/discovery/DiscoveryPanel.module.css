@@ -1,0 +1,186 @@
+/* Floating panel — bottom-right of /map, frosted-white, 296px. Matches
+   the prototype's `.discover` block. Hide on small screens to avoid
+   overlapping the bottom-center PlaceMenu. */
+
+.toggle {
+  position: fixed;
+  right: 16px;
+  bottom: 80px;
+  z-index: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #0f172a;
+  background: rgba(255,255,255,0.95);
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px -8px rgba(15,23,42,0.18);
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.toggle:hover {
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.toggleDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+}
+
+.panel {
+  position: fixed;
+  right: 16px;
+  bottom: 80px;
+  z-index: 800;
+  width: 296px;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px -12px rgba(15,23,42,0.22);
+  padding: 14px 14px 12px;
+  font-family: var(--font-body, 'Barlow', system-ui, sans-serif);
+}
+
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.eye {
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.title {
+  margin-top: 2px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.sub {
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.close {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: rgba(15,23,42,0.04);
+  border: 0;
+  color: #64748b;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.close:hover {
+  background: rgba(15,23,42,0.08);
+  color: #0f172a;
+}
+
+.segment {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  background: rgba(15,23,42,0.04);
+  border: 1px solid rgba(15,23,42,0.05);
+  border-radius: 999px;
+}
+
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: #334155;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.chip:hover {
+  background: rgba(15,23,42,0.04);
+  color: #0f172a;
+}
+
+.chip[data-active="true"][data-activity="hike"]      { background: #16a34a; color: #fff; }
+.chip[data-active="true"][data-activity="surf"]      { background: #0891b2; color: #fff; }
+.chip[data-active="true"][data-activity="snowboard"] { background: #2563eb; color: #fff; }
+
+.status {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 currentColor;
+  animation: pulseDot 1.6s ease-out infinite;
+}
+
+@keyframes pulseDot {
+  0%   { box-shadow: 0 0 0 0 currentColor; opacity: 0.7; }
+  70%  { box-shadow: 0 0 0 6px transparent; opacity: 1; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.divider {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.error {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: #b91c1c;
+  background: rgba(185,28,28,0.06);
+  border: 1px solid rgba(185,28,28,0.15);
+  border-radius: 8px;
+  padding: 8px 10px;
+  line-height: 1.4;
+}

@@ -18,8 +18,13 @@
 
 import type { ExtendedWeatherData } from '@/components/utils/fetchForecast';
 import type { SuitabilityResult } from '@/lib/activityScore';
-import type { TempUnit } from '@/lib/preferences';
+import type { TempUnit, DistUnit } from '@/lib/preferences';
 import { formatTemp } from '@/lib/formatTemp';
+import {
+  formatWindSpeed,
+  formatVisibility,
+  formatSnowDepth,
+} from '@/lib/formatDistance';
 
 export type ReasonTone = 'good' | 'warn' | 'bad';
 
@@ -37,13 +42,8 @@ interface Candidate extends SpotReason {
 const TONE_ORDER: Record<ReasonTone, number> = { bad: 0, warn: 1, good: 2 };
 
 // ─── unit helpers ───────────────────────────────────────────────────────────
-// Temperature formatting now lives in lib/formatTemp.ts so reasons honour
-// the user's °F / °C preference. Distance conversion stays inline (only
-// used in one place — visibility km/mi could be threaded the same way as
-// a future commit).
-function mToKm(m: number): number {
-  return m / 1000;
-}
+// Temperature formatting lives in lib/formatTemp.ts; distance formatting in
+// lib/formatDistance.ts. Both honour the user's °F/°C and mi/km prefs.
 function round(n: number, places = 0): number {
   const p = 10 ** places;
   return Math.round(n * p) / p;
@@ -54,6 +54,7 @@ function hikeCandidates(
   weather: ExtendedWeatherData,
   suitability: SuitabilityResult,
   tempUnit: TempUnit,
+  distUnit: DistUnit,
 ): Candidate[] {
   const c = weather.current;
   const out: Candidate[] = [];
@@ -146,21 +147,21 @@ function hikeCandidates(
   if (c.windKph > 50) {
     out.push({
       tone: 'bad',
-      headline: `Wind ${round(c.windKph)} km/h on exposed sections`,
+      headline: `Wind ${formatWindSpeed(c.windKph, distUnit)} on exposed sections`,
       detail: 'Above tree line this gets dangerous fast. Add a buff and consider a lower route.',
       weight: 75,
     });
   } else if (c.windKph > 30) {
     out.push({
       tone: 'warn',
-      headline: `Wind ${round(c.windKph)} km/h — chilly on ridges`,
+      headline: `Wind ${formatWindSpeed(c.windKph, distUnit)} — chilly on ridges`,
       detail: 'Manageable in the trees. On exposed sections it strips body heat.',
       weight: 40,
     });
   } else if (c.windKph < 12) {
     out.push({
       tone: 'good',
-      headline: `Wind ${round(c.windKph)} km/h — calm`,
+      headline: `Wind ${formatWindSpeed(c.windKph, distUnit)} — calm`,
       detail: 'Light enough that summit photos hold still and bugs don’t get blown off.',
       weight: 25,
     });
@@ -170,14 +171,14 @@ function hikeCandidates(
   if (c.visibilityM != null && c.visibilityM < 1500) {
     out.push({
       tone: 'warn',
-      headline: `Visibility ${round(mToKm(c.visibilityM), 1)} km — fog patches`,
+      headline: `Visibility ${formatVisibility(c.visibilityM, distUnit, 1)} — fog patches`,
       detail: 'Route-finding on bare rock or alpine bowls gets harder. Stick to marked trail.',
       weight: 50,
     });
   } else if (c.visibilityM != null && c.visibilityM > 20000) {
     out.push({
       tone: 'good',
-      headline: `Visibility ${round(mToKm(c.visibilityM))} km — long sightlines`,
+      headline: `Visibility ${formatVisibility(c.visibilityM, distUnit)} — long sightlines`,
       detail: 'Far ridges and skyline are sharp from any high point on the route.',
       weight: 22,
     });
@@ -218,6 +219,7 @@ function surfCandidates(
   weather: ExtendedWeatherData,
   suitability: SuitabilityResult,
   tempUnit: TempUnit,
+  distUnit: DistUnit,
 ): Candidate[] {
   const c = weather.current;
   const out: Candidate[] = [];
@@ -299,21 +301,21 @@ function surfCandidates(
   if (c.windKph > 40) {
     out.push({
       tone: 'bad',
-      headline: `Wind ${round(c.windKph)} km/h — blown out`,
+      headline: `Wind ${formatWindSpeed(c.windKph, distUnit)} — blown out`,
       detail: 'Surface is shredded. Even ground-swell lines lose all shape.',
       weight: 80,
     });
   } else if (c.windKph > 25) {
     out.push({
       tone: 'warn',
-      headline: `Wind ${round(c.windKph)} km/h onshore`,
+      headline: `Wind ${formatWindSpeed(c.windKph, distUnit)} onshore`,
       detail: 'Faces are textured. Doable but timing your turns gets harder.',
       weight: 50,
     });
   } else if (c.windKph < 10) {
     out.push({
       tone: 'good',
-      headline: `Wind ${round(c.windKph)} km/h — glassy`,
+      headline: `Wind ${formatWindSpeed(c.windKph, distUnit)} — glassy`,
       detail: 'Surface is mirror-clean. Faces will hold their shape end-to-end.',
       weight: 50,
     });
@@ -371,6 +373,7 @@ function snowboardCandidates(
   weather: ExtendedWeatherData,
   suitability: SuitabilityResult,
   tempUnit: TempUnit,
+  distUnit: DistUnit,
 ): Candidate[] {
   const c = weather.current;
   const out: Candidate[] = [];
@@ -393,14 +396,14 @@ function snowboardCandidates(
     if (c.snowfallCm >= 15) {
       out.push({
         tone: 'good',
-        headline: `${round(c.snowfallCm, 1)}cm fresh — powder day`,
+        headline: `${formatSnowDepth(c.snowfallCm, distUnit)} fresh — powder day`,
         detail: 'Cold-smoke refresh. Whole mountain reset since yesterday.',
         weight: 80,
       });
     } else if (c.snowfallCm >= 5) {
       out.push({
         tone: 'good',
-        headline: `${round(c.snowfallCm, 1)}cm fresh overnight`,
+        headline: `${formatSnowDepth(c.snowfallCm, distUnit)} fresh overnight`,
         detail: 'Soft surface across the mountain. Off-piste is back in play.',
         weight: 60,
       });
@@ -420,21 +423,21 @@ function snowboardCandidates(
     if (baseCm >= 100) {
       out.push({
         tone: 'good',
-        headline: `Base ${round(baseCm)}cm — coverage holds`,
+        headline: `Base ${formatSnowDepth(baseCm, distUnit)} — coverage holds`,
         detail: 'Deep enough that rocks and brush stay buried edge to edge.',
         weight: 38,
       });
     } else if (baseCm < 30) {
       out.push({
         tone: 'bad',
-        headline: `Base only ${round(baseCm)}cm — exposed rock`,
+        headline: `Base only ${formatSnowDepth(baseCm, distUnit)} — exposed rock`,
         detail: 'Thin underfoot. Sticking to groomers and watching for core shots.',
         weight: 70,
       });
     } else if (baseCm < 60) {
       out.push({
         tone: 'warn',
-        headline: `Base ${round(baseCm)}cm — moderate`,
+        headline: `Base ${formatSnowDepth(baseCm, distUnit)} — moderate`,
         detail: 'Most named runs are fine. Off-piste is risky for board damage.',
         weight: 40,
       });
@@ -476,21 +479,21 @@ function snowboardCandidates(
   if (c.gustKph != null && c.gustKph > 70) {
     out.push({
       tone: 'bad',
-      headline: `Gusts ${round(c.gustKph)} km/h — wind hold likely`,
+      headline: `Gusts ${formatWindSpeed(c.gustKph, distUnit)} — wind hold likely`,
       detail: 'Upper lifts will be on hold. Whole mountain stops below tree line.',
       weight: 85,
     });
   } else if (c.gustKph != null && c.gustKph > 40) {
     out.push({
       tone: 'warn',
-      headline: `Gusts ${round(c.gustKph)} km/h above tree line`,
+      headline: `Gusts ${formatWindSpeed(c.gustKph, distUnit)} above tree line`,
       detail: 'Top chairs may run intermittently. Plan around mid-mountain laps.',
       weight: 50,
     });
   } else if (c.windKph < 18) {
     out.push({
       tone: 'good',
-      headline: `Wind ${round(c.windKph)} km/h — calm at summit`,
+      headline: `Wind ${formatWindSpeed(c.windKph, distUnit)} — calm at summit`,
       detail: 'Top-to-bottom open. Goggles stay clear and lifts run on schedule.',
       weight: 30,
     });
@@ -498,25 +501,25 @@ function snowboardCandidates(
 
   // ── Visibility ───────────────────────────────────────────────────────────
   if (c.visibilityM != null) {
-    const visKm = round(mToKm(c.visibilityM), 1);
+    const visLabel = formatVisibility(c.visibilityM, distUnit, 1);
     if (c.visibilityM < 500) {
       out.push({
         tone: 'bad',
-        headline: `Whiteout — visibility ${visKm}km`,
+        headline: `Whiteout — visibility ${visLabel}`,
         detail: 'Trail signs invisible at arm’s length. Stay off open bowls.',
         weight: 80,
       });
     } else if (c.visibilityM < 2000) {
       out.push({
         tone: 'warn',
-        headline: `Visibility ${visKm}km — flat light`,
+        headline: `Visibility ${visLabel} — flat light`,
         detail: 'Treed runs read better than open bowls. Stick to defined edges.',
         weight: 45,
       });
     } else if (c.visibilityM > 20000) {
       out.push({
         tone: 'good',
-        headline: `Visibility ${round(mToKm(c.visibilityM))}km — bluebird`,
+        headline: `Visibility ${formatVisibility(c.visibilityM, distUnit)} — bluebird`,
         detail: 'Sightlines all the way to the next range. Photo day.',
         weight: 35,
       });
@@ -544,13 +547,15 @@ export function deriveSpotReasons(
    *  that haven't been migrated to pass tempUnit keep producing the
    *  current output. */
   tempUnit: TempUnit = 'F',
+  /** User's mi / km preference. Defaults to 'mi' for the same reason. */
+  distUnit: DistUnit = 'mi',
 ): SpotReason[] {
   const candidates =
     activity === 'surf'
-      ? surfCandidates(weather, suitability, tempUnit)
+      ? surfCandidates(weather, suitability, tempUnit, distUnit)
       : activity === 'snowboard'
-        ? snowboardCandidates(weather, suitability, tempUnit)
-        : hikeCandidates(weather, suitability, tempUnit);
+        ? snowboardCandidates(weather, suitability, tempUnit, distUnit)
+        : hikeCandidates(weather, suitability, tempUnit, distUnit);
 
   // Dedupe by headline — two candidate generators occasionally surface the
   // same condition (e.g. wind-chill triggering both temperature and

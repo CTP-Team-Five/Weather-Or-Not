@@ -15,15 +15,10 @@
   margin: 0 auto;
 }
 
-/* ── Header row: title + tab group ────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────────────────────── */
 
 .header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
   margin-bottom: 28px;
-  gap: 24px;
-  flex-wrap: wrap;
 }
 
 .headerCopy {
@@ -60,7 +55,10 @@
 /* ── Body ─────────────────────────────────────────────────────────────── */
 
 .body {
-  margin-top: 8px;
+  display:        flex;
+  flex-direction: column;
+  gap:            32px;
+  margin-top:     8px;
 }
 
 .placeholder {
@@ -118,37 +116,14 @@
   gap:                   12px;
 }
 
-/* ── Coming-soon stub (Calendar / Tentative / Past tabs in Phase 1) ───── */
+/* ── Upcoming section label ───────────────────────────────────────────── */
 
-.comingSoon {
-  padding: 60px 24px;
-  text-align: center;
-  background: hsl(var(--surface));
-  border: 1px dashed hsl(var(--border-subtle));
-  border-radius: 16px;
-}
-
-.comingSoonTitle {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  color: hsl(var(--foreground));
-  letter-spacing: -0.01em;
-}
-
-.comingSoonBody {
-  margin: 6px 0 0;
-  font-size: 13px;
-  color: hsl(var(--muted-foreground));
-}
-
-/* ── Suspense / loading fallback ──────────────────────────────────────── */
-
-.dimMessage {
-  padding: 40px 20px;
-  text-align: center;
-  color: hsl(var(--muted-foreground));
-  font-size: 12px;
-  letter-spacing: 0.1em;
+.upcomingLabel {
+  font-family:    var(--font-display);
+  font-size:      10px;
+  font-weight:    700;
+  letter-spacing: 0.18em;
+  color:          hsl(var(--muted-foreground));
   text-transform: uppercase;
+  margin-bottom:  12px;
 }
