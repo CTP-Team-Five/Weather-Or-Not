@@ -10,6 +10,12 @@ export interface SavedPin {
   slug?: string;
   popularity_score?: number;
   tags?: string[];
+  /**
+   * Surf pins only: compass bearing the beach faces (where the ocean is),
+   * 0–359. When set, surf scoring computes exact on/offshore wind. UI to
+   * set this lands separately; absent for legacy pins.
+   */
+  beachFacingDeg?: number;
 }
 
 /** LocalStorage-backed pin manager */

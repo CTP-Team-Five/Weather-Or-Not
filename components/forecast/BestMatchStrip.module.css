@@ -117,6 +117,23 @@
   gap: 12px;
 }
 
+/* ── Card wrapper ─────────────────────────────────────────────────────────
+   Holds the clickable open-spot button + the optional SavePlanButton as
+   siblings. HTML disallows interactive descendants of a <button>, so the
+   two have to live next to each other instead of nested. */
+
+.cardWrapper {
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+.saveAction {
+  display:         flex;
+  justify-content: flex-end;
+  padding:         0 4px;
+}
+
 .cards[data-count='1'] { grid-template-columns: 1fr; }
 .cards[data-count='2'] { grid-template-columns: repeat(2, 1fr); }
 .cards[data-count='3'] { grid-template-columns: repeat(3, 1fr); }

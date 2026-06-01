@@ -1,0 +1,188 @@
+/* components/forecast/HourlyForecastRow.module.css
+   One row per scored hour inside a DayHourlySection. Verdict-tinted
+   background + matching outline. The "Best" hours (peak window) get a
+   stronger outline + lift. */
+
+.row {
+  --hsl: var(--score-ok);
+
+  display:               grid;
+  grid-template-columns: 80px 200px 1fr 220px;
+  gap:                   16px;
+  align-items:           center;
+  padding:               12px 14px;
+  border-radius:         10px;
+  border:                1px solid hsl(var(--hsl) / 0.20);
+  background:            hsl(var(--hsl) / 0.06);
+  transition:            transform 120ms ease, box-shadow 120ms ease;
+}
+
+.row[data-verdict='GO']    { --hsl: var(--score-great); }
+.row[data-verdict='MAYBE'] { --hsl: var(--score-ok); }
+.row[data-verdict='SKIP']  { --hsl: var(--score-terrible); }
+
+.row[data-best='true'] {
+  box-shadow:
+    0 0 0 1.5px hsl(var(--hsl) / 0.55),
+    0 4px 12px hsl(var(--hsl) / 0.12);
+}
+
+/* ── Time cell ─────────────────────────────────────────────────────────── */
+
+.timeCell {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+}
+
+.time {
+  font-family: var(--font-display);
+  font-size:   16px;
+  font-weight: 700;
+  color:       hsl(var(--foreground));
+}
+
+.bestPip {
+  font-family:    var(--font-display);
+  font-size:      9px;
+  font-weight:    700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color:          hsl(var(--hsl));
+}
+
+/* ── Verdict + score cell ──────────────────────────────────────────────── */
+
+.verdictCell {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  min-width:   0;
+}
+
+.verdictPill {
+  font-family:    var(--font-display);
+  font-size:      10px;
+  font-weight:    700;
+  letter-spacing: 0.16em;
+  padding:        3px 8px;
+  border-radius:  999px;
+  text-transform: uppercase;
+  background:     hsl(var(--hsl) / 0.18);
+  color:          hsl(var(--hsl));
+  border:         1px solid hsl(var(--hsl) / 0.35);
+  flex-shrink:    0;
+}
+
+.scoreWrap {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  flex:        1;
+  min-width:   0;
+}
+
+.scoreTrack {
+  position:      relative;
+  flex:          1;
+  height:        4px;
+  border-radius: 999px;
+  background:    hsl(var(--muted));
+  overflow:      hidden;
+  min-width:     60px;
+}
+
+.scoreFill {
+  height:        100%;
+  border-radius: 999px;
+  background:    hsl(var(--hsl));
+  transition:    width 280ms ease;
+}
+
+.scoreNum {
+  font-family: var(--font-display);
+  font-size:   13px;
+  font-weight: 700;
+  color:       hsl(var(--foreground));
+  width:       28px;
+  text-align:  right;
+}
+
+/* ── Stats cell ────────────────────────────────────────────────────────── */
+
+.statsCell {
+  display:               grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:                   14px;
+}
+
+.stat {
+  display:        flex;
+  flex-direction: column;
+  gap:            1px;
+  min-width:      0;
+}
+
+.statLabel {
+  font-family:    var(--font-display);
+  font-size:      9px;
+  font-weight:    700;
+  letter-spacing: 0.14em;
+  color:          hsl(var(--muted-foreground));
+  text-transform: uppercase;
+}
+
+.statValue {
+  font-family:    var(--font-display);
+  font-size:      13px;
+  font-weight:    700;
+  color:          hsl(var(--foreground));
+  letter-spacing: -0.01em;
+}
+
+.statSub {
+  font-family: var(--font-display);
+  font-size:   10px;
+  font-weight: 500;
+  color:       hsl(var(--muted-foreground));
+}
+
+/* ── Why cell ──────────────────────────────────────────────────────────── */
+
+.whyCell {
+  font-size:   12px;
+  font-weight: 500;
+  color:       hsl(var(--muted-foreground));
+  text-align:  right;
+  line-height: 1.4;
+}
+
+/* ── Compact stack at narrow widths ────────────────────────────────────── */
+
+@media (max-width: 960px) {
+  .row {
+    grid-template-columns: auto 1fr;
+    grid-template-rows:    auto auto auto;
+  }
+
+  .timeCell {
+    grid-column: 1;
+    grid-row:    1 / span 2;
+  }
+
+  .verdictCell {
+    grid-column: 2;
+    grid-row:    1;
+  }
+
+  .statsCell {
+    grid-column: 1 / span 2;
+    grid-row:    2;
+  }
+
+  .whyCell {
+    grid-column: 1 / span 2;
+    grid-row:    3;
+    text-align:  left;
+  }
+}

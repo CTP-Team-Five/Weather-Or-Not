@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, MouseEvent } from 'react';
+import { useState, useMemo, useRef, useEffect, MouseEvent } from 'react';
 import { HiPencilSquare, HiTrash, HiChevronLeft, HiBars3 } from 'react-icons/hi2';
 import { SavedPin } from '@/components/data/pinStore';
 import { ComputedSuitability } from '@/lib/computeSuitability';
@@ -9,50 +9,42 @@ import { useSidebarCollapsed } from '@/lib/sidebarCollapsed';
 import TeardropPin from '@/components/map/TeardropPin';
 import styles from './HomeSidebar.module.css';
 
-// Verdict pill — matches the design's primitives.jsx VerdictPill: leading
-// solid dot, uppercase verdict text, soft tinted background, 1px border in
-// the matching tone. The GO dot pulses via the `dotPing` keyframe.
-const VERDICT_TONE: Record<Verdict, { bg: string; fg: string; border: string; solid: string }> = {
-  GO:    { bg: 'rgba(20, 184, 138, 0.15)', fg: '#0d9971', border: 'rgba(20,184,138,0.35)', solid: '#14b88a' },
-  MAYBE: { bg: 'rgba(234, 179, 8, 0.18)',  fg: '#a16207', border: 'rgba(234,179,8,0.40)',  solid: '#eab308' },
-  SKIP:  { bg: 'rgba(239, 68, 68, 0.15)',  fg: '#b91c1c', border: 'rgba(239,68,68,0.35)',  solid: '#ef4444' },
+// Resizable sidebar width — persisted across reloads so the user only sets
+// it once. Bounds keep the layout sane: too narrow and pin names truncate
+// even harder; too wide and the map underneath becomes a sliver.
+const SIDEBAR_WIDTH_KEY = 'weatherornot.homeSidebarWidth';
+const MIN_WIDTH = 240;
+const MAX_WIDTH = 560;
+const DEFAULT_WIDTH = 280;
+
+// Verdict label — plain brand-font text in the verdict colour. No pill, no
+// dot, no border. The display font carries the brand voice; the colour
+// alone is enough signal next to the pin name.
+const VERDICT_COLOUR: Record<Verdict, string> = {
+  GO:    '#0d9971',
+  MAYBE: '#a16207',
+  SKIP:  '#b91c1c',
 };
 
-function VerdictPill({ verdict }: { verdict: Verdict }) {
-  const tone = VERDICT_TONE[verdict];
-  const isGo = verdict === 'GO';
+function VerdictLabel({ verdict }: { verdict: Verdict }) {
   return (
     <span
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        background: tone.bg,
-        color: tone.fg,
-        border: `1px solid ${tone.border}`,
-        borderRadius: 999,
-        padding: '3px 10px',
-        fontWeight: 700,
-        fontSize: 11,
-        letterSpacing: '0.06em',
-        textTransform: 'uppercase',
+        fontFamily: 'var(--font-editorial), Georgia, serif',
+        fontStyle: 'italic',
+        color: VERDICT_COLOUR[verdict],
+        fontWeight: 400,
+        fontSize: 20,
+        letterSpacing: '-0.015em',
         whiteSpace: 'nowrap',
         flexShrink: 0,
+        lineHeight: 1,
       }}
     >
-      <span
-        aria-hidden
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          background: tone.solid,
-          color: tone.solid, // currentColor for the dotPing box-shadow
-          boxShadow: isGo ? `0 0 0 0 ${tone.solid}` : 'none',
-          animation: isGo ? 'dotPing 2s ease-out infinite' : 'none',
-        }}
-      />
-      {verdict}
+      {/* Title-case to mirror "Weather" on the hero (cap first letter,
+          rest lowercase) — full all-caps reads as a chip even without the
+          background, which is exactly what we just removed. */}
+      {verdict.charAt(0) + verdict.slice(1).toLowerCase()}
     </span>
   );
 }
@@ -101,6 +93,69 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
   const [collapsed, toggleCollapsed] = useSidebarCollapsed();
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Drag-resize state. Start at DEFAULT_WIDTH so SSR + first client paint
+  // match; hydrate from localStorage post-mount to avoid layout flash + match
+  // the pattern the rest of the app uses (account prefs, forecast range).
+  const [width, setWidth] = useState<number>(DEFAULT_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
+  const dragStateRef = useRef<{ startX: number; startWidth: number } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(SIDEBAR_WIDTH_KEY);
+      const n = raw ? parseInt(raw, 10) : NaN;
+      if (Number.isFinite(n)) {
+        setWidth(Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, n)));
+      }
+    } catch {
+      /* malformed → keep default */
+    }
+  }, []);
+
+  // Global mouse listeners while dragging. We attach to `document` (not the
+  // handle itself) because the cursor commonly leaves the 4px-wide handle
+  // mid-drag — without document-level capture the drag drops the moment the
+  // user accelerates. The `body { cursor }` override keeps the col-resize
+  // cursor sticky across the whole window so iframes/text don't reset it.
+  useEffect(() => {
+    if (!isResizing) return;
+    const onMove = (e: globalThis.MouseEvent) => {
+      const state = dragStateRef.current;
+      if (!state) return;
+      const delta = e.clientX - state.startX;
+      const next = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, state.startWidth + delta));
+      setWidth(next);
+    };
+    const onUp = () => {
+      setIsResizing(false);
+      dragStateRef.current = null;
+      try {
+        window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));
+      } catch {
+        /* quota / private mode — silently drop */
+      }
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    const prevCursor = document.body.style.cursor;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevSelect;
+    };
+  }, [isResizing, width]);
+
+  const handleResizeStart = (e: MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    dragStateRef.current = { startX: e.clientX, startWidth: width };
+    setIsResizing(true);
+  };
 
   const filteredPins = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -155,7 +210,20 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
   }
 
   return (
-    <aside className={styles.sidebar}>
+    <aside
+      className={styles.sidebar}
+      style={{ width, position: 'relative' }}
+    >
+      {/* Drag handle — 6px-wide hit region on the right edge with a 1px
+          visual rule. Width persists to localStorage on mouseup. */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize sidebar"
+        onMouseDown={handleResizeStart}
+        className={styles.resizeHandle}
+        data-resizing={isResizing || undefined}
+      />
       <div className="flex items-center justify-between" style={{ marginBottom: '1rem', padding: '0 0.5rem' }}>
         <h2 className={styles.heading} style={{ marginBottom: 0, padding: 0 }}>
           Your Spots
@@ -253,7 +321,7 @@ export default function HomeSidebar({ pins, activeId, computedMap, loading, onSe
                 {loading && !verdict ? (
                   <span className={styles.badgeSkeleton} />
                 ) : verdict ? (
-                  <VerdictPill verdict={verdict} />
+                  <VerdictLabel verdict={verdict} />
                 ) : null}
               </button>
 

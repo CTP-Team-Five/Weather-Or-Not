@@ -101,6 +101,7 @@ function VerdictCell({
     { weekday: 'short', month: 'short', day: 'numeric' },
   );
   const reasonHint = day.reasons[0] ?? `peak score ${day.score}`;
+  const timeHint   = day.timeOfDay ? ` · best ${day.timeOfDay.toLowerCase()}` : '';
 
   return (
     <button
@@ -110,12 +111,15 @@ function VerdictCell({
       data-available={available || undefined}
       data-dim={dim || undefined}
       data-past-peak={day.peakWindowPassed || undefined}
-      title={`${spotName} · ${dateLabel} — ${day.verdict} ${day.score} · ${reasonHint}`}
-      aria-label={`${spotName}, ${dateLabel}: ${day.verdict}, score ${day.score}. ${reasonHint}`}
+      title={`${spotName} · ${dateLabel} — ${day.verdict} ${day.score}${timeHint} · ${reasonHint}`}
+      aria-label={`${spotName}, ${dateLabel}: ${day.verdict}, score ${day.score}${timeHint}. ${reasonHint}`}
       className={styles.cell}
     >
       <span className={styles.cellScore}>{day.score}</span>
       <span className={styles.cellVerdict}>{day.verdict}</span>
+      {day.timeOfDay && (
+        <span className={styles.cellTime}>{day.timeOfDay}</span>
+      )}
     </button>
   );
 }

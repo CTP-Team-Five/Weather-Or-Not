@@ -34,18 +34,6 @@ const VERDICT_BORDER: Record<Verdict, string> = {
   SKIP:  'hsl(var(--score-terrible) / 0.30)',
 };
 
-function weatherGlyph(code: number): string {
-  if (code === 0)   return '☀';
-  if (code <= 3)    return '⛅';
-  if (code <= 48)   return '🌫';
-  if (code <= 67)   return '🌧';
-  if (code <= 77)   return '❄';
-  if (code <= 82)   return '🌧';
-  if (code <= 86)   return '🌨';
-  if (code <= 99)   return '⛈';
-  return '·';
-}
-
 function formatPeakWindow(peakHour: number): string {
   // 9–17 peak window; show a 2hr band centred on the peak hour, clamped.
   const start = Math.max(6, peakHour - 1);
@@ -189,18 +177,6 @@ export default function WeeklyForecastRail({ days, className }: Props) {
                 }}
               >
                 {formatTempBare(d.tempMax, prefs.tempUnit)} / {formatTempBare(d.tempMin, prefs.tempUnit)}
-              </div>
-
-              {/* Weather glyph */}
-              <div
-                style={{
-                  fontSize: 14,
-                  marginTop: 4,
-                  opacity: 0.75,
-                }}
-                aria-hidden="true"
-              >
-                {weatherGlyph(d.weatherCode)}
               </div>
 
               {/* Today pill */}

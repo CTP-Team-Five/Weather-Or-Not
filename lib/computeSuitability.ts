@@ -49,6 +49,7 @@ export async function computeSuitabilityForPin(
     pin.lon,
     pin.canonical_name || pin.area,
     pin.tags,
+    pin.beachFacingDeg,
   );
 
   const weatherSnap = buildWeatherSnapshot({
@@ -64,10 +65,15 @@ export async function computeSuitabilityForPin(
     snowDepthM:      weather.current.snowDepthM,
     snowfallCm:      weather.current.snowfallCm,
     visibilityM:     weather.current.visibilityM,
-    soilMoistureVwc: weather.current.soilMoistureVwc,
-    waveHeightM:     weather.current.waveHeight,
-    swellPeriodS:    weather.current.swellPeriod,
-    hourlyUnits:     weather.hourlyUnits,
+    soilMoistureVwc:    weather.current.soilMoistureVwc,
+    directRadiationWm2: weather.current.directRadiationWm2,
+    waveHeightM:        weather.current.waveHeight,
+    swellPeriodS:       weather.current.swellPeriod,
+    swellDirDeg:        weather.current.swellDirDeg,
+    seaSurfaceTempC:    weather.current.seaSurfaceTempC,
+    swellWaveHeightM:   weather.current.swellWaveHeightM,
+    windWaveHeightM:    weather.current.windWaveHeightM,
+    hourlyUnits:        weather.hourlyUnits,
   });
 
   const suitability = scoreActivity(activity, locationMeta, weatherSnap);

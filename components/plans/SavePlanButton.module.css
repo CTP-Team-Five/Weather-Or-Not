@@ -1,0 +1,93 @@
+/* components/plans/SavePlanButton.module.css
+   Verdict-tinted CTA. Color comes from --score-{great|ok|terrible} via the
+   data-verdict attribute. No new tokens. */
+
+.button {
+  display:        inline-flex;
+  align-items:    center;
+  justify-content: center;
+  gap:            6px;
+  font:           inherit;
+  font-family:    var(--font-display);
+  font-weight:    700;
+  letter-spacing: 0.02em;
+  border:         1px solid transparent;
+  border-radius:  10px;
+  cursor:         pointer;
+  transition:     transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  white-space:    nowrap;
+}
+
+.button:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor:  not-allowed;
+}
+
+/* ── Variant: primary (full-width-ish CTA) ────────────────────────────── */
+
+.button[data-variant='primary'] {
+  font-size: 13px;
+  padding:   10px 18px;
+  min-height: 40px;
+}
+
+.button[data-variant='primary'][data-verdict='GO'] {
+  background:   hsl(var(--score-great));
+  color:        hsl(var(--score-great-foreground));
+  border-color: hsl(var(--score-great));
+}
+
+.button[data-variant='primary'][data-verdict='MAYBE'] {
+  background:   hsl(var(--score-ok));
+  color:        hsl(var(--score-ok-foreground));
+  border-color: hsl(var(--score-ok));
+}
+
+.button[data-variant='primary'][data-verdict='SKIP'] {
+  background:   hsl(var(--score-terrible));
+  color:        hsl(var(--score-terrible-foreground));
+  border-color: hsl(var(--score-terrible));
+}
+
+.button[data-variant='primary']:hover:not(:disabled) {
+  transform:  translateY(-1px);
+  box-shadow: 0 6px 18px hsl(var(--shadow) / 0.18);
+}
+
+/* ── Variant: compact (inline pill for tight surfaces) ────────────────── */
+
+.button[data-variant='compact'] {
+  font-size:   11px;
+  padding:     5px 12px;
+  border-radius: 999px;
+  min-height:  28px;
+}
+
+.button[data-variant='compact'][data-verdict='GO'] {
+  background:   hsl(var(--score-great) / 0.12);
+  color:        hsl(var(--score-great));
+  border-color: hsl(var(--score-great) / 0.35);
+}
+
+.button[data-variant='compact'][data-verdict='MAYBE'] {
+  background:   hsl(var(--score-ok) / 0.14);
+  color:        hsl(var(--score-ok));
+  border-color: hsl(var(--score-ok) / 0.38);
+}
+
+.button[data-variant='compact'][data-verdict='SKIP'] {
+  background:   hsl(var(--score-terrible) / 0.12);
+  color:        hsl(var(--score-terrible));
+  border-color: hsl(var(--score-terrible) / 0.35);
+}
+
+.button[data-variant='compact']:hover:not(:disabled) {
+  background:
+    var(--score-foreground, hsl(var(--surface)));
+  filter: brightness(0.97);
+}

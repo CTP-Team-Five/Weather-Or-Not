@@ -464,45 +464,6 @@
     100% { box-shadow: 0 0 0 0 transparent;  opacity: 1; }
   }
 
-  /* SpotDetailBoard v2 mount flash — full-viewport tint that fades in then
-     out when the user opens any /pins/[id]. Background colour is set inline
-     per-verdict (green / yellow / red); this keyframe just controls opacity. */
-  @keyframes pinDetailFlash {
-    0%   { opacity: 0; }
-    20%  { opacity: 1; }
-    100% { opacity: 0; }
-  }
-
-  /* Used by /pins/[id]/report (full-report view) */
-  @keyframes verdictReveal {
-    0% {
-      opacity: 0;
-      transform: scale(0.8);
-      letter-spacing: -0.05em;
-      filter: blur(20px);
-    }
-    50% {
-      opacity: 1;
-      filter: blur(0);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-      letter-spacing: -0.03em;
-      filter: blur(0);
-    }
-  }
-
-  @keyframes fadeOutOverlay {
-    from {
-      opacity: 1;
-    }
-    to {
-      opacity: 0;
-      visibility: hidden;
-    }
-  }
-
   @keyframes fadeUp {
     from {
       opacity: 0;

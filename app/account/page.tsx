@@ -35,7 +35,6 @@ interface PrefsShape {
   tempUnit: 'F' | 'C';
   distUnit: 'mi' | 'km';
   homeLabel: string;
-  verdictFlash: boolean;
 }
 
 interface AlertsShape {
@@ -52,7 +51,6 @@ const DEFAULT_PREFS: PrefsShape = {
   tempUnit: 'F',
   distUnit: 'mi',
   homeLabel: 'Brooklyn, NY',
-  verdictFlash: true,
 };
 
 const DEFAULT_ALERTS: AlertsShape = {
@@ -427,12 +425,6 @@ function PreferencesSection() {
         />
       </Row>
       <Row
-        label="Verdict flash"
-        helper="The full-screen GO / MAYBE / SKIP burst when you open a pin. Off if you'd rather skip the dramatic entrance."
-      >
-        <Toggle value={prefs.verdictFlash} onChange={(v) => update('verdictFlash', v)} />
-      </Row>
-      <Row
         label="Home location"
         helper="Drives the default map center and travel-time estimates."
         last
@@ -751,27 +743,16 @@ export default function AccountPage() {
           <PreferencesSection />
         </section>
 
-        <section className="mb-14">
-          <SectionHeader
-            num="03"
-            title="Alerts"
-            subtitle="A push when conditions actually warrant the trip."
-          />
-          <AlertsSection />
-        </section>
-
-        <section className="mb-14">
-          <SectionHeader
-            num="04"
-            title="Trips"
-            subtitle="Spots you've actually been to, with what we said vs. what you got."
-          />
-          <TripsSection />
-        </section>
+        {/* Alerts (notifications) + Trips sections hidden until they're
+            actually wired. Alerts UI was UI-only — no delivery rail
+            connected — and shipping the toggle that does nothing reads as
+            broken. Trips is the post-session reconciliation surface, not
+            ready for demo. Both kept in source for the post-demo wire-up;
+            see commented JSX below. */}
 
         <section className="mb-4">
           <SectionHeader
-            num="05"
+            num="03"
             title="Danger zone"
             subtitle="The two buttons we hope you never need."
           />

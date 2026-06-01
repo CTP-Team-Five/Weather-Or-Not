@@ -1,0 +1,109 @@
+/* components/forecast/BestWindowCard.module.css
+   Verdict-tinted callout that sits between the DayHero and the hourly
+   row list. All colour from --score-* tokens via data-verdict — no
+   local hex. */
+
+.card {
+  --hsl: var(--score-ok);
+
+  display:        flex;
+  flex-direction: column;
+  gap:            10px;
+  padding:        16px 20px;
+  border-radius:  14px;
+  background:     hsl(var(--hsl) / 0.10);
+  border:         1px solid hsl(var(--hsl) / 0.32);
+  box-shadow:     0 4px 16px hsl(var(--hsl) / 0.10);
+}
+
+.card[data-verdict='GO']    { --hsl: var(--score-great); }
+.card[data-verdict='MAYBE'] { --hsl: var(--score-ok); }
+.card[data-verdict='SKIP']  { --hsl: var(--score-terrible); }
+
+/* Today's peak already happened — dim the card so it doesn't read as a
+   live recommendation. */
+.card[data-passed='true'] {
+  opacity:      0.7;
+  background:   hsl(var(--muted) / 0.6);
+  border-color: hsl(var(--border-subtle));
+  box-shadow:   none;
+}
+
+.eyebrow {
+  font-family:    var(--font-display);
+  font-size:      10px;
+  font-weight:    700;
+  letter-spacing: 0.18em;
+  color:          hsl(var(--muted-foreground));
+  text-transform: uppercase;
+}
+
+.body {
+  display:         flex;
+  align-items:     baseline;
+  justify-content: space-between;
+  gap:             16px;
+  flex-wrap:       wrap;
+}
+
+.bodyPassed {
+  display:     flex;
+  align-items: baseline;
+  gap:         14px;
+}
+
+.time {
+  font-family:    var(--font-editorial);
+  font-style:     italic;
+  font-weight:    400;
+  font-size:      clamp(28px, 4vw, 38px);
+  line-height:    1;
+  letter-spacing: -0.005em;
+  color:          hsl(var(--foreground));
+}
+
+.right {
+  display:     flex;
+  align-items: baseline;
+  gap:         12px;
+}
+
+.verdict {
+  font-family: var(--font-editorial);
+  font-style:  italic;
+  font-weight: 400;
+  font-size:   28px;
+  line-height: 1;
+  color:       hsl(var(--hsl));
+}
+
+.metaScore {
+  font-family:    var(--font-display);
+  font-size:      22px;
+  font-weight:    800;
+  color:          hsl(var(--foreground));
+  letter-spacing: -0.02em;
+}
+
+.metaOver {
+  font-size:   12px;
+  font-weight: 600;
+  color:       hsl(var(--muted-foreground));
+  margin-left: 2px;
+}
+
+.reason {
+  font-size:   13px;
+  font-weight: 500;
+  color:       hsl(var(--foreground));
+  line-height: 1.4;
+}
+
+/* ── Actions row (SavePlanButton) ────────────────────────────────────── */
+
+.actions {
+  display:         flex;
+  justify-content: flex-end;
+  padding-top:     8px;
+  border-top:      1px solid hsl(var(--hsl) / 0.18);
+}

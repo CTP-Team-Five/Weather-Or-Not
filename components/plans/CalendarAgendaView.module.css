@@ -1,0 +1,117 @@
+/* components/plans/CalendarAgendaView.module.css
+   Month grid calendar for the Calendar tab on /plans. 5-week rolling
+   window with verdict-tinted mini chips inside day cells. Matches the
+   handoff prototype. Shared tokens only — no local hex. */
+
+.month {
+  overflow-x: auto;
+}
+
+.monthGrid {
+  display:               grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap:                   4px;
+  min-width:             640px;
+}
+
+.monthDow {
+  font-family:    var(--font-display);
+  font-size:      10px;
+  font-weight:    700;
+  letter-spacing: 0.14em;
+  color:          hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  text-align:     center;
+  padding-bottom: 6px;
+}
+
+.monthCell {
+  min-height:     96px;
+  padding:        6px;
+  border-radius:  8px;
+  background:     hsl(var(--surface));
+  border:         1px solid hsl(var(--border-subtle));
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+}
+
+.monthCellPast {
+  opacity: 0.5;
+}
+
+.monthCellToday {
+  border-color: hsl(var(--accent));
+  box-shadow:   0 0 0 1px hsl(var(--accent) / 0.2);
+}
+
+.monthCellNum {
+  font-family: var(--font-display);
+  font-size:   11px;
+  font-weight: 700;
+  color:       hsl(var(--foreground));
+}
+
+/* Month chip — verdict-tinted mini pill inside day cell */
+.monthChip {
+  display:         flex;
+  align-items:     center;
+  gap:             4px;
+  padding:         3px 6px;
+  border-radius:   6px;
+  font-family:     var(--font-display);
+  font-size:       10px;
+  font-weight:     700;
+  text-decoration: none;
+  color:           inherit;
+  overflow:        hidden;
+  transition:      opacity 100ms ease;
+}
+
+.monthChip:hover {
+  opacity: 0.8;
+}
+
+.monthChip:focus-visible {
+  outline:    none;
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.45);
+}
+
+.monthChip[data-verdict='GO'] {
+  background: hsl(var(--score-great) / 0.15);
+  color:      hsl(var(--score-great));
+}
+
+.monthChip[data-verdict='MAYBE'] {
+  background: hsl(var(--score-ok) / 0.15);
+  color:      hsl(var(--score-ok));
+}
+
+.monthChip[data-verdict='SKIP'] {
+  background: hsl(var(--score-terrible) / 0.15);
+  color:      hsl(var(--score-terrible));
+}
+
+.monthChipName {
+  overflow:      hidden;
+  text-overflow: ellipsis;
+  white-space:   nowrap;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 720px) {
+  .monthGrid {
+    min-width: 0;
+  }
+
+  .monthCell {
+    min-height: 72px;
+    padding:    4px;
+  }
+
+  .monthChip {
+    font-size: 9px;
+    padding:   2px 4px;
+  }
+}

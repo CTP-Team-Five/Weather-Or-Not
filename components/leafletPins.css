@@ -29,7 +29,10 @@
 .wo-pin-manager-inner {
   display: flex;
   align-items: center;
-  pointer-events: auto;
+  /* Container itself must pass clicks through — its layout box is wider
+     than the visible pill (the panel still takes layout space when closed,
+     only its transform moves it off-screen). Children opt in below. */
+  pointer-events: none;
 }
 
 /* ── Collapsed pill ──────────────────────────────────────────────────────── */
@@ -49,6 +52,9 @@
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   cursor: pointer;
+  /* Parent .wo-pin-manager-inner is pointer-events: none so the empty layout
+     slot beside this pill doesn't eat clicks bound for the map underneath. */
+  pointer-events: auto;
   transition:
     background 0.18s ease,
     box-shadow 0.18s ease,

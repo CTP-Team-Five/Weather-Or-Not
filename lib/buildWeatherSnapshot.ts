@@ -73,8 +73,18 @@ export interface SnapshotInput {
    * varies by soil type and that context is unavailable here.
    */
   soilMoistureVwc:    number | null;
+  /** Direct solar radiation, W/m². Drives the snow spring-melt branch. */
+  directRadiationWm2: number | null;
   waveHeightM:        number | null;
   swellPeriodS:       number | null;
+  /** Direction the swell is coming FROM, degrees. */
+  swellDirDeg:        number | null;
+  /** Sea-surface temperature in °C. Real water temp, not air-temp proxy. */
+  seaSurfaceTempC:    number | null;
+  /** Swell-only height. Used with windWaveHeightM to detect swell dominance. */
+  swellWaveHeightM:   number | null;
+  /** Wind-chop-only height. */
+  windWaveHeightM:    number | null;
   /** The hourly_units object returned by Open-Meteo; validated exactly once here. */
   hourlyUnits:        Record<string, string>;
 }
@@ -97,8 +107,13 @@ export function buildWeatherSnapshot(input: SnapshotInput): WeatherSnapshot {
   if (input.visibilityM   != null) presentOptionals.add('visibilityM');
   if (input.precipProb    != null) presentOptionals.add('precipProb');
   if (input.soilMoistureVwc != null) presentOptionals.add('soilMoistureTopLayerVwc');
+  if (input.directRadiationWm2 != null) presentOptionals.add('directRadiationWm2');
   if (input.waveHeightM   != null) presentOptionals.add('waveHeightM');
   if (input.swellPeriodS  != null) presentOptionals.add('swellPeriodS');
+  if (input.swellDirDeg   != null) presentOptionals.add('swellDirDeg');
+  if (input.seaSurfaceTempC != null) presentOptionals.add('seaSurfaceTempC');
+  if (input.swellWaveHeightM != null) presentOptionals.add('swellWaveHeightM');
+  if (input.windWaveHeightM  != null) presentOptionals.add('windWaveHeightM');
 
   // 3. Filter to the activity-specific critical subset.
   const missingCriticalHazards = CRITICAL_FIELDS[input.activity].filter(
@@ -125,8 +140,13 @@ export function buildWeatherSnapshot(input: SnapshotInput): WeatherSnapshot {
     visibilityM:            input.visibilityM ?? undefined,
     // Raw VWC ratio (m³/m³) — NOT a saturation percentage
     soilMoistureTopLayerVwc: input.soilMoistureVwc ?? undefined,
+    directRadiationWm2:     input.directRadiationWm2 ?? undefined,
     waveHeightM:            input.waveHeightM ?? undefined,
     swellPeriodS:           input.swellPeriodS ?? undefined,
+    swellDirDeg:            input.swellDirDeg ?? undefined,
+    seaSurfaceTempC:        input.seaSurfaceTempC ?? undefined,
+    swellWaveHeightM:       input.swellWaveHeightM ?? undefined,
+    windWaveHeightM:        input.windWaveHeightM ?? undefined,
     dataQuality,
   };
 }

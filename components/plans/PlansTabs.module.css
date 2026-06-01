@@ -1,0 +1,41 @@
+/* components/plans/PlansTabs.module.css
+   Segmented pill group. Same visual vocabulary as the activity filter on
+   /forecast (see app/forecast/page.module.css activityFilter / activityChip)
+   so the two routes feel like siblings. */
+
+.tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: hsl(var(--surface));
+  border-radius: 999px;
+  border: 1px solid hsl(var(--border-subtle));
+}
+
+.tab {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.tab:hover {
+  color: hsl(var(--foreground));
+}
+
+.tab[data-active='true'] {
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+}
+
+.tab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--ring) / 0.45);
+}

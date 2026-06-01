@@ -10,7 +10,7 @@
 
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/useAuth';
@@ -19,13 +19,56 @@ import {
   computeWeeklyForPinSafe,
   type DayScore,
 } from '@/lib/computeWeeklySuitability';
+import type { ExtendedWeatherData } from '@/components/utils/fetchForecast';
 import ForecastCalendar from '@/components/forecast/ForecastCalendar';
 import BestMatchStrip from '@/components/forecast/BestMatchStrip';
 import CellDrawer from '@/components/forecast/CellDrawer';
+import ForecastRangeToggle, {
+  DAYS_FOR_RANGE,
+  isForecastRange,
+  type ForecastRange,
+} from '@/components/forecast/ForecastRangeToggle';
+import ThreeDayForecast from '@/components/forecast/ThreeDayForecast';
+import {
+  planFromBestMatch,
+  planFromCellDrawer,
+  planFromBestWindow,
+  confidenceForDayOffset,
+  dayOffsetForDate,
+  type BestWindow,
+} from '@/lib/plans/buildPlan';
+import { usePlans } from '@/lib/plans/usePlans';
+import type { Plan, PlanDraft } from '@/lib/plans/types';
+import PlanPreviewDrawer from '@/components/plans/PlanPreviewDrawer';
+import SaveSuccessCard from '@/components/plans/SaveSuccessCard';
 import styles from './page.module.css';
 
+// Always fetch the max horizon — switching range modes is a render concern,
+// not a data concern. Keeps the toggle instant.
 const FORECAST_DAYS = 14;
 const STORAGE_KEY = 'weatherornot_forecast_availability';
+const RANGE_KEY = 'weatherornot_forecast_range';
+
+// Mode-specific header copy. The italic editorial word + the rest match the
+// prototype's HEADER_COPY map so the page tone shifts with intent — "What
+// hour" (3-Day) vs "When" (7-Day) vs "Plan" (14-Day).
+const HEADER_COPY: Record<ForecastRange, { editorial: string; rest: string; subtitle: string }> = {
+  '3':  {
+    editorial: 'What',
+    rest:      'hour should you go?',
+    subtitle:  'Pick a spot and find the best daylight window.',
+  },
+  '7':  {
+    editorial: 'When',
+    rest:      'should you go?',
+    subtitle:  "Mark the days you're free. We'll line up your saved spots and surface the best matches.",
+  },
+  '14': {
+    editorial: 'Plan',
+    rest:      'farther ahead.',
+    subtitle:  'Scan the long-range outlook for your saved spots.',
+  },
+};
 
 type ActivityFilter = 'all' | 'hike' | 'surf' | 'snowboard';
 
@@ -111,7 +154,16 @@ function ForecastPageContent() {
   const [savedPins, setSavedPins] = useState<SavedPin[]>([]);
   const [pinsLoaded, setPinsLoaded] = useState(false);
   const [forecasts, setForecasts] = useState<Record<string, DayScore[]>>({});
-  const [computing, setComputing] = useState(false);
+  // Weather payloads alongside the daily forecasts — kept so the 3-Day
+  // surface can score hours per pin without re-fetching.
+  const [weatherByPin, setWeatherByPin] = useState<Record<string, ExtendedWeatherData>>({});
+  // Gate the calendar render until EVERY pin's forecast is in. Bumps to true
+  // only when forecasts has an entry for every saved pin id. Reset on every
+  // savedPins change so adding a pin re-enters the loading state cleanly.
+  const [forecastsReady, setForecastsReady] = useState(false);
+  // 10s timeout fallback. If the parallel fetch doesn't resolve in time we
+  // surface an error instead of leaving the page in a loading limbo forever.
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
   // Start empty so server and client first-render agree; saved state arrives
@@ -120,6 +172,95 @@ function ForecastPageContent() {
   const [availableDays, setAvailableDays] = useState<Set<number>>(new Set());
   const [availabilityHydrated, setAvailabilityHydrated] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{ pin: SavedPin; day: DayScore } | null>(null);
+
+  // Forecast range mode — default '14' so existing users see the same calendar
+  // they had pre-toggle. Persisted across reloads via localStorage.
+  const [range, setRange] = useState<ForecastRange>('14');
+  const [rangeHydrated, setRangeHydrated] = useState(false);
+
+  // Hydrate range from localStorage on mount, same SSR-safe pattern as
+  // availability (start with default; replace post-mount).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(RANGE_KEY);
+      if (raw && isForecastRange(raw)) {
+        setRange(raw);
+      }
+    } catch {
+      /* malformed → keep default */
+    }
+    setRangeHydrated(true);
+  }, []);
+
+  // Persist range after first hydration so the default '14' doesn't clobber
+  // a user's chosen mode on first render.
+  useEffect(() => {
+    if (!rangeHydrated) return;
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(RANGE_KEY, range);
+    } catch {
+      /* quota / private mode — silently drop */
+    }
+  }, [range, rangeHydrated]);
+
+  const visibleDays = DAYS_FOR_RANGE[range];
+  const copy        = HEADER_COPY[range];
+
+  // ── Save-plan flow state ──────────────────────────────────────────────
+  // `draft` mounts the PlanPreviewDrawer. `justSaved` mounts the inline
+  // SaveSuccessCard. Both null when nothing's in flight. Save: user clicks
+  // SavePlanButton on a forecast surface → host computes confidence + builds
+  // a draft → drawer opens → user adds note → addPlan persists → success card
+  // renders inline → fades after 8s.
+  const { addPlan } = usePlans();
+  const [draft, setDraft] = useState<PlanDraft | null>(null);
+  const [justSaved, setJustSaved] = useState<Plan | null>(null);
+
+  const handleSaveFromBestMatch = useCallback((pin: SavedPin, day: DayScore) => {
+    const isTentative = confidenceForDayOffset(dayOffsetForDate(day.date)) === 'tentative';
+    setDraft(planFromBestMatch(pin, day, isTentative));
+  }, []);
+
+  const handleSaveFromCellDrawer = useCallback((pin: SavedPin, day: DayScore) => {
+    const isTentative = confidenceForDayOffset(dayOffsetForDate(day.date)) === 'tentative';
+    setDraft(planFromCellDrawer(pin, day, isTentative));
+    // Close the CellDrawer so the PlanPreviewDrawer takes focus cleanly.
+    setSelectedCell(null);
+  }, []);
+
+  const handleSaveFromBestWindow = useCallback((pin: SavedPin, day: DayScore) => {
+    // Mirror the window BestWindowCard rendered: peakHour ± 1, clamped to
+    // [0, 23]. When the per-hour sliding window detect lands as its own
+    // slice, this is where the real start/end gets sourced from.
+    const peak  = day.peakHour;
+    const start = Math.max(0,  peak - 1);
+    const end   = Math.min(23, peak + 2);
+    const window: BestWindow = {
+      startHour: start,
+      endHour:   end,
+      score:     day.score,
+      verdict:   day.verdict,
+      reason:    day.reasons[0] ?? 'Mixed conditions.',
+    };
+    const isTentative = confidenceForDayOffset(dayOffsetForDate(day.date)) === 'tentative';
+    setDraft(planFromBestWindow(pin, day, window, isTentative));
+  }, []);
+
+  const handleConfirmSave = useCallback((note: string | undefined) => {
+    // Side effects (addPlan + setJustSaved) live OUTSIDE the setDraft
+    // updater on purpose. React StrictMode double-invokes updater functions
+    // in dev to surface impure updates — when addPlan ran inside the
+    // updater, it minted two UUIDs and persisted two distinct plans per
+    // save click. Reading `draft` from the closure + putting it in the dep
+    // array fires addPlan exactly once and lets StrictMode keep its
+    // impurity check intact.
+    if (!draft) return;
+    const plan = addPlan(draft, note);
+    setJustSaved(plan);
+    setDraft(null);
+  }, [draft, addPlan]);
 
   // Hydrate availability from localStorage on mount. Doing this in a useEffect
   // (not a lazy useState initializer) is what avoids the SSR hydration mismatch.
@@ -196,28 +337,61 @@ function ForecastPageContent() {
     };
   }, [user]);
 
-  // ── Compute per-pin forecast in parallel ──
+  // ── Compute per-pin forecast in parallel, gated by a 10s timeout ──
+  // The page should NOT render the calendar until every pin's forecast has
+  // arrived (no half-empty calendar shell). If the parallel fetch takes more
+  // than 10 seconds we abort the wait and surface a `loadError` instead.
   useEffect(() => {
-    if (!pinsLoaded || savedPins.length === 0) {
+    if (!pinsLoaded) return;
+    if (savedPins.length === 0) {
       setForecasts({});
+      setWeatherByPin({});
+      setForecastsReady(true);
+      setLoadError(null);
       return;
     }
     let cancelled = false;
-    setComputing(true);
-    (async () => {
-      const results = await Promise.all(
-        savedPins.map((p) =>
-          computeWeeklyForPinSafe(p, FORECAST_DAYS).then((r) => [p.id, r] as const),
-        ),
-      );
+    setForecastsReady(false);
+    setLoadError(null);
+
+    const fetchAll = Promise.all(
+      savedPins.map((p) =>
+        computeWeeklyForPinSafe(p, FORECAST_DAYS).then((r) => [p.id, r] as const),
+      ),
+    );
+    const timeout = new Promise<'timeout'>((resolve) => {
+      setTimeout(() => resolve('timeout'), 10_000);
+    });
+
+    Promise.race([fetchAll, timeout]).then((winner) => {
       if (cancelled) return;
-      const next: Record<string, DayScore[]> = {};
-      for (const [id, result] of results) {
-        if (result?.days) next[id] = result.days;
+      if (winner === 'timeout') {
+        setLoadError(
+          "We couldn't reach the forecast service in time. Check your connection and refresh.",
+        );
+        return;
       }
+      const next:        Record<string, DayScore[]>          = {};
+      const nextWeather: Record<string, ExtendedWeatherData> = {};
+      for (const [id, result] of winner) {
+        if (result?.days)    next[id]        = result.days;
+        if (result?.weather) nextWeather[id] = result.weather;
+      }
+      // Only flip ready if EVERY pin produced day data. A partial response
+      // (e.g. one pin's API call failed silently inside the Safe wrapper)
+      // counts as an error from the user's standpoint.
+      const allHaveData = savedPins.every((p) => next[p.id] && next[p.id].length > 0);
       setForecasts(next);
-      setComputing(false);
-    })();
+      setWeatherByPin(nextWeather);
+      if (allHaveData) {
+        setForecastsReady(true);
+      } else {
+        setLoadError(
+          "We couldn't load the forecast for one or more saved spots. Try refreshing.",
+        );
+      }
+    });
+
     return () => {
       cancelled = true;
     };
@@ -263,32 +437,33 @@ function ForecastPageContent() {
         {/* Header */}
         <header className={styles.header}>
           <div>
-            <div className={styles.eyebrow}>FORECAST · {FORECAST_DAYS} DAYS</div>
+            <div className={styles.eyebrow}>FORECAST · {visibleDays} DAYS</div>
             <h1 className={styles.title}>
-              <span className={styles.titleEditorial}>When</span>should you go?
+              <span className={styles.titleEditorial}>{copy.editorial}</span>
+              {copy.rest}
             </h1>
-            <p className={styles.subtitle}>
-              Mark the days you&apos;re free. We&apos;ll line up your saved spots and
-              surface the best matches.
-            </p>
+            <p className={styles.subtitle}>{copy.subtitle}</p>
           </div>
 
-          <div
-            className={styles.activityFilter}
-            role="group"
-            aria-label="Filter by activity"
-          >
-            {ACTIVITY_FILTERS.map((o) => (
-              <button
-                key={o.v}
-                type="button"
-                onClick={() => setActivityFilter(o.v)}
-                aria-pressed={activityFilter === o.v}
-                className={styles.activityChip}
-              >
-                {o.l}
-              </button>
-            ))}
+          <div className={styles.headerControls}>
+            <ForecastRangeToggle value={range} onChange={setRange} />
+            <div
+              className={styles.activityFilter}
+              role="group"
+              aria-label="Filter by activity"
+            >
+              {ACTIVITY_FILTERS.map((o) => (
+                <button
+                  key={o.v}
+                  type="button"
+                  onClick={() => setActivityFilter(o.v)}
+                  aria-pressed={activityFilter === o.v}
+                  className={styles.activityChip}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
           </div>
         </header>
 
@@ -313,16 +488,30 @@ function ForecastPageContent() {
           )}
         </div>
 
+        {/* SaveSuccessCard — inline post-save confirmation. Auto-fades 8s. */}
+        {justSaved && (
+          <div className={styles.successWrap}>
+            <SaveSuccessCard
+              plan={justSaved}
+              onDismiss={() => setJustSaved(null)}
+            />
+          </div>
+        )}
+
         {/* Best matches */}
         <div className={styles.bestMatch}>
           <BestMatchStrip
             availableDays={availableDays}
             pins={filteredPins}
             forecasts={forecasts}
+            onSavePlan={handleSaveFromBestMatch}
           />
         </div>
 
-        {/* Calendar / empty / loading */}
+        {/* Calendar / 3-Day mode / empty / loading / error
+            The calendar is gated on `forecastsReady` — we never paint a
+            half-empty shell. Loading state runs until every pin's forecast
+            has arrived OR the 10s timeout fires. */}
         {!pinsLoaded ? (
           <div className={styles.dimMessage}>Loading your saved spots…</div>
         ) : savedPins.length === 0 ? (
@@ -333,26 +522,44 @@ function ForecastPageContent() {
               you have spots saved.
             </p>
           </div>
+        ) : loadError ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyTitle}>Forecast unavailable</div>
+            <p className={styles.emptyBody}>{loadError}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className={styles.chip}
+              style={{ marginTop: 12 }}
+            >
+              Refresh
+            </button>
+          </div>
+        ) : !forecastsReady ? (
+          <div className={styles.dimMessage}>Computing forecasts…</div>
         ) : filteredPins.length === 0 ? (
           <div className={styles.emptyState}>
             <p className={styles.emptyBody}>
               No saved spots match the current activity filter.
             </p>
           </div>
+        ) : range === '3' ? (
+          <ThreeDayForecast
+            pins={filteredPins}
+            forecasts={forecasts}
+            weatherByPin={weatherByPin}
+            onSavePlan={handleSaveFromBestWindow}
+          />
         ) : (
           <ForecastCalendar
             pins={filteredPins}
             forecasts={forecasts}
-            forecastDays={FORECAST_DAYS}
+            forecastDays={visibleDays}
             availableDays={availableDays}
             onToggleDay={toggleDay}
             onCellClick={(pin, day) => setSelectedCell({ pin, day })}
             onPinClick={(pin) => router.push(`/pins/${pin.id}`)}
           />
-        )}
-
-        {computing && pinsLoaded && savedPins.length > 0 && (
-          <div className={styles.computingNote}>Computing forecasts…</div>
         )}
 
         {/* Legend */}
@@ -377,6 +584,19 @@ function ForecastPageContent() {
           pin={selectedCell.pin}
           day={selectedCell.day}
           onClose={() => setSelectedCell(null)}
+          onSavePlan={handleSaveFromCellDrawer}
+        />
+      )}
+
+      {/* PlanPreviewDrawer — opens whenever a SavePlanButton anywhere on this
+          page set the draft. Closes via Cancel / Esc / scrim-tap (handled by
+          the component itself), or transitions into the SaveSuccessCard on
+          successful save. */}
+      {draft && (
+        <PlanPreviewDrawer
+          draft={draft}
+          onSave={handleConfirmSave}
+          onCancel={() => setDraft(null)}
         />
       )}
     </div>

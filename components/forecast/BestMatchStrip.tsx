@@ -14,6 +14,11 @@ import { HiOutlineCalendarDays } from 'react-icons/hi2';
 import type { SavedPin } from '@/components/data/pinStore';
 import type { DayScore } from '@/lib/computeWeeklySuitability';
 import {
+  confidenceForDayOffset,
+  dayOffsetForDate,
+} from '@/lib/plans/buildPlan';
+import SavePlanButton from '@/components/plans/SavePlanButton';
+import {
   canonicalActivityKey,
   formatActivityLabel,
 } from './activityKey';
@@ -24,6 +29,10 @@ interface Props {
   availableDays: Set<number>;
   pins:          SavedPin[];
   forecasts:     Record<string, DayScore[]>;
+  /** Optional save-plan callback. Fires when the user clicks the SavePlanButton
+   *  rendered beneath each card. Wired by the host (app/forecast/page.tsx) to
+   *  open the PlanPreviewDrawer. Absent prop → no button is rendered. */
+  onSavePlan?:   (pin: SavedPin, day: DayScore) => void;
 }
 
 interface Candidate {
@@ -38,6 +47,7 @@ export default function BestMatchStrip({
   availableDays,
   pins,
   forecasts,
+  onSavePlan,
 }: Props) {
   const router = useRouter();
 
@@ -123,37 +133,51 @@ export default function BestMatchStrip({
           const activityLabel = formatActivityLabel(pin.activity);
           const spotName = pin.name || pin.canonical_name || pin.area;
           const showArea = pin.area && pin.area.toLowerCase() !== spotName.toLowerCase();
+          const confidence = confidenceForDayOffset(dayOffsetForDate(best.date));
           return (
-            <button
-              key={pin.id}
-              type="button"
-              onClick={() => router.push(`/pins/${pin.id}`)}
-              data-verdict={best.verdict}
-              data-rank={idx + 1}
-              aria-label={`Open ${spotName}, ${best.verdict} verdict, average score ${Math.round(avg)} of 100 across selected days`}
-              className={styles.card}
-            >
-              {idx === 0 && <span className={styles.topBadge}>Top pick</span>}
-              <div className={styles.cardEyebrow}>
-                <span
-                  aria-hidden
-                  className={styles.cardActivityDot}
-                  data-activity={activityKey}
-                />
-                {activityLabel}
-                {showArea ? ` · ${pin.area}` : ''}
-              </div>
-              <div className={styles.cardName}>{spotName}</div>
-              <div className={styles.cardScoreRow}>
-                <span className={styles.cardScoreNum}>{Math.round(avg)}</span>
-                <span className={styles.cardScoreMeta}>
-                  AVG · {goCount}/{daysCount} GO
-                </span>
-              </div>
-              <div className={styles.cardWhy}>
-                {best.weekday} · {best.reasons[0] ?? `peak score ${best.score}`}
-              </div>
-            </button>
+            // Wrapper so the open-spot button + the save-plan button can sit
+            // as siblings (HTML disallows interactive descendants of a button).
+            <div key={pin.id} className={styles.cardWrapper} data-rank={idx + 1}>
+              <button
+                type="button"
+                onClick={() => router.push(`/pins/${pin.id}`)}
+                data-verdict={best.verdict}
+                data-rank={idx + 1}
+                aria-label={`Open ${spotName}, ${best.verdict} verdict, average score ${Math.round(avg)} of 100 across selected days`}
+                className={styles.card}
+              >
+                {idx === 0 && <span className={styles.topBadge}>Top pick</span>}
+                <div className={styles.cardEyebrow}>
+                  <span
+                    aria-hidden
+                    className={styles.cardActivityDot}
+                    data-activity={activityKey}
+                  />
+                  {activityLabel}
+                  {showArea ? ` · ${pin.area}` : ''}
+                </div>
+                <div className={styles.cardName}>{spotName}</div>
+                <div className={styles.cardScoreRow}>
+                  <span className={styles.cardScoreNum}>{Math.round(avg)}</span>
+                  <span className={styles.cardScoreMeta}>
+                    AVG · {goCount}/{daysCount} GO
+                  </span>
+                </div>
+                <div className={styles.cardWhy}>
+                  {best.weekday} · {best.reasons[0] ?? `peak score ${best.score}`}
+                </div>
+              </button>
+              {onSavePlan && (
+                <div className={styles.saveAction}>
+                  <SavePlanButton
+                    verdict={best.verdict}
+                    confidence={confidence}
+                    variant="compact"
+                    onClick={() => onSavePlan(pin, best)}
+                  />
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

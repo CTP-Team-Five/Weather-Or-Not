@@ -1,7 +1,7 @@
 // components/spotdetail/WeatherTopBar.tsx
 // Sticky 64px chrome that owns the top of the SpotDetailBoard v2 view.
 // Same three-column layout as Navbar — left brand, center
-// PINS/MAP/FORECAST nav, right cluster of GO-count + auth + New Spot +
+// PINS/MAP/FORECAST nav, right cluster of auth + New Spot +
 // per-pin overflow menu — but with the weather-reactive twist: rain/snow
 // video clipped inside the bar, brand mark that swaps sun/cloud/snowflake,
 // "OrNot" wordmark tinted by weather state.
@@ -14,7 +14,6 @@ import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { HiEllipsisVertical } from 'react-icons/hi2';
 import type { WeatherState } from '@/lib/weatherState';
-import { DashboardCache } from '@/components/data/viewCache';
 import UserAvatarMenu from '@/components/UserAvatarMenu';
 import BrandMark from './BrandMark';
 import WeatherVideoChip from './WeatherVideoChip';
@@ -29,6 +28,7 @@ const NAV_ITEMS: { label: string; href: string }[] = [
   { label: 'PINS', href: '/' },
   { label: 'MAP', href: '/map' },
   { label: 'FORECAST', href: '/forecast' },
+  { label: 'PLANS', href: '/plans' },
 ];
 
 const ACCENT: Record<WeatherState, string> = {
@@ -62,19 +62,6 @@ export default function WeatherTopBar({
   const hasVideo = state !== 'clear';
   const isWet = state === 'raining' || state === 'snowing';
   const accent = ACCENT[state];
-
-  // Read GO count from cached dashboard scores (this view is outside the
-  // homepage's data flow, so we lean on the cache rather than recomputing).
-  const [goCount, setGoCount] = useState(0);
-  useEffect(() => {
-    const cached = DashboardCache.get();
-    if (!cached) return;
-    let n = 0;
-    cached.computed.forEach((computed) => {
-      if (computed?.suitability.label === 'GREAT') n += 1;
-    });
-    setGoCount(n);
-  }, [pathname]);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
@@ -131,10 +118,6 @@ export default function WeatherTopBar({
         navInactive: 'rgba(255,255,255,0.7)',
         navActive: '#ffffff',
         underline: '#ffffff',
-        goPillBg: 'rgba(255,255,255,0.15)',
-        goPillFg: '#ffffff',
-        goPillBorder: 'rgba(255,255,255,0.30)',
-        goPillDot: '#34d399',
         authText: '#ffffff',
         authBtnBg: 'rgba(255,255,255,0.15)',
         authBtnBorder: 'rgba(255,255,255,0.30)',
@@ -145,10 +128,6 @@ export default function WeatherTopBar({
         navInactive: '#64748b',
         navActive: '#0f172a',
         underline: '#0f172a',
-        goPillBg: 'rgba(20,184,138,0.12)',
-        goPillFg: '#0d9971',
-        goPillBorder: 'rgba(20,184,138,0.30)',
-        goPillDot: '#14b88a',
         authText: '#475569',
         authBtnBg: 'transparent',
         authBtnBorder: 'rgba(15,23,42,0.10)',
@@ -241,31 +220,6 @@ export default function WeatherTopBar({
             className="flex items-center gap-3"
             style={{ justifySelf: 'end' }}
           >
-            {goCount > 0 && (
-              <span
-                className="hidden items-center gap-2 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] md:inline-flex"
-                style={{
-                  background: tone.goPillBg,
-                  color: tone.goPillFg,
-                  border: `1px solid ${tone.goPillBorder}`,
-                }}
-                title="Pins with GO conditions right now"
-              >
-                <span
-                  aria-hidden
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: tone.goPillDot,
-                    color: tone.goPillDot,
-                    animation: 'dotPing 2s ease-out infinite',
-                  }}
-                />
-                {goCount} {goCount === 1 ? 'good day' : 'good days'}
-              </span>
-            )}
-
             <UserAvatarMenu buttonBg={tone.avatarBg} buttonFg={tone.avatarFg} />
 
             <Link

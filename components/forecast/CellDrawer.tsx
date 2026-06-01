@@ -10,15 +10,24 @@ import { useEffect, useId, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { SavedPin } from '@/components/data/pinStore';
 import type { DayScore } from '@/lib/computeWeeklySuitability';
+import {
+  confidenceForDayOffset,
+  dayOffsetForDate,
+} from '@/lib/plans/buildPlan';
+import SavePlanButton from '@/components/plans/SavePlanButton';
 import styles from './CellDrawer.module.css';
 
 interface Props {
-  pin: SavedPin;
-  day: DayScore;
-  onClose: () => void;
+  pin:        SavedPin;
+  day:        DayScore;
+  onClose:    () => void;
+  /** Optional save-plan callback. When provided, a SavePlanButton renders at
+   *  the start of the actions row. Wired by the host (app/forecast/page.tsx)
+   *  to open the PlanPreviewDrawer. */
+  onSavePlan?: (pin: SavedPin, day: DayScore) => void;
 }
 
-export default function CellDrawer({ pin, day, onClose }: Props) {
+export default function CellDrawer({ pin, day, onClose, onSavePlan }: Props) {
   const router = useRouter();
   const titleId = useId();
   const closeBtnRef = useRef<HTMLButtonElement>(null);
@@ -44,9 +53,10 @@ export default function CellDrawer({ pin, day, onClose }: Props) {
   const why = day.reasons[0] ?? 'Mixed conditions.';
 
   const spotName = pin.name || pin.canonical_name || pin.area;
+  const timePart = day.timeOfDay ? ` · BEST ${day.timeOfDay}` : '';
   const eyebrow = day.peakWindowPassed
-    ? `TODAY · LATER · ${dateLabel}`
-    : `${day.weekday} · ${dateLabel}`;
+    ? `TODAY · LATER · ${dateLabel}${timePart}`
+    : `${day.weekday} · ${dateLabel}${timePart}`;
 
   return (
     <div
@@ -77,6 +87,14 @@ export default function CellDrawer({ pin, day, onClose }: Props) {
           <div className={styles.whyLabel}>Why</div>
           <p className={styles.whyText}>{why}</p>
           <div className={styles.actions}>
+            {onSavePlan && (
+              <SavePlanButton
+                verdict={day.verdict}
+                confidence={confidenceForDayOffset(dayOffsetForDate(day.date))}
+                variant="primary"
+                onClick={() => onSavePlan(pin, day)}
+              />
+            )}
             <button
               type="button"
               onClick={() => router.push(`/pins/${pin.id}`)}

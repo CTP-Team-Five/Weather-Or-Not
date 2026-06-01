@@ -36,6 +36,7 @@ import { deriveSpotReasons, type ReasonTone } from '@/lib/spotReasons';
 import { usePreferences } from '@/lib/preferences';
 import type { TempUnit } from '@/lib/preferences';
 import { formatTemp, formatTempBare } from '@/lib/formatTemp';
+import { formatWindSpeed, formatVisibility } from '@/lib/formatDistance';
 
 const ACTIVITY_UPPERCASE: Record<string, string> = {
   hike: 'HIKING',
@@ -110,61 +111,6 @@ function activitySlotForReasons(a: string): 'hike' | 'surf' | 'snowboard' {
 
 // Temperature formatting moved to lib/formatTemp.ts so this page honours
 // the user's °F / °C preference.
-
-// ── VerdictReveal ──────────────────────────────────────────────────────────
-// 1.8s fullscreen overlay with the verdict word in big Instrument Serif italic.
-// Auto-completes onto the report content. Skipped under prefers-reduced-motion.
-
-function VerdictReveal({ verdict, onComplete }: { verdict: Verdict; onComplete: () => void }) {
-  useEffect(() => {
-    const reduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const t = setTimeout(onComplete, reduced ? 0 : 1800);
-    return () => clearTimeout(t);
-  }, [onComplete]);
-
-  const c = VERDICT_COLORS[verdict];
-  const message =
-    verdict === 'GO'
-      ? 'GO. THIS IS YOUR DAY.'
-      : verdict === 'MAYBE'
-        ? "MAYBE. IT'S A CALL."
-        : 'SKIP. NOT TODAY.';
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 200,
-        background:
-          'radial-gradient(circle at center, rgba(15,23,42,0.96) 0%, rgba(0,0,0,1) 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        animation: 'fadeOutOverlay 600ms ease-out 1.2s forwards',
-      }}
-    >
-      <div
-        className="font-editorial italic"
-        style={{
-          fontWeight: 700,
-          fontSize: 'clamp(60px, 12vw, 180px)',
-          color: c.solid,
-          letterSpacing: '-0.03em',
-          lineHeight: 0.9,
-          textAlign: 'center',
-          textShadow: `0 0 100px ${c.solid}99, 0 0 30px ${c.solid}`,
-          animation: 'verdictReveal 1.4s cubic-bezier(0.22,1,0.36,1) both',
-          padding: '0 40px',
-        }}
-      >
-        {message}
-      </div>
-    </div>
-  );
-}
 
 // ── HourlyCurve ────────────────────────────────────────────────────────────
 // 24-point SVG temperature curve normalized to the day's min/max range, with a
@@ -326,7 +272,6 @@ export default function PinReportPage() {
   const [ambientTheme, setAmbientTheme] = useState<AmbientTheme | null>(null);
   const [weekly, setWeekly] = useState<WeeklySuitability | null>(null);
   const [otherPins, setOtherPins] = useState<SavedPin[]>([]);
-  const [revealed, setRevealed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -493,10 +438,10 @@ export default function PinReportPage() {
     },
     {
       label: 'WIND',
-      value: `${Math.round(cur.windKph)}km/h`,
+      value: formatWindSpeed(cur.windKph, prefs.distUnit),
       sub:
         cur.gustKph != null && cur.gustKph > cur.windKph * 1.4
-          ? `gusts ${Math.round(cur.gustKph)}`
+          ? `gusts ${formatWindSpeed(cur.gustKph, prefs.distUnit)}`
           : getWeatherDescription(cur.weatherCode).toLowerCase(),
     },
     {
@@ -510,7 +455,7 @@ export default function PinReportPage() {
     {
       label: 'VIS',
       value:
-        cur.visibilityM != null ? `${(cur.visibilityM / 1000).toFixed(0)}km` : '—',
+        cur.visibilityM != null ? formatVisibility(cur.visibilityM, prefs.distUnit) : '—',
       sub:
         cur.visibilityM != null
           ? cur.visibilityM > 20000
@@ -524,10 +469,6 @@ export default function PinReportPage() {
 
   return (
     <div className="font-geist" style={{ background: '#fafaf7', minHeight: '100vh' }}>
-      {prefs.verdictFlash && !revealed && (
-        <VerdictReveal verdict={verdict} onComplete={() => setRevealed(true)} />
-      )}
-
       {/* ── Hero strip — 60vh ─────────────────────────────────────────── */}
       <section
         style={{
@@ -827,6 +768,7 @@ export default function PinReportPage() {
                   weather,
                   suitability,
                   prefs.tempUnit,
+                  prefs.distUnit,
                 );
                 if (richReasons.length === 0) {
                   return <p style={{ fontSize: 13, color: '#64748b' }}>No breakdown available.</p>;

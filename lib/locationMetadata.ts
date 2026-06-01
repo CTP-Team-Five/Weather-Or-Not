@@ -135,12 +135,15 @@ interface NominatimData {
 }
 
 /**
- * Build LocationMetadata from Nominatim data and optional pin tags
+ * Build LocationMetadata from Nominatim data and optional pin tags.
+ * `beachFacingDeg` is passed through to the LocationMetadata when set on
+ * the pin (surf pins only).
  */
 export function buildLocationMetadata(
   nominatimData: NominatimData | null,
   pinName: string,
-  pinTags?: string[]
+  pinTags?: string[],
+  beachFacingDeg?: number,
 ): LocationMetadata {
   const addr = nominatimData?.address || {};
   const extratags = nominatimData?.extratags || {};
@@ -252,6 +255,7 @@ export function buildLocationMetadata(
     isUrban,
     snowFriendly,
     surfFriendly,
+    beachFacingDeg,
   };
 }
 
@@ -455,19 +459,20 @@ export async function fetchLocationMetadata(
   lat: number,
   lon: number,
   pinName: string,
-  pinTags?: string[]
+  pinTags?: string[],
+  beachFacingDeg?: number,
 ): Promise<LocationMetadata> {
   // Fast path: skip Nominatim for saved pins entirely.
   // buildLocationMetadata derives coastal/park/snow/surf from pinName + pinTags.
   // Nominatim has CORS issues from localhost and rate limits from production.
   if (pinTags != null) {
-    return buildLocationMetadata(null, pinName, pinTags);
+    return buildLocationMetadata(null, pinName, pinTags, beachFacingDeg);
   }
 
   const cacheKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
 
   if (_nominatimCache.has(cacheKey)) {
-    return buildLocationMetadata(_nominatimCache.get(cacheKey) ?? null, pinName, pinTags);
+    return buildLocationMetadata(_nominatimCache.get(cacheKey) ?? null, pinName, pinTags, beachFacingDeg);
   }
 
   try {
@@ -480,10 +485,10 @@ export async function fetchLocationMetadata(
 
     const data = await nominatimFetch(url);
     _nominatimCache.set(cacheKey, data);
-    return buildLocationMetadata(data, pinName, pinTags);
+    return buildLocationMetadata(data, pinName, pinTags, beachFacingDeg);
   } catch {
     _nominatimCache.set(cacheKey, null);
-    return buildLocationMetadata(null, pinName, pinTags);
+    return buildLocationMetadata(null, pinName, pinTags, beachFacingDeg);
   }
 }
 

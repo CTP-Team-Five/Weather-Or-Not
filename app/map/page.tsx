@@ -10,6 +10,13 @@ import MapSearch, { SearchResult } from "@/components/MapSearch";
 import MapPinManager from "@/components/MapPinManager";
 import PlaceMenu, { PlacementActivity } from "@/components/map/PlaceMenu";
 import PinCursor from "@/components/map/PinCursor";
+import DiscoveryPanel from "@/components/map/discovery/DiscoveryPanel";
+import DiscoveryLayer from "@/components/map/discovery/DiscoveryLayer";
+import { fetchDiscovery } from "@/lib/overpass";
+import type {
+  DiscoveryActivity,
+  DiscoveryResult,
+} from "@/components/map/discovery/types";
 import { generateCanonicalName, inferTags } from "@/lib/generateCanonicalName";
 import { generateSlug } from "@/lib/generateSlug";
 import { supabase } from "@/lib/supabaseClient";
@@ -197,6 +204,110 @@ function MapPageContent() {
      LeafletMap's InitialAutoFit (with animate: false) is the single source
      of truth for the on-mount centering. The user can press the bottom-
      right "Show all" button to refit any time after that. */
+
+  /* ── Focus a specific pin via ?focus=<pinId> ────────────────────────────────
+     The "See on map" button on the spot detail page routes here with the pin
+     id. We wait until both pins are loaded AND the map ref is ready, then
+     fly to that pin's coords. `focus=search` (autoFocus the search box) is
+     handled separately below; the UUID branch and the "search" sentinel
+     never collide. */
+  const focusConsumedRef = useRef(false);
+  useEffect(() => {
+    if (focusConsumedRef.current) return;
+    if (!mapRef || !pinsLoaded) return;
+    const focus = searchParams.get('focus');
+    if (!focus || focus === 'search') return;
+    const target = allSavedPins.find((p) => p.id === focus);
+    if (!target) {
+      // Pin not in this user's saved set — bail silently. (Could happen if
+      // a stale link lands here after the pin was deleted.)
+      focusConsumedRef.current = true;
+      return;
+    }
+    mapRef.invalidateSize();
+    mapRef.flyTo([target.lat, target.lon], 14, { animate: true, duration: 1.0 });
+    focusConsumedRef.current = true;
+  }, [mapRef, pinsLoaded, allSavedPins, searchParams]);
+
+  /* ── Discovery overlay ─────────────────────────────────────────────────── */
+
+  const [discoverOpen, setDiscoverOpen] = useState(false);
+  const [discoverActivity, setDiscoverActivity] = useState<DiscoveryActivity>('hike');
+  const [discoverResults, setDiscoverResults] = useState<DiscoveryResult[]>([]);
+  const [discoverLoading, setDiscoverLoading] = useState(false);
+  const [discoverError, setDiscoverError] = useState<string | null>(null);
+  // Saved-id set to mark already-saved discovery results; coords list to
+  // dedup the dashed teardrop against the user's own saved pins.
+  const savedDiscoveryIds = useRef<Set<string>>(new Set());
+  const savedCoords: Array<[number, number]> = allSavedPins.map((p) => [p.lat, p.lon]);
+  const discoverRadiusKm: Record<DiscoveryActivity, number> = {
+    hike: 40, surf: 40, snowboard: 300,
+  };
+
+  // Fetch when the panel opens or activity changes. Anchored on the
+  // current map center so the user can pan + re-trigger by switching
+  // activity. We use the map center over geolocation because we don't
+  // have a geolocation flow today; map-center is the closest stand-in.
+  useEffect(() => {
+    if (!discoverOpen || !mapRef) return;
+    let cancelled = false;
+    setDiscoverLoading(true);
+    setDiscoverError(null);
+    setDiscoverResults([]);
+    const c = mapRef.getCenter();
+    fetchDiscovery(discoverActivity, c.lat, c.lng)
+      .then((rs) => { if (!cancelled) setDiscoverResults(rs); })
+      .catch(() => { if (!cancelled) setDiscoverError('Discovery unavailable — try again in a minute.'); })
+      .finally(() => { if (!cancelled) setDiscoverLoading(false); });
+    return () => { cancelled = true; };
+  }, [discoverOpen, discoverActivity, mapRef]);
+
+  // Promote a discovery result to a real SavedPin (same shape as a manual
+  // placement, but skip the reverse-geocode round trip — OSM already gave
+  // us a name + tag). Routes to the new spot detail page.
+  const handleDiscoverySave = useCallback(async (result: DiscoveryResult) => {
+    const slug = generateSlug(result.name);
+    const newPin: SavedPin = {
+      id: crypto.randomUUID(),
+      name: result.name,
+      area: result.name,
+      lat: result.lat,
+      lon: result.lon,
+      activity: result.activity,
+      createdAt: Date.now(),
+      canonical_name: result.name,
+      slug,
+      popularity_score: 1,
+      tags: [result.osmTag],
+    };
+    PinStore.add(newPin);
+    setAllSavedPins((prev) => [...prev, newPin]);
+    savedDiscoveryIds.current.add(result.id);
+
+    if (supabase) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase.from('pins').insert({
+          id: newPin.id, area: newPin.area, lat: newPin.lat, lon: newPin.lon,
+          activity: newPin.activity, canonical_name: newPin.canonical_name,
+          slug: newPin.slug, popularity_score: newPin.popularity_score,
+          tags: newPin.tags,
+        });
+        if (!error) {
+          await supabase.from('user_pins').insert({ user_id: user.id, pin_id: newPin.id });
+        }
+      }
+    }
+    router.push(`/pins/${newPin.id}`);
+  }, [router]);
+
+  const handleDiscoveryView = useCallback((result: DiscoveryResult) => {
+    // Already saved — find the SavedPin by coord proximity, open it.
+    const existing = allSavedPins.find(
+      (p) => Math.abs(p.lat - result.lat) < 0.0005 && Math.abs(p.lon - result.lon) < 0.0005,
+    );
+    if (existing) router.push(`/pins/${existing.id}`);
+  }, [allSavedPins, router]);
 
   /* ── Pin placement ────────────────────────────────────────────────────────── */
 
@@ -416,6 +527,39 @@ function MapPageContent() {
           y={cursorPos.y}
           visible={!!placementActivity && cursorOnMap}
         />
+
+        {/* ── Discovery panel + layer ──────────────────────────────────────
+            Hidden for the June 1 demo — the Overpass server proxy is hooked
+            up but the GUI flow (save-to-score, dashed-teardrop rendering on
+            the leaflet layer) hasn't had enough QA passes to demo safely.
+            Re-enable by removing the `false &&` guard once the flow is
+            stable. State + handlers above stay in place so the wire-up is a
+            one-character revert. */}
+        {false && (
+          <>
+            <DiscoveryPanel
+              open={discoverOpen}
+              activity={discoverActivity}
+              count={discoverLoading ? null : discoverResults.length}
+              radiusKm={discoverRadiusKm[discoverActivity]}
+              loading={discoverLoading}
+              error={discoverError}
+              onToggle={() => setDiscoverOpen((v) => !v)}
+              onPick={(a) => setDiscoverActivity(a)}
+            />
+            {discoverOpen && mapRef && (
+              <DiscoveryLayer
+                map={mapRef}
+                results={discoverResults}
+                activity={discoverActivity}
+                savedIds={savedDiscoveryIds.current}
+                savedCoords={savedCoords}
+                onSave={handleDiscoverySave}
+                onView={handleDiscoveryView}
+              />
+            )}
+          </>
+        )}
 
         {/* ── Recenter — bottom right. Pill with icon + label so it can't
             be mistaken for a fullscreen toggle. The icon points inward

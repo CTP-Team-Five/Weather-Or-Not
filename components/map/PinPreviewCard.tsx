@@ -22,6 +22,7 @@ import { getWeatherDescription } from '@/components/utils/fetchForecast';
 import { ActivityIcon } from '@/components/icons/ActivityIcons';
 import WeatherVideoChip from '@/components/spotdetail/WeatherVideoChip';
 import { usePreferences } from '@/lib/preferences';
+import { formatWindSpeed } from '@/lib/formatDistance';
 import { formatTempBare } from '@/lib/formatTemp';
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -201,8 +202,7 @@ export default function PinPreviewCard({ pin }: Props) {
           <div>
             <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">Wind</div>
             <div className="text-[15px] font-bold text-slate-900">
-              {Math.round(cur.windKph)}
-              <span className="text-[10px] font-semibold text-slate-500"> km/h</span>
+              {formatWindSpeed(cur.windKph, prefs.distUnit)}
             </div>
           </div>
           <div>

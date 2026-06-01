@@ -1,0 +1,129 @@
+/* app/plans/page.module.css
+   /plans surface. Light-first, shared --score-* / --accent / chrome tokens
+   only — no local hex. Mirrors the spacing + type vocabulary of
+   app/forecast/page.module.css so the two routes feel like siblings. */
+
+.shell {
+  min-height: calc(100vh - var(--navbar-height));
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  padding: 32px 40px 60px;
+}
+
+.inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+
+.header {
+  margin-bottom: 28px;
+}
+
+.headerCopy {
+  min-width: 0;
+}
+
+.eyebrow {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+}
+
+.subtitle {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4.5vw, 40px);
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin: 4px 0 0;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.count {
+  font-size: 13px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  margin: 10px 0 0;
+  min-height: 19px;
+}
+
+/* ── Body ─────────────────────────────────────────────────────────────── */
+
+.body {
+  display:        flex;
+  flex-direction: column;
+  gap:            32px;
+  margin-top:     8px;
+}
+
+.placeholder {
+  padding: 28px 24px;
+  text-align: center;
+  background: hsl(var(--surface));
+  border: 1px dashed hsl(var(--border-subtle));
+  border-radius: 14px;
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* ── Upcoming tab: bucketed PlanCard grid ─────────────────────────────── */
+
+.buckets {
+  display:        flex;
+  flex-direction: column;
+  gap:            28px;
+}
+
+.bucket {
+  display:        flex;
+  flex-direction: column;
+  gap:            12px;
+}
+
+.bucketHeader {
+  display:     flex;
+  align-items: baseline;
+  gap:         8px;
+  margin:      0;
+}
+
+.bucketLabel {
+  font-family:    var(--font-display);
+  font-size:      12px;
+  font-weight:    800;
+  letter-spacing: 0.18em;
+  color:          hsl(var(--foreground));
+  text-transform: uppercase;
+}
+
+.bucketCount {
+  font-family: var(--font-display);
+  font-size:   12px;
+  font-weight: 700;
+  color:       hsl(var(--muted-foreground));
+}
+
+.bucketGrid {
+  display:               grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap:                   12px;
+}
+
+/* ── Upcoming section label ───────────────────────────────────────────── */
+
+.upcomingLabel {
+  font-family:    var(--font-display);
+  font-size:      10px;
+  font-weight:    700;
+  letter-spacing: 0.18em;
+  color:          hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  margin-bottom:  12px;
+}

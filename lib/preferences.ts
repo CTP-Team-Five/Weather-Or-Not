@@ -24,9 +24,6 @@ export interface UserPreferences {
   tempUnit: TempUnit;
   distUnit: DistUnit;
   homeLabel: string;
-  /** When true, the SpotDetailBoard mount-flash and the report page's
-   *  VerdictReveal overlay both fire on pin open. Off = skip both. */
-  verdictFlash: boolean;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -34,7 +31,6 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   tempUnit: 'F',
   distUnit: 'mi',
   homeLabel: 'Brooklyn, NY',
-  verdictFlash: true,
 };
 
 function normalizeActivity(raw: unknown): ActivityCode {
@@ -65,29 +61,14 @@ export function getPreferences(): UserPreferences {
         typeof parsed.homeLabel === 'string' && parsed.homeLabel.trim().length > 0
           ? parsed.homeLabel
           : DEFAULT_PREFERENCES.homeLabel,
-      verdictFlash:
-        typeof parsed.verdictFlash === 'boolean'
-          ? parsed.verdictFlash
-          : DEFAULT_PREFERENCES.verdictFlash,
     };
   } catch {
     return DEFAULT_PREFERENCES;
   }
 }
 
-// Pre-hydration baseline. Matches DEFAULT_PREFERENCES *except* `verdictFlash`,
-// which we force off until the real stored value loads. A user who has
-// disabled the flash would otherwise see a brief burst on first render
-// because `useEffect`-driven hydration trails the initial commit — on
-// slower clients (notably Windows browsers) the gap is wide enough that
-// the CSS animation visibly plays before we flip it back off.
-const INITIAL_PREFERENCES: UserPreferences = {
-  ...DEFAULT_PREFERENCES,
-  verdictFlash: false,
-};
-
 export function usePreferences(): UserPreferences {
-  const [prefs, setPrefs] = useState<UserPreferences>(INITIAL_PREFERENCES);
+  const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
 
   useEffect(() => {
     setPrefs(getPreferences());

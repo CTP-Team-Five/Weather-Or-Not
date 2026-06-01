@@ -3,6 +3,9 @@
 .sidebar {
   display: flex;
   flex-direction: column;
+  /* Default width — the React component overrides this via inline `style`
+     once the persisted width hydrates from localStorage. Min/max enforced
+     in the drag handler in HomeSidebar.tsx. */
   width: 280px;
   padding: 1.25rem;
   background: hsl(var(--surface) / 0.65);
@@ -11,6 +14,31 @@
   border-right: 1px solid hsl(var(--border-subtle));
   overflow-y: auto;
   flex-shrink: 0;
+}
+
+/* ── Drag handle ── */
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  /* 6px-wide hit region centred on the 1px visual rule below. Wider hit
+     area than the visible line makes it discoverable without making the
+     border look bulky. */
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  /* Sit above the sidebar's overflow-y scroll edge so the cursor change is
+     reliable; below floating tooltips/menus. */
+  z-index: 5;
+  /* Subtle vertical rule baked into the handle itself instead of as a
+     separate ::after pseudo-element. */
+  background: transparent;
+  transition: background 120ms ease;
+}
+
+.resizeHandle:hover,
+.resizeHandle[data-resizing] {
+  background: hsl(var(--accent) / 0.25);
 }
 
 .heading {
@@ -161,7 +189,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 160px;
+  /* Take the full available column width — drag-resizing the sidebar
+     trades pin-name space for reason space without a hardcoded ceiling. */
 }
 
 .reasonSkeleton {
