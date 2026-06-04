@@ -14,6 +14,53 @@
 
 export type Activity = 'surfing' | 'skiing' | 'snowboarding' | 'hiking';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Stored-prefs reader — keeps the score engine itself unit-aware without
+// forcing every caller to thread prefs down through computeSuitability,
+// computeWeeklyForPin, scoreHourly, etc. SSR-safe: returns °F/mi defaults
+// when window is undefined.
+//
+// The "weatherornot.preferences" key + shape match lib/preferences.ts. We
+// inline the reader here (instead of importing) so this module doesn't get
+// pulled into the client bundle as a 'use client' boundary — it's still
+// safe to call from server-render paths and from tests.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type TempUnit = 'F' | 'C';
+type DistUnit = 'mi' | 'km';
+
+function getStoredPrefs(): { tempUnit: TempUnit; distUnit: DistUnit } {
+  if (typeof window === 'undefined') {
+    return { tempUnit: 'F', distUnit: 'mi' };
+  }
+  try {
+    const raw = window.localStorage.getItem('weatherornot.preferences');
+    if (!raw) return { tempUnit: 'F', distUnit: 'mi' };
+    const p = JSON.parse(raw) as Partial<{ tempUnit: string; distUnit: string }>;
+    return {
+      tempUnit: p.tempUnit === 'C' ? 'C' : 'F',
+      distUnit: p.distUnit === 'km' ? 'km' : 'mi',
+    };
+  } catch {
+    return { tempUnit: 'F', distUnit: 'mi' };
+  }
+}
+
+function fmtTemp(c: number, unit: TempUnit): string {
+  if (unit === 'F') return `${Math.round((c * 9) / 5 + 32)}°F`;
+  return `${Math.round(c)}°C`;
+}
+
+function fmtWind(kph: number, unit: DistUnit): string {
+  if (unit === 'mi') return `${Math.round(kph / 1.609344)} mph`;
+  return `${Math.round(kph)} km/h`;
+}
+
+function fmtSnow(cm: number, unit: DistUnit): string {
+  if (unit === 'mi') return `${Math.round(cm / 2.54)} in`;
+  return `${Math.round(cm)} cm`;
+}
+
 export type LocationMetadata = {
   name: string;
   countryCode?: string;
@@ -397,8 +444,11 @@ function angleDistance(a: number, b: number): number {
  * Every fragment is grounded in the snapshot.
  */
 function buildSurfingSignalReasons(w: WeatherSnapshot, loc: LocationMetadata): string[] {
+  const { tempUnit, distUnit } = getStoredPrefs();
   const parts: string[] = [];
 
+  // Wave height stays in metres — surf vernacular is metric worldwide, no
+  // unit toggle for swell size.
   if (w.waveHeightM != null) {
     parts.push(`${w.waveHeightM.toFixed(1)} m`);
   }
@@ -425,13 +475,13 @@ function buildSurfingSignalReasons(w: WeatherSnapshot, loc: LocationMetadata): s
     }
   }
   if (w.windKph < 5)        parts.push('no wind');
-  else if (windQual)        parts.push(`${Math.round(w.windKph)} km/h ${windQual}`);
-  else if (w.windKph < 15)  parts.push(`${Math.round(w.windKph)} km/h light wind`);
-  else                      parts.push(`${Math.round(w.windKph)} km/h wind`);
+  else if (windQual)        parts.push(`${fmtWind(w.windKph, distUnit)} ${windQual}`);
+  else if (w.windKph < 15)  parts.push(`${fmtWind(w.windKph, distUnit)} light wind`);
+  else                      parts.push(`${fmtWind(w.windKph, distUnit)} wind`);
 
   const wt = w.seaSurfaceTempC ?? w.tempC;
   const wtLabel = w.seaSurfaceTempC != null ? 'water' : 'air';
-  parts.push(`${Math.round(wt)}°C ${wtLabel}`);
+  parts.push(`${fmtTemp(wt, tempUnit)} ${wtLabel}`);
 
   return [parts.join(' · ')];
 }
@@ -650,6 +700,7 @@ function finalizeSkiScore(
  * "Partly cloudy" — no jargon. Followed by concrete temp / base / wind.
  */
 function buildSkiSignalReasons(w: WeatherSnapshot): string[] {
+  const { tempUnit, distUnit } = getStoredPrefs();
   const parts: string[] = [];
   const fresh = w.snowfallCm ?? 0;
   const code  = w.weatherCode;
@@ -658,7 +709,7 @@ function buildSkiSignalReasons(w: WeatherSnapshot): string[] {
 
   // Lead with the surface story in plain language.
   if (fresh >= 5 && w.tempC <= -2) {
-    parts.push(`Fresh snow — ${Math.round(fresh)}cm`);
+    parts.push(`Fresh snow — ${fmtSnow(fresh, distUnit)}`);
   } else if (isSnowingCode && w.tempC <= -2) {
     parts.push('Snow falling');
   } else if (code === 0) {
@@ -670,15 +721,15 @@ function buildSkiSignalReasons(w: WeatherSnapshot): string[] {
   }
 
   // Snow-surface temp (not apparent — surface integrity).
-  parts.push(`${Math.round(w.tempC)}°C`);
+  parts.push(fmtTemp(w.tempC, tempUnit));
 
   if (w.snowDepthCm !== undefined && w.snowDepthCm >= 30) {
-    parts.push(`${Math.round(w.snowDepthCm)}cm base`);
+    parts.push(`${fmtSnow(w.snowDepthCm, distUnit)} base`);
   }
 
   if (w.windKph < 10) parts.push('light wind');
-  else if (w.windKph < 25) parts.push(`${Math.round(w.windKph)} km/h wind`);
-  else parts.push(`${Math.round(w.windKph)} km/h gusty`);
+  else if (w.windKph < 25) parts.push(`${fmtWind(w.windKph, distUnit)} wind`);
+  else parts.push(`${fmtWind(w.windKph, distUnit)} gusty`);
 
   return [parts.join(' · ')];
 }
@@ -851,6 +902,7 @@ function finalizeHikeScore(
  * Each fragment is grounded in the snapshot, so a 95 GO reads inspectable.
  */
 function buildHikingSignalReasons(w: WeatherSnapshot, loc: LocationMetadata): string[] {
+  const { tempUnit, distUnit } = getStoredPrefs();
   const parts: string[] = [];
 
   // Sky
@@ -859,7 +911,7 @@ function buildHikingSignalReasons(w: WeatherSnapshot, loc: LocationMetadata): st
 
   // Apparent temperature
   const t = w.apparentTempC ?? w.tempC;
-  parts.push(`${Math.round(t)}°C feel`);
+  parts.push(`${fmtTemp(t, tempUnit)} feel`);
 
   // Rain risk — only mention when low, otherwise the score wouldn't be GO
   if (w.precipProb !== undefined && w.precipProb < 30) {
@@ -870,8 +922,8 @@ function buildHikingSignalReasons(w: WeatherSnapshot, loc: LocationMetadata): st
 
   // Wind
   if (w.windKph < 8) parts.push('calm');
-  else if (w.windKph < 20) parts.push(`${Math.round(w.windKph)} km/h breeze`);
-  else parts.push(`${Math.round(w.windKph)} km/h wind`);
+  else if (w.windKph < 20) parts.push(`${fmtWind(w.windKph, distUnit)} breeze`);
+  else parts.push(`${fmtWind(w.windKph, distUnit)} wind`);
 
   const headline = parts.join(' · ');
   const result: string[] = [headline];

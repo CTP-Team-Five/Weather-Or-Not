@@ -43,7 +43,7 @@ const UTM_APP = 'weatherornot';
 // Bump the cache prefix when the matching algorithm changes — old cached
 // matches (which were too loose) get bypassed in favor of re-validating
 // against the new logic.
-const CACHE_PREFIX = 'won:img:v5:';
+const CACHE_PREFIX = 'won:img:v6:';
 
 // Cache TTL — long enough that we essentially fetch once per pin per activity.
 // If a photo gets pulled from Unsplash, the URL 404s gracefully; on the next
