@@ -134,15 +134,20 @@
   padding:         0 4px;
 }
 
-.cards[data-count='1'] { grid-template-columns: 1fr; }
-.cards[data-count='2'] { grid-template-columns: repeat(2, 1fr); }
-.cards[data-count='3'] { grid-template-columns: repeat(3, 1fr); }
-.cards[data-count='4'] { grid-template-columns: repeat(4, 1fr); }
+/* minmax(0, 1fr) instead of 1fr — without the explicit 0 floor, grid
+   items default to min-width: auto, which is min-content width. A long
+   pin name or a wordy reason ("Drizzle in the forecast — conditions damp
+   but manageable.") refuses to shrink and pushes the whole grid past the
+   .strip container's right edge. */
+.cards[data-count='1'] { grid-template-columns: minmax(0, 1fr); }
+.cards[data-count='2'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cards[data-count='3'] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cards[data-count='4'] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
 @media (max-width: 920px) {
   .cards[data-count='3'],
   .cards[data-count='4'] {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -150,7 +155,7 @@
   .cards[data-count='2'],
   .cards[data-count='3'],
   .cards[data-count='4'] {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

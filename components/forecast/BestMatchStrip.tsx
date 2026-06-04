@@ -71,7 +71,11 @@ export default function BestMatchStrip({
   }
 
   // Score each pin = avg over selected days, sort desc, take top 4.
-  const candidates: Candidate[] = pins
+  // Dedup by location (lat/lon rounded to 3 decimals ≈ 110 m grid) since the
+  // pin store can hold the same place twice if the user saved it from two
+  // different flows. Keep the highest-scoring entry per location so the
+  // strip never renders two identical "Malibu Beach" cards.
+  const scored = pins
     .map((pin) => {
       const series = forecasts[pin.id];
       if (!series || series.length === 0) return null;
@@ -84,7 +88,16 @@ export default function BestMatchStrip({
       const goCount = selected.filter((d) => d.verdict === 'GO').length;
       return { pin, avg, goCount, best, daysCount: selected.length };
     })
-    .filter((c): c is Candidate => c !== null)
+    .filter((c): c is Candidate => c !== null);
+
+  const byLocation = new Map<string, Candidate>();
+  for (const c of scored) {
+    const key = `${c.pin.activity}@${c.pin.lat.toFixed(3)},${c.pin.lon.toFixed(3)}`;
+    const prev = byLocation.get(key);
+    if (!prev || c.avg > prev.avg) byLocation.set(key, c);
+  }
+
+  const candidates: Candidate[] = Array.from(byLocation.values())
     .sort((a, b) => b.avg - a.avg)
     .slice(0, 4);
 
